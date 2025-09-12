@@ -1,4 +1,4 @@
-# Oscilloscope-Network-Capture
+# Oscilloscope Network Capture
 
 A very simple oscilloscope network capture application. Primarily developed for own usage, but would be happy to know if this also works for other oscilloscopes - it _should_ work, as it uses a standard VISA/SCPI protocol but ...
 
