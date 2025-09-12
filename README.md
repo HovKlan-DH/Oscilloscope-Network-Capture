@@ -1,6 +1,12 @@
 # Oscilloscope-Network-Capture
 
+A very simple oscilloscope network capture application. Primarily developed for own usage, but would be happy to know if this also works for other oscilloscopes - it _should_ work, as it uses a standard VISA/SCPI protocol but ...
 
+Requirements:
+* Windows 10 or newer (64-bit)
+* .NET Framework 4.8.1
+  
+A couple of images from the application:
 
 <img width="900" height="761" alt="image" src="https://github.com/user-attachments/assets/5abd058d-a49f-45a7-a905-e734a7495d33" />
 
