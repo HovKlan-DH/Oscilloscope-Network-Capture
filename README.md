@@ -5,7 +5,9 @@ A very simple oscilloscope network capture application. Primarily developed for 
 Requirements:
 * Windows 10 or newer (64-bit)
 * .NET Framework 4.8.1
-  
+
+The tool has been made as a helper-tool for my other project _Commodore Repair Toolbox_ (CRT), https://github.com/HovKlan-DH/Commodore-Repair-Toolbox
+
 A couple of images from the application:
 
 <img width="900" height="761" alt="image" src="https://github.com/user-attachments/assets/5abd058d-a49f-45a7-a905-e734a7495d33" />
