@@ -43,6 +43,11 @@ namespace Oscilloscope_Network_Capture
 
         private enum LogLevel { Info, Warning, Error, Notice }
 
+        // NEW: vendor detection
+        private enum ScopeVendor { Unknown, Rigol, Siglent }
+        private ScopeVendor detectedVendor = ScopeVendor.Unknown;
+        private string lastIdn = null;
+
         public Form1()
         {
             initializing = true;
@@ -259,7 +264,6 @@ namespace Oscilloscope_Network_Capture
                 }
                 else
                 {
-                    // Legacy single-line (IP only)
                     string txt = string.Join("", lines).Trim();
                     if (!string.IsNullOrWhiteSpace(txt) && ValidateIp(txt))
                     {
@@ -387,7 +391,11 @@ namespace Oscilloscope_Network_Capture
                             scpi.ClearStatus();
 
                             string idn = scpi.QueryLine("*IDN?");
+                            lastIdn = idn;
                             Log("IDN: " + (idn ?? "").Trim(), LogLevel.Info);
+                            detectedVendor = DetermineVendor(idn);
+                            if (detectedVendor != ScopeVendor.Unknown)
+                                Log("Detected vendor: " + detectedVendor, LogLevel.Notice);
 
                             if (!string.IsNullOrWhiteSpace(idn))
                             {
@@ -419,11 +427,13 @@ namespace Oscilloscope_Network_Capture
                     {
                         Log("Connectivity check failed (I/O): " + ioex.Message, LogLevel.Error);
                         ClearPictureBoxImage();
+                        Beep("error");
                     }
                     catch (Exception ex)
                     {
                         Log("Connectivity check failed: " + ex.Message, LogLevel.Error);
                         ClearPictureBoxImage();
+                        Beep("error");
                     }
                 });
             }
@@ -431,6 +441,15 @@ namespace Oscilloscope_Network_Capture
             {
                 if (buttonCheckScope != null) buttonCheckScope.Enabled = true;
             }
+        }
+
+        private ScopeVendor DetermineVendor(string idn)
+        {
+            if (string.IsNullOrWhiteSpace(idn)) return ScopeVendor.Unknown;
+            var up = idn.ToUpperInvariant();
+            if (up.Contains("SIGLENT")) return ScopeVendor.Siglent;
+            if (up.Contains("RIGOL")) return ScopeVendor.Rigol;
+            return ScopeVendor.Unknown;
         }
 
         // ================= HOTKEY / PIN MODE =================
@@ -612,7 +631,6 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
-        // Filename construction preserves user format verbatim (only substitutes variables and removes illegal chars)
         private string BuildCaptureFileName(int? pinNumber)
         {
             string format = (textBoxFilenameFormat != null && !string.IsNullOrWhiteSpace(textBoxFilenameFormat.Text))
@@ -662,7 +680,6 @@ namespace Oscilloscope_Network_Capture
             if (string.IsNullOrWhiteSpace(expanded))
                 expanded = "capture_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
-            // Replace invalid filename chars only, preserve user's formatting
             char[] invalid = Path.GetInvalidFileNameChars();
             var sb = new StringBuilder(expanded.Length);
             foreach (char c in expanded)
@@ -679,7 +696,7 @@ namespace Oscilloscope_Network_Capture
             return Path.Combine(outputFolder, expanded + ".png");
         }
 
-        // ================= MULTI-VENDOR SCREENSHOT LOGIC (NO ICMP) =================
+        // ================= MULTI-VENDOR SCREENSHOT LOGIC =================
         private Task CaptureScreenToFileAsync(string regionTag, string outputFileName)
         {
             string host = scopeIp;
@@ -704,17 +721,20 @@ namespace Oscilloscope_Network_Capture
                         scpi.ClearStatus();
 
                         string idn = scpi.TryQuery("*IDN?", timeoutMs: 2500);
-                        if (string.IsNullOrWhiteSpace(idn))
-                            Log("No *IDN? response.", LogLevel.Warning);
-                        else
+                        if (!string.IsNullOrWhiteSpace(idn))
+                        {
+                            lastIdn = idn;
+                            detectedVendor = DetermineVendor(idn);
                             Log("IDN: " + idn.Trim(), LogLevel.Info);
+                            Log("Vendor classification: " + detectedVendor, LogLevel.Notice);
+                        }
 
                         string vendorUpper = "";
                         if (!string.IsNullOrWhiteSpace(idn))
                             vendorUpper = idn.Split(',')[0].Trim().ToUpperInvariant();
 
                         bool wasRunning = DetectAndStopAcquisition(scpi, vendorUpper);
-                        byte[] rawImage = TryFetchScreenshot(scpi, vendorUpper);
+                        byte[] rawImage = FetchScreenshot(scpi, detectedVendor);
 
                         if (rawImage == null || rawImage.Length < 32)
                         {
@@ -734,6 +754,7 @@ namespace Oscilloscope_Network_Capture
                         {
                             Log("Unknown image format signature.", LogLevel.Error);
                             failMode = true;
+                            Beep("error");
                             if (wasRunning) TryRun(scpi);
                             return;
                         }
@@ -784,24 +805,97 @@ namespace Oscilloscope_Network_Capture
                 catch (TimeoutException tex)
                 {
                     Log("Capture failed (timeout): " + tex.Message, LogLevel.Error);
+                    Beep("error");
                 }
                 catch (IOException ioex)
                 {
                     Log("Capture failed (I/O): " + ioex.Message, LogLevel.Error);
+                    Beep("error");
                 }
                 catch (InvalidDataException idex)
                 {
                     Log("Capture failed (invalid data): " + idex.Message, LogLevel.Error);
+                    Beep("error");
                 }
                 catch (Exception ex)
                 {
                     Log("Capture failed: " + ex.Message, LogLevel.Error);
+                    Beep("error");
                 }
                 finally
                 {
                     if (!success) ClearPictureBoxImage();
                 }
             });
+        }
+
+        // New unified fetch
+        private byte[] FetchScreenshot(RawScpiClient scpi, ScopeVendor vendor)
+        {
+            if (vendor == ScopeVendor.Siglent)
+            {
+                var img = TryFetchSiglent(scpi);
+                if (img != null) return img;
+                Log("Siglent path failed; falling back to generic list.", LogLevel.Warning);
+            }
+            // Rigol or fallback generic (existing logic)
+            return TryFetchRigolStyle(scpi);
+        }
+
+        private byte[] TryFetchRigolStyle(RawScpiClient scpi)
+        {
+            string[] attempts =
+            {
+                ":DISP:DATA?",
+                ":DISP:DATA? PNG",
+                ":DISP:DATA? ON,0,PNG",
+                ":HARDcopy:DATA? PNG",
+                ":HCOPy:DATA? PNG",
+                ":DISP:DATA? ON,0,BMP",
+                ":SCDP?"
+            };
+            foreach (var cmd in attempts)
+            {
+                Log("Trying screenshot command (Rigol path): " + cmd, LogLevel.Info);
+                byte[] data = scpi.TryQueryBinaryBlock(cmd, 50 * 1024 * 1024, 8000);
+                if (data != null && data.Length > 64)
+                {
+                    Log("Command " + cmd + " succeeded (block, bytes=" + data.Length + ", head=" + HexPreview(data, 16) + ")", LogLevel.Info);
+                    return data;
+                }
+            }
+            return null;
+        }
+
+        private byte[] TryFetchSiglent(RawScpiClient scpi)
+        {
+            string[] siglent = { "SCDP", "SCDP?", ":SCDP?" };
+            foreach (var cmd in siglent)
+            {
+                Log("Trying Siglent screenshot command: " + cmd, LogLevel.Info);
+                string mode;
+                byte[] data = scpi.TryQuerySiglentImage(cmd, 50 * 1024 * 1024, 12000, out mode);
+                if (data != null && data.Length > 64)
+                {
+                    Log($"Siglent command {cmd} succeeded (mode={mode}, bytes={data.Length}, head={HexPreview(data, 16)})", LogLevel.Info);
+                    return data;
+                }
+                Log($"Siglent command {cmd} produced no usable data.", LogLevel.Warning);
+            }
+            return null;
+        }
+
+        private static string HexPreview(byte[] data, int max)
+        {
+            if (data == null) return "";
+            int n = Math.Min(max, data.Length);
+            var sb = new StringBuilder(n * 3);
+            for (int i = 0; i < n; i++)
+            {
+                sb.Append(data[i].ToString("X2"));
+                if (i + 1 < n) sb.Append(' ');
+            }
+            return sb.ToString();
         }
 
         private bool DetectAndStopAcquisition(RawScpiClient scpi, string vendorUpper)
@@ -835,28 +929,6 @@ namespace Oscilloscope_Network_Capture
                 Log("Scope acquisition already stopped.", LogLevel.Info);
             }
             return running;
-        }
-
-        private byte[] TryFetchScreenshot(RawScpiClient scpi, string vendorUpper)
-        {
-            string[] attempts =
-            {
-                ":DISP:DATA?",
-                ":DISP:DATA? PNG",
-                ":DISP:DATA? ON,0,PNG",
-                ":HARDcopy:DATA? PNG",
-                ":HCOPy:DATA? PNG",
-                ":DISP:DATA? ON,0,BMP",
-                ":SCDP?"
-            };
-            foreach (var cmd in attempts)
-            {
-                Log("Trying screenshot command: " + cmd, LogLevel.Info);
-                byte[] data = scpi.TryQueryBinaryBlock(cmd, 50 * 1024 * 1024, 8000);
-                if (data != null && data.Length > 64)
-                    return data;
-            }
-            return null;
         }
 
         private bool TryWrite(RawScpiClient scpi, string cmd)
@@ -1132,8 +1204,15 @@ namespace Oscilloscope_Network_Capture
                 try { Directory.CreateDirectory(outDir); }
                 catch (Exception ex) { Log("Could not create output folder: " + ex.Message, LogLevel.Error); return; }
             }
-            try { Process.Start("explorer.exe", "\"" + outDir + "\""); }
-            catch (Exception ex) { Log("Failed to open output folder: " + ex.Message, LogLevel.Error); }
+            try
+            {
+                Process.Start("explorer.exe", "\"" + outDir + "\"");
+            }
+            catch (Exception ex)
+            {
+                Log("Failed to open output folder: " + ex.Message, LogLevel.Error);
+                Beep("error");
+            }
         }
     }
 
@@ -1205,6 +1284,115 @@ namespace Oscilloscope_Network_Capture
             }
             catch { return null; }
             finally { _client.ReceiveTimeout = old; }
+        }
+
+        // Siglent flexible image (raw or block)
+        public byte[] TryQuerySiglentImage(string command, int maxBytes, int timeoutMs, out string mode)
+        {
+            mode = "";
+            int old = _client.ReceiveTimeout;
+            try
+            {
+                _client.ReceiveTimeout = timeoutMs;
+                WriteLine(command);
+
+                int first = ReadByteSkipWhitespace();
+                if (first < 0) return null;
+
+                if (first == '#')
+                {
+                    mode = "block";
+                    int ndChar = ReadByte();
+                    if (ndChar < '0' || ndChar > '9') return null;
+                    int nd = ndChar - '0';
+                    if (nd == 0) return null;
+                    int length = 0;
+                    for (int i = 0; i < nd; i++)
+                    {
+                        int d = ReadByte();
+                        if (d < '0' || d > '9') return null;
+                        length = length * 10 + (d - '0');
+                        if (length > maxBytes) return null;
+                    }
+                    var data = new byte[length];
+                    ReadExactly(data, 0, length);
+                    ConsumeCrLf();
+                    return data;
+                }
+
+                // RAW path
+                var header = new List<byte>();
+                header.Add((byte)first);
+                while (header.Count < 8)
+                {
+                    int b = ReadByte();
+                    if (b < 0) break;
+                    header.Add((byte)b);
+                }
+
+                if (header.Count >= 2 && header[0] == 0x42 && header[1] == 0x4D)
+                {
+                    mode = "raw-bmp";
+                    while (header.Count < 54)
+                    {
+                        int b = ReadByte();
+                        if (b < 0) break;
+                        header.Add((byte)b);
+                    }
+                    if (header.Count < 54) return null;
+                    uint fileSize = (uint)(header[2] | (header[3] << 8) | (header[4] << 16) | (header[5] << 24));
+                    if (fileSize == 0 || fileSize > maxBytes) fileSize = (uint)Math.Min(maxBytes, 12 * 1024 * 1024);
+                    var bmp = new byte[fileSize];
+                    for (int i = 0; i < header.Count && i < bmp.Length; i++) bmp[i] = header[i];
+                    if (fileSize > (uint)header.Count)
+                        ReadExactly(bmp, header.Count, (int)fileSize - header.Count);
+                    return bmp;
+                }
+
+                if (header.Count >= 8 &&
+                    header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47)
+                {
+                    mode = "raw-png";
+                    var ms = new MemoryStream();
+                    ms.Write(header.ToArray(), 0, header.Count);
+                    while (ms.Length < maxBytes)
+                    {
+                        byte[] lenType = new byte[8];
+                        ReadExactly(lenType, 0, 8);
+                        ms.Write(lenType, 0, 8);
+                        int chunkLen = (lenType[0] << 24) | (lenType[1] << 16) | (lenType[2] << 8) | lenType[3];
+                        if (chunkLen < 0 || chunkLen > 32 * 1024 * 1024) break;
+                        byte[] chunkPlusCrc = new byte[chunkLen + 4];
+                        ReadExactly(chunkPlusCrc, 0, chunkPlusCrc.Length);
+                        ms.Write(chunkPlusCrc, 0, chunkPlusCrc.Length);
+                        string type = Encoding.ASCII.GetString(lenType, 4, 4);
+                        if (type == "IEND") break;
+                    }
+                    return ms.ToArray();
+                }
+
+                mode = "raw-unknown";
+                var raw = new List<byte>(header);
+                var buf = new byte[4096];
+                while (raw.Count < maxBytes)
+                {
+                    int n;
+                    try { n = _stream.Read(buf, 0, buf.Length); }
+                    catch { break; }
+                    if (n <= 0) break;
+                    for (int i = 0; i < n; i++) raw.Add(buf[i]);
+                    if (n < buf.Length) break;
+                }
+                return raw.ToArray();
+            }
+            catch
+            {
+                return null;
+            }
+            finally
+            {
+                _client.ReceiveTimeout = old;
+            }
         }
 
         public void ClearStatus() { WriteLine("*CLS"); }
