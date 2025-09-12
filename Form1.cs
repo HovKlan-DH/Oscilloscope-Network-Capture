@@ -126,6 +126,8 @@ namespace Oscilloscope_Network_Capture
             helpTxt += @"  * \{Region\}\line ";
             helpTxt += @"  * \{Component\}\line ";
             helpTxt += @"  * \{Pin\}\line ";
+            helpTxt += @"  * \{Date\} is YYYYMMDD - e.g. 20251231\line ";
+            helpTxt += @"  * \{Time\} is HHMMSS - e.g. 235959\line ";
             richTextBox1.Rtf = helpTxt;
 
             textBoxComponent.Text = component;
@@ -721,16 +723,22 @@ namespace Oscilloscope_Network_Capture
             if (!string.IsNullOrWhiteSpace(pinVal)) pinVal = SanitizeForFile(pinVal);
             regionVal = SanitizeForFile(string.IsNullOrWhiteSpace(regionVal) ? "default" : regionVal);
 
+            // New date/time values
+            string dateVal = DateTime.Now.ToString("yyyyMMdd");
+            string timeVal = DateTime.Now.ToString("HHmmss");
+
             var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 { "component", componentVal },
                 { "pin", pinVal },
-                { "region", regionVal }
+                { "region", regionVal },
+                { "date", dateVal },
+                { "time", timeVal }
             };
 
             string expanded = Regex.Replace(
                 format,
-                @"\{(component|pin|region)\}",
+                @"\{(component|pin|region|date|time)\}",
                 m =>
                 {
                     string key = m.Groups[1].Value;
@@ -801,92 +809,44 @@ namespace Oscilloscope_Network_Capture
 
                 try
                 {
-                    Log($"Connecting {host}:{port}", LogLevel.Info);
                     using (var scpi = RawScpiClient.Connect(host, port, connectTimeoutMs, ioTimeoutMs))
                     {
-                        scpi.DrainInput();
-                        scpi.ClearStatus();
+                        PrepareSession(scpi);
 
-                        string idn = scpi.TryQuery("*IDN?", timeoutMs: 2500);
-                        if (!string.IsNullOrWhiteSpace(idn))
-                        {
-                            lastIdn = idn;
-                            detectedVendor = DetermineVendor(idn);
-                            Log("IDN: " + idn.Trim(), LogLevel.Info);
-                            Log("Vendor classification: " + detectedVendor, LogLevel.Notice);
-                        }
+                        bool wasRunning = StopAcquisitionIfRunning(scpi);
 
-                        string vendorUpper = "";
-                        if (!string.IsNullOrWhiteSpace(idn))
-                            vendorUpper = idn.Split(',')[0].Trim().ToUpperInvariant();
-
-                        bool wasRunning = DetectAndStopAcquisition(scpi, vendorUpper);
-                        byte[] rawImage = FetchScreenshot(scpi, detectedVendor);
-
+                        byte[] rawImage = FetchImage(scpi);
                         if (rawImage == null || rawImage.Length < 32)
                         {
-                            Log("All screenshot command attempts failed.", LogLevel.Error);
-                            failMode = true;
-                            Beep("error");
-                            if (wasRunning) TryRun(scpi);
+                            Fail("All screenshot command attempts failed.", wasRunning, scpi);
                             return;
                         }
 
-                        bool isPng = rawImage.Length >= 8 &&
-                                     rawImage[0] == 0x89 && rawImage[1] == 0x50 &&
-                                     rawImage[2] == 0x4E && rawImage[3] == 0x47;
-                        bool isBmp = rawImage.Length >= 2 && rawImage[0] == 0x42 && rawImage[1] == 0x4D;
-
-                        if (!isPng && !isBmp)
+                        ImageKind kind = DetectImageKind(rawImage);
+                        if (kind == ImageKind.Unknown)
                         {
-                            Log("Unknown image format signature.", LogLevel.Error);
-                            failMode = true;
-                            Beep("error");
-                            if (wasRunning) TryRun(scpi);
+                            Fail("Unknown image format signature.", wasRunning, scpi);
                             return;
                         }
 
-                        Log($"Screenshot format: {(isPng ? "PNG" : "BMP")}, bytes={rawImage.Length}", LogLevel.Info);
+                        if (kind == ImageKind.Bmp && !ValidateBmp(rawImage))
+                        {
+                            Fail("BMP validation failed (see log).", wasRunning, scpi);
+                            return;
+                        }
 
                         if (!Directory.Exists(outputFolder))
                             Directory.CreateDirectory(outputFolder);
 
-                        if (isBmp)
-                        {
-                            int width, height, bpp; string validationError;
-                            if (!ValidateScopeBmp(rawImage, out width, out height, out bpp, out validationError, true))
-                            {
-                                Log("BMP validation failed: " + validationError, LogLevel.Error);
-                                failMode = true;
-                                Beep("error");
-                                if (wasRunning) TryRun(scpi);
-                                return;
-                            }
-                        }
-
-                        using (var ms = new MemoryStream(rawImage))
-                        using (var img = Image.FromStream(ms, false, false))
-                        {
-                            bool existed = File.Exists(outputFileName);
-                            img.Save(outputFileName, ImageFormat.Png);
-                            Log((existed ? "Overwrote " : "Saved ") + Path.GetFullPath(outputFileName), LogLevel.Notice);
-                            SetPictureBoxImage((Image)img.Clone());
-                        }
+                        SaveAndDisplay(rawImage, outputFileName);
 
                         pictureBoxBorderColor = Color.Green;
                         success = true;
                         failMode = false;
                         Beep("after");
 
-                        if (wasRunning) TryRun(scpi);
-
-                        for (int i = 0; i < 4; i++)
-                        {
-                            var line = scpi.TryQuery(":SYST:ERR?", timeoutMs: 800);
-                            if (string.IsNullOrWhiteSpace(line)) break;
-                            if (line.StartsWith("0,", StringComparison.Ordinal)) break;
-                            Log("Instrument error: " + line.Trim(), LogLevel.Warning);
-                        }
+                        if (wasRunning) ResumeAcquisition(scpi);
+                        DrainInstrumentErrors(scpi);
                     }
                 }
                 catch (TimeoutException tex)
@@ -914,6 +874,91 @@ namespace Oscilloscope_Network_Capture
                     if (!success) ClearPictureBoxImage();
                 }
             });
+        }
+
+        private void PrepareSession(RawScpiClient scpi)
+        {
+            Log($"Connecting {scopeIp}:{scopePort}", LogLevel.Info);
+            scpi.DrainInput();
+            scpi.ClearStatus();
+            string idn = scpi.TryQuery("*IDN?", timeoutMs: 2500);
+            if (!string.IsNullOrWhiteSpace(idn))
+            {
+                lastIdn = idn;
+                detectedVendor = DetermineVendor(idn);
+                Log("IDN: " + idn.Trim(), LogLevel.Info);
+                Log("Vendor classification: " + detectedVendor, LogLevel.Notice);
+            }
+        }
+
+        private bool StopAcquisitionIfRunning(RawScpiClient scpi)
+        {
+            string vendorUpper = "";
+            if (!string.IsNullOrWhiteSpace(lastIdn))
+                vendorUpper = lastIdn.Split(',')[0].Trim().ToUpperInvariant();
+            return DetectAndStopAcquisition(scpi, vendorUpper);
+        }
+
+        private byte[] FetchImage(RawScpiClient scpi) => FetchScreenshot(scpi, detectedVendor);
+
+        private enum ImageKind { Unknown, Png, Bmp }
+
+        private ImageKind DetectImageKind(byte[] raw)
+        {
+            if (raw.Length >= 8 &&
+                raw[0] == 0x89 && raw[1] == 0x50 &&
+                raw[2] == 0x4E && raw[3] == 0x47)
+                return ImageKind.Png;
+            if (raw.Length >= 2 && raw[0] == 0x42 && raw[1] == 0x4D)
+                return ImageKind.Bmp;
+            return ImageKind.Unknown;
+        }
+
+        private bool ValidateBmp(byte[] raw)
+        {
+            int width, height, bpp;
+            string validationError;
+            if (!ValidateScopeBmp(raw, out width, out height, out bpp, out validationError, true))
+            {
+                Log("BMP validation failed: " + validationError, LogLevel.Error);
+                failMode = true;
+                Beep("error");
+                return false;
+            }
+            return true;
+        }
+
+        private void SaveAndDisplay(byte[] rawImage, string outputFileName)
+        {
+            using (var ms = new MemoryStream(rawImage))
+            using (var img = Image.FromStream(ms, false, false))
+            {
+                bool existed = File.Exists(outputFileName);
+                img.Save(outputFileName, ImageFormat.Png);
+                Log((existed ? "Overwrote " : "Saved ") + Path.GetFullPath(outputFileName), LogLevel.Notice);
+                SetPictureBoxImage((Image)img.Clone());
+            }
+        }
+
+        private void ResumeAcquisition(RawScpiClient scpi) => TryRun(scpi);
+
+        private void DrainInstrumentErrors(RawScpiClient scpi)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                var line = scpi.TryQuery(":SYST:ERR?", timeoutMs: 800);
+                if (string.IsNullOrWhiteSpace(line)) break;
+                if (line.StartsWith("0,", StringComparison.Ordinal)) break;
+                Log("Instrument error: " + line.Trim(), LogLevel.Warning);
+            }
+        }
+
+        private void Fail(string message, bool wasRunning, RawScpiClient scpi)
+        {
+            Log(message, LogLevel.Error);
+            failMode = true;
+            Beep("error");
+            if (wasRunning) ResumeAcquisition(scpi);
         }
 
         // ###########################################################################################
