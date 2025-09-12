@@ -7,6 +7,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -21,8 +22,11 @@ namespace Oscilloscope_Network_Capture
         private string component = "U1";
         private string outputFolder = "output";
         private string filenameFormat = "{Component}_{Pin}_{Region}";
+        private string oncPage = "https://commodore-repair-toolbox.dk";
+        private string oncPageAutoUpdate = "/auto-update/";
         private bool beepEnabled = true;
-
+       
+        private string versionThis = "";
         private readonly string configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Oscilloscope Network Capture.cfg");
 
         private Color pictureBoxBorderColor = Color.Red;
@@ -43,10 +47,13 @@ namespace Oscilloscope_Network_Capture
 
         private enum LogLevel { Info, Warning, Error, Notice }
 
-        // NEW: vendor detection
         private enum ScopeVendor { Unknown, Rigol, Siglent }
         private ScopeVendor detectedVendor = ScopeVendor.Unknown;
         private string lastIdn = null;
+
+        // ###########################################################################################
+        // Form constructor
+        // ###########################################################################################
 
         public Form1()
         {
@@ -88,13 +95,14 @@ namespace Oscilloscope_Network_Capture
             {
                 rev = "";
             }
-            labelProductVersion.Text = "Version " + date + rev;
+            versionThis = date + rev;
+            labelProductVersion.Text = "Version " + versionThis;
 
             if (textBoxIp != null) textBoxIp.Text = scopeIp;
 
             if (comboBoxRegion != null)
             {
-                comboBoxRegion.SelectedIndexChanged += comboBox1_SelectedIndexChanged;
+                comboBoxRegion.SelectedIndexChanged += comboBoxRegion_SelectedIndexChanged;
                 if (comboBoxRegion.Items.Count > 0)
                     comboBoxRegion.SelectedIndex = 0;
             }
@@ -104,6 +112,22 @@ namespace Oscilloscope_Network_Capture
             LoadConfig();
             EnsureLog();
 
+            string helpTxt = @"{\rtf1\ansi {\fs28{\b Rigol}}\line ";
+            helpTxt += @"Typical port is {\b 5555}.\line ";
+            helpTxt += @"Confirmed working on:\line ";
+            helpTxt += @"  * Rigol DS2202A\line ";
+            helpTxt += @"\line ";
+            helpTxt += @"{\fs28{\b Siglent}}\line ";
+            helpTxt += @"Typical port is {\b 5025}.\line ";
+            helpTxt += @"Confirmed working on:\line ";
+            helpTxt += @"  * Siglent SDS 1204X - E \line";
+            helpTxt += @"\line";
+            helpTxt += @"{\fs28{\b Variables to use in filename format}}\line ";
+            helpTxt += @"  * \{Region\}\line ";
+            helpTxt += @"  * \{Component\}\line ";
+            helpTxt += @"  * \{Pin\}\line ";
+            richTextBox1.Rtf = helpTxt;
+
             textBoxComponent.Text = component;
             textBoxFilenameFormat.Text = filenameFormat;
 
@@ -112,20 +136,20 @@ namespace Oscilloscope_Network_Capture
             textBoxPort.KeyDown += textBoxPort_KeyDown;
             textBoxFilenameFormat.Leave += textBoxFilenameFormat_Leave;
             textBoxFilenameFormat.KeyDown += textBoxFilenameFormat_KeyDown;
-            buttonCaptureOnce.Click += button1_Click;
-            buttonCaptureContinuelsy.Click += button2_Click;
-            buttonCheckScope.Click += button3_Click;
+            buttonCaptureOnce.Click += buttonCaptureOnce_Click;
+            buttonCaptureContinuelsy.Click += buttonCaptureContinuelsy_Click;
+            buttonCheckScope.Click += buttonCheckScope_Click;
 
             this.KeyPreview = true;
-            this.KeyDown += Form1_KeyDown;
+            this.KeyDown += Form_KeyDown;
 
             pictureBoxImage.SizeMode = PictureBoxSizeMode.Zoom;
             pictureBoxImage.BorderStyle = BorderStyle.None;
-            pictureBoxImage.Paint += PictureBox1_Paint;
+            pictureBoxImage.Paint += PictureBoxImage_Paint;
             pictureBoxIcon.SizeMode = PictureBoxSizeMode.Zoom;
             textBoxIp.Leave += textBoxIp_Leave;
             textBoxIp.KeyDown += textBoxIp_KeyDown;
-            textBoxCapturePin.KeyDown += textBox5_KeyDown;
+            textBoxCapturePin.KeyDown += textBoxCapturePin_KeyDown;
             textBoxCapturePinStart.KeyDown += textBoxPinRange_KeyDown;
             textBoxCapturePinEnd.KeyDown += textBoxPinRange_KeyDown;
 
@@ -134,10 +158,16 @@ namespace Oscilloscope_Network_Capture
             Log("Ready.", LogLevel.Info);
             richTextBoxAction.Text = "Ready for capture";
             initializing = false;
+
+            GetOnlineVersion();
         }
 
-        // ---- Filename format handlers ----
+        // ###########################################################################################
+        // Filename format textbox handlers
+        // ###########################################################################################
+
         private void textBoxFilenameFormat_Leave(object sender, EventArgs e) => ApplyFilenameFormatFromTextBox();
+
         private void textBoxFilenameFormat_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
@@ -146,28 +176,13 @@ namespace Oscilloscope_Network_Capture
                 e.SuppressKeyPress = true;
             }
         }
-        private void ApplyFilenameFormatFromTextBox()
-        {
-            if (textBoxFilenameFormat == null) return;
-            string raw = textBoxFilenameFormat.Text;
-            if (string.IsNullOrWhiteSpace(raw))
-            {
-                Log("Filename format empty; reverting to default.", LogLevel.Warning);
-                filenameFormat = "{Component}_{Pin}_{Region}";
-                textBoxFilenameFormat.Text = filenameFormat;
-                SaveConfig();
-                return;
-            }
-            if (raw != filenameFormat)
-            {
-                filenameFormat = raw;
-                Log("Filename format updated: " + filenameFormat, LogLevel.Info);
-                SaveConfig();
-            }
-        }
+        
+        // ###########################################################################################
+        // Port textbox handlers
+        // ###########################################################################################
 
-        // ---- Port textbox handlers ----
         private void textBoxPort_Leave(object sender, EventArgs e) => ApplyPortFromTextBox();
+
         private void textBoxPort_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
@@ -176,26 +191,11 @@ namespace Oscilloscope_Network_Capture
                 e.SuppressKeyPress = true;
             }
         }
-        private void ApplyPortFromTextBox()
-        {
-            if (textBoxPort == null) return;
-            string raw = textBoxPort.Text.Trim();
-            int newPort;
-            if (!int.TryParse(raw, out newPort) || newPort < 1 || newPort > 65535)
-            {
-                Log("Invalid port (must be 1..65535): " + raw, LogLevel.Warning);
-                textBoxPort.Text = scopePort.ToString();
-                return;
-            }
-            if (newPort != scopePort)
-            {
-                scopePort = newPort;
-                Log("Scope port changed to " + scopePort, LogLevel.Info);
-                SaveConfig();
-            }
-        }
 
-        // ================= CONFIG LOAD / SAVE =================
+        // ###########################################################################################
+        // Load configuration file
+        // ###########################################################################################
+
         private void LoadConfig()
         {
             try
@@ -279,6 +279,10 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
+        // ###########################################################################################
+        // Save configuration file
+        // ###########################################################################################
+
         private void SaveConfig()
         {
             try
@@ -299,22 +303,57 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
-        // ================= BASIC UI EVENTS =================
-        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        private void ApplyPortFromTextBox()
+        {
+            if (textBoxPort == null) return;
+            string raw = textBoxPort.Text.Trim();
+            int newPort;
+            if (!int.TryParse(raw, out newPort) || newPort < 1 || newPort > 65535)
+            {
+                Log("Invalid port (must be 1..65535): " + raw, LogLevel.Warning);
+                textBoxPort.Text = scopePort.ToString();
+                return;
+            }
+            if (newPort != scopePort)
+            {
+                scopePort = newPort;
+                Log("Scope port changed to " + scopePort, LogLevel.Info);
+                SaveConfig();
+            }
+        }
+
+        private void ApplyFilenameFormatFromTextBox()
+        {
+            if (textBoxFilenameFormat == null) return;
+            string raw = textBoxFilenameFormat.Text;
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                Log("Filename format empty; reverting to default.", LogLevel.Warning);
+                filenameFormat = "{Component}_{Pin}_{Region}";
+                textBoxFilenameFormat.Text = filenameFormat;
+                SaveConfig();
+                return;
+            }
+            if (raw != filenameFormat)
+            {
+                filenameFormat = raw;
+                Log("Filename format updated: " + filenameFormat, LogLevel.Info);
+                SaveConfig();
+            }
+        }
+
+        private void comboBoxRegion_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (initializing) return;
             SaveConfig();
         }
 
-        private void checkBoxBeep_CheckedChanged(object sender, EventArgs e)
-        {
-            if (checkBoxBeep == null) return;
-            beepEnabled = checkBoxBeep.Checked;
-            if (initializing) return;
-            SaveConfig();
-        }
+        // ###########################################################################################
+        // IP textbox handlers
+        // ###########################################################################################
 
         private void textBoxIp_Leave(object sender, EventArgs e) => ApplyIpFromTextBox();
+
         private void textBoxIp_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
@@ -323,6 +362,7 @@ namespace Oscilloscope_Network_Capture
                 e.SuppressKeyPress = true;
             }
         }
+
         private void ApplyIpFromTextBox()
         {
             if (textBoxIp == null) return;
@@ -341,14 +381,18 @@ namespace Oscilloscope_Network_Capture
                 textBoxIp.Text = scopeIp;
             }
         }
+
         private bool ValidateIp(string value)
         {
             IPAddress addr;
             return IPAddress.TryParse(value, out addr);
         }
 
-        // ================= CONNECTIVITY CHECK (NO ICMP) =================
-        private async void button3_Click(object sender, EventArgs e)
+        // ###########################################################################################
+        // Check scope connectivity
+        // ###########################################################################################
+
+        private async void buttonCheckScope_Click(object sender, EventArgs e)
         {
             if (buttonCaptureOnce != null) buttonCaptureOnce.Enabled = false;
             if (buttonCaptureContinuelsy != null) buttonCaptureContinuelsy.Enabled = false;
@@ -452,8 +496,24 @@ namespace Oscilloscope_Network_Capture
             return ScopeVendor.Unknown;
         }
 
-        // ================= HOTKEY / PIN MODE =================
-        private void button2_Click(object sender, EventArgs e)
+        // ###########################################################################################
+        // Update "Action" textbox
+        // ###########################################################################################
+
+        private void UpdatePinStatusText()
+        {
+            if (richTextBoxAction == null) return;
+            if (pinStart <= pinEnd)
+                richTextBoxAction.Text = $"Ready to capture pin {pinStart} of {pinEnd}\r\nPress [ENTER] to capture, [ESC] to stop.";
+            else
+                richTextBoxAction.Text = "Capture completed";
+        }
+
+        // ###########################################################################################
+        // Hotkey mode
+        // ###########################################################################################
+
+        private void buttonCaptureContinuelsy_Click(object sender, EventArgs e)
         {
             if (hotkeyMode)
             {
@@ -474,35 +534,6 @@ namespace Oscilloscope_Network_Capture
             Log("Hotkey mode active. Press [ENTER] to capture current pin, [ESC] to stop.", LogLevel.Notice);
         }
 
-        private bool TryInitializePinRange()
-        {
-            if (textBoxCapturePinStart == null || textBoxCapturePinEnd == null)
-            {
-                Log("Pin range controls not found.", LogLevel.Error);
-                return false;
-            }
-            int startParsed, endParsed;
-            if (!int.TryParse(textBoxCapturePinStart.Text.Trim(), out startParsed) ||
-                !int.TryParse(textBoxCapturePinEnd.Text.Trim(), out endParsed) ||
-                startParsed <= 0 || endParsed <= 0 || endParsed < startParsed)
-            {
-                Log("Invalid pin range. Provide positive integers with start <= end.", LogLevel.Warning);
-                return false;
-            }
-            pinStart = startParsed;
-            pinEnd = endParsed;
-            return true;
-        }
-
-        private void UpdatePinStatusText()
-        {
-            if (richTextBoxAction == null) return;
-            if (pinStart <= pinEnd)
-                richTextBoxAction.Text = $"Ready to capture pin {pinStart} of {pinEnd}\r\nPress [ENTER] to capture, [ESC] to stop.";
-            else
-                richTextBoxAction.Text = "Capture completed";
-        }
-
         private void DisableHotkeyMode()
         {
             if (!hotkeyMode) return;
@@ -514,7 +545,7 @@ namespace Oscilloscope_Network_Capture
             Log("Hotkey capture mode disabled.", LogLevel.Notice);
         }
 
-        private async void Form1_KeyDown(object sender, KeyEventArgs e)
+        private async void Form_KeyDown(object sender, KeyEventArgs e)
         {
             if (!hotkeyMode) return;
             if (e.KeyCode == Keys.Enter)
@@ -567,6 +598,30 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
+        // ###########################################################################################
+        // Initialize and update "pinStart" and "pinEnd" in the continuesly capture
+        // ###########################################################################################
+
+        private bool TryInitializePinRange()
+        {
+            if (textBoxCapturePinStart == null || textBoxCapturePinEnd == null)
+            {
+                Log("Pin range controls not found.", LogLevel.Error);
+                return false;
+            }
+            int startParsed, endParsed;
+            if (!int.TryParse(textBoxCapturePinStart.Text.Trim(), out startParsed) ||
+                !int.TryParse(textBoxCapturePinEnd.Text.Trim(), out endParsed) ||
+                startParsed <= 0 || endParsed <= 0 || endParsed < startParsed)
+            {
+                Log("Invalid pin range. Provide positive integers with start <= end.", LogLevel.Warning);
+                return false;
+            }
+            pinStart = startParsed;
+            pinEnd = endParsed;
+            return true;
+        }
+
         private bool RefreshPinRangeFromTextBoxes(bool logOnError = true)
         {
             if (textBoxCapturePinStart == null || textBoxCapturePinEnd == null)
@@ -591,8 +646,11 @@ namespace Oscilloscope_Network_Capture
             return true;
         }
 
-        // ================= SINGLE CAPTURE =================
-        private async void button1_Click(object sender, EventArgs e)
+        // ###########################################################################################
+        // Start single capture
+        // ###########################################################################################
+
+        private async void buttonCaptureOnce_Click(object sender, EventArgs e)
         {
             await StartSingleCaptureAsync(null);
         }
@@ -630,6 +688,10 @@ namespace Oscilloscope_Network_Capture
                 captureInProgress = false;
             }
         }
+
+        // ###########################################################################################
+        // Build capture filename from format and inputs
+        // ###########################################################################################
 
         private string BuildCaptureFileName(int? pinNumber)
         {
@@ -696,7 +758,32 @@ namespace Oscilloscope_Network_Capture
             return Path.Combine(outputFolder, expanded + ".png");
         }
 
-        // ================= MULTI-VENDOR SCREENSHOT LOGIC =================
+        // ###########################################################################################
+        // Sanitize string for use in file names
+        // ###########################################################################################
+
+        private string SanitizeForFile(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return "default";
+            char[] invalid = Path.GetInvalidFileNameChars();
+            var sb = new StringBuilder(value.Length);
+            foreach (char c in value)
+            {
+                if (c < 32 || Array.IndexOf(invalid, c) >= 0) sb.Append('_');
+                else if (char.IsWhiteSpace(c)) sb.Append('_');
+                else sb.Append(c);
+            }
+            string cleaned = sb.ToString();
+            while (cleaned.Contains("__")) cleaned = cleaned.Replace("__", "_");
+            cleaned = cleaned.Trim('_');
+            return string.IsNullOrEmpty(cleaned) ? "default" : cleaned;
+        }
+
+        // ###########################################################################################
+        // Capture screen to file (main logic)
+        // ###########################################################################################
+
         private Task CaptureScreenToFileAsync(string regionTag, string outputFileName)
         {
             string host = scopeIp;
@@ -829,7 +916,10 @@ namespace Oscilloscope_Network_Capture
             });
         }
 
-        // New unified fetch
+        // ###########################################################################################
+        // Fetch screenshot using vendor-specific (Siglent for now) or generic (Rigol) commands
+        // ###########################################################################################
+
         private byte[] FetchScreenshot(RawScpiClient scpi, ScopeVendor vendor)
         {
             if (vendor == ScopeVendor.Siglent)
@@ -841,6 +931,10 @@ namespace Oscilloscope_Network_Capture
             // Rigol or fallback generic (existing logic)
             return TryFetchRigolStyle(scpi);
         }
+
+        // ###########################################################################################
+        // Rigol - try various commands to fetch screenshot in different formats
+        // ###########################################################################################
 
         private byte[] TryFetchRigolStyle(RawScpiClient scpi)
         {
@@ -867,6 +961,10 @@ namespace Oscilloscope_Network_Capture
             return null;
         }
 
+        // ###########################################################################################
+        // Siglent - try various commands to fetch screenshot in different formats
+        // ###########################################################################################
+
         private byte[] TryFetchSiglent(RawScpiClient scpi)
         {
             string[] siglent = { "SCDP", "SCDP?", ":SCDP?" };
@@ -885,18 +983,10 @@ namespace Oscilloscope_Network_Capture
             return null;
         }
 
-        private static string HexPreview(byte[] data, int max)
-        {
-            if (data == null) return "";
-            int n = Math.Min(max, data.Length);
-            var sb = new StringBuilder(n * 3);
-            for (int i = 0; i < n; i++)
-            {
-                sb.Append(data[i].ToString("X2"));
-                if (i + 1 < n) sb.Append(' ');
-            }
-            return sb.ToString();
-        }
+
+        // ###########################################################################################
+        // Detect if scope acquisition is running and stop it if so
+        // ###########################################################################################
 
         private bool DetectAndStopAcquisition(RawScpiClient scpi, string vendorUpper)
         {
@@ -931,10 +1021,9 @@ namespace Oscilloscope_Network_Capture
             return running;
         }
 
-        private bool TryWrite(RawScpiClient scpi, string cmd)
-        {
-            try { scpi.WriteLine(cmd); return true; } catch { return false; }
-        }
+        // ###########################################################################################
+        // Resume scope acquisition if we stopped it
+        // ###########################################################################################
 
         private void TryRun(RawScpiClient scpi)
         {
@@ -950,7 +1039,29 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
-        // ================= UI HELPERS / DRAWING =================
+        // ###########################################################################################
+        // Send a SCPI command and ignore errors
+        // ###########################################################################################
+
+        private bool TryWrite(RawScpiClient scpi, string cmd)
+        {
+            try { scpi.WriteLine(cmd); return true; } catch { return false; }
+        }
+
+        // ###########################################################################################
+        // Pressing ENTER should trigger capture in both places (once or continuesly)
+
+        private void textBoxCapturePin_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                if (!captureInProgress && buttonCaptureOnce != null && buttonCaptureOnce.Enabled)
+                    buttonCaptureOnce.PerformClick();
+            }
+        }
+
         private void textBoxPinRange_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
@@ -962,18 +1073,11 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
-        private void textBox5_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.Enter)
-            {
-                e.Handled = true;
-                e.SuppressKeyPress = true;
-                if (!captureInProgress && buttonCaptureOnce != null && buttonCaptureOnce.Enabled)
-                    buttonCaptureOnce.PerformClick();
-            }
-        }
+        // ###########################################################################################
+        // Paint event for scope image box - draws border
+        // ###########################################################################################
 
-        private void PictureBox1_Paint(object sender, PaintEventArgs e)
+        private void PictureBoxImage_Paint(object sender, PaintEventArgs e)
         {
             var pb = (PictureBox)sender;
             var r = pb.ClientRectangle;
@@ -985,6 +1089,10 @@ namespace Oscilloscope_Network_Capture
                 e.Graphics.DrawRectangle(pen, r);
             }
         }
+
+        // ###########################################################################################
+        // Set picture box image thread-safely
+        // ###########################################################################################
 
         private void SetPictureBoxImage(Image img)
         {
@@ -999,6 +1107,10 @@ namespace Oscilloscope_Network_Capture
             old?.Dispose();
         }
 
+        // ###########################################################################################
+        // Clear picture box - e.g. if a fail happens
+        // ###########################################################################################
+
         private void ClearPictureBoxImage()
         {
             pictureBoxBorderColor = Color.Red;
@@ -1011,6 +1123,18 @@ namespace Oscilloscope_Network_Capture
             var old = pictureBoxImage.Image;
             pictureBoxImage.Image = null;
             old?.Dispose();
+        }
+
+        // ###########################################################################################
+        // Beep sounds
+        // ###########################################################################################
+
+        private void checkBoxBeep_CheckedChanged(object sender, EventArgs e)
+        {
+            if (checkBoxBeep == null) return;
+            beepEnabled = checkBoxBeep.Checked;
+            if (initializing) return;
+            SaveConfig();
         }
 
         private void Beep(string type = "before")
@@ -1032,25 +1156,9 @@ namespace Oscilloscope_Network_Capture
             catch { }
         }
 
-        private void EnsureLog()
-        {
-            if (richTextBoxLog == null) return;
-            richTextBoxLog.ReadOnly = true;
-            richTextBoxLog.DetectUrls = false;
-            richTextBoxLog.Font = new Font("Consolas", 9f);
-            richTextBoxLog.BackColor = Color.Black;
-            richTextBoxLog.ForeColor = Color.LightGreen;
-            richTextBoxLog.HideSelection = false;
-            richTextBoxLog.BorderStyle = BorderStyle.FixedSingle;
-        }
-
-        // ================= NETWORK HELPERS =================
-        private void SuggestNextSteps()
-        {
-            Log($"Verify scope IP [{scopeIp}] and TCP port [{scopePort}] are correct and reachable.", LogLevel.Error);
-            Beep("error");
-            failMode = true;
-        }
+        // ###########################################################################################
+        // TCP port test (no ICMP)
+        // ###########################################################################################
 
         private bool TestTcpPort(string host, int port, int timeoutMs)
         {
@@ -1068,7 +1176,10 @@ namespace Oscilloscope_Network_Capture
             catch { return false; }
         }
 
-        // ================= BMP VALIDATION =================
+        // ###########################################################################################
+        // BMP validation and patching
+        // ###########################################################################################
+
         private bool ValidateScopeBmp(byte[] data,
                                       out int width,
                                       out int height,
@@ -1132,16 +1243,22 @@ namespace Oscilloscope_Network_Capture
             data[5] = (byte)((actual >> 24) & 0xFF);
         }
 
-        // ================= LOGGING =================
-        private void Log(string message) => Log(message, InferLevel(message));
-        private LogLevel InferLevel(string msg)
+        // ###########################################################################################
+        // Logging with color coding
+        // ###########################################################################################
+
+        private void EnsureLog()
         {
-            if (msg.IndexOf("fail", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                msg.IndexOf("error", StringComparison.OrdinalIgnoreCase) >= 0) return LogLevel.Error;
-            if (msg.StartsWith("Warning", StringComparison.OrdinalIgnoreCase)) return LogLevel.Warning;
-            if (msg.StartsWith("Notice", StringComparison.OrdinalIgnoreCase)) return LogLevel.Notice;
-            return LogLevel.Info;
+            if (richTextBoxLog == null) return;
+            richTextBoxLog.ReadOnly = true;
+            richTextBoxLog.DetectUrls = false;
+            richTextBoxLog.Font = new Font("Consolas", 9f);
+            richTextBoxLog.BackColor = Color.Black;
+            richTextBoxLog.ForeColor = Color.LightGreen;
+            richTextBoxLog.HideSelection = false;
+            richTextBoxLog.BorderStyle = BorderStyle.FixedSingle;
         }
+
         private void Log(string message, LogLevel level)
         {
             if (richTextBoxLog == null) return;
@@ -1150,6 +1267,7 @@ namespace Oscilloscope_Network_Capture
             else
                 AppendColoredLine(message, level);
         }
+
         private void AppendColoredLine(string message, LogLevel level)
         {
             if (richTextBoxLog == null) return;
@@ -1171,30 +1289,24 @@ namespace Oscilloscope_Network_Capture
             richTextBoxLog.ScrollToCaret();
         }
 
-        // ================= HELPERS =================
-        private static uint ReadUInt32LE(byte[] d, int o) => (uint)(d[o] | (d[o + 1] << 8) | (d[o + 2] << 16) | (d[o + 3] << 24));
-        private static int ReadInt32LE(byte[] d, int o) => d[o] | (d[o + 1] << 8) | (d[o + 2] << 16) | (d[o + 3] << 24);
-        private static ushort ReadUInt16LE(byte[] d, int o) => (ushort)(d[o] | (d[o + 1] << 8));
-
-        private string SanitizeForFile(string value)
+        private static string HexPreview(byte[] data, int max)
         {
-            if (string.IsNullOrEmpty(value))
-                return "default";
-            char[] invalid = Path.GetInvalidFileNameChars();
-            var sb = new StringBuilder(value.Length);
-            foreach (char c in value)
+            if (data == null) return "";
+            int n = Math.Min(max, data.Length);
+            var sb = new StringBuilder(n * 3);
+            for (int i = 0; i < n; i++)
             {
-                if (c < 32 || Array.IndexOf(invalid, c) >= 0) sb.Append('_');
-                else if (char.IsWhiteSpace(c)) sb.Append('_');
-                else sb.Append(c);
+                sb.Append(data[i].ToString("X2"));
+                if (i + 1 < n) sb.Append(' ');
             }
-            string cleaned = sb.ToString();
-            while (cleaned.Contains("__")) cleaned = cleaned.Replace("__", "_");
-            cleaned = cleaned.Trim('_');
-            return string.IsNullOrEmpty(cleaned) ? "default" : cleaned;
+            return sb.ToString();
         }
 
-        private void button1_Click_1(object sender, EventArgs e)
+        // ###########################################################################################
+        // Open output capture folder in File Explorer
+        // ###########################################################################################
+
+        private void buttonOpenFolder_Click(object sender, EventArgs e)
         {
             string exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             if (string.IsNullOrEmpty(exeDir)) return;
@@ -1214,10 +1326,61 @@ namespace Oscilloscope_Network_Capture
                 Beep("error");
             }
         }
+
+        // ###########################################################################################
+        // Check if there is a newer version online
+        // ###########################################################################################
+
+        private void GetOnlineVersion()
+        {
+            try
+            {
+                using (WebClient webClient = new WebClient())
+                {
+                    ServicePointManager.Expect100Continue = true;
+                    ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
+                    webClient.Headers.Add("user-agent", "ONC " + versionThis);
+
+                    // Include some control POST data
+                    var postData = new System.Collections.Specialized.NameValueCollection
+                    {
+                        { "control", "ONC" }
+                    };
+
+                    // Send the POST data to the server
+                    byte[] responseBytes = webClient.UploadValues(oncPage + oncPageAutoUpdate, postData);
+
+                    // Convert the "response bytes" to a human readable string
+                    string onlineAvailableVersion = Encoding.UTF8.GetString(responseBytes);
+
+                    if (onlineAvailableVersion.Substring(0, 7) == "Version")
+                    {
+                        onlineAvailableVersion = onlineAvailableVersion.Substring(9);
+                        if (onlineAvailableVersion != versionThis)
+                        {
+                            /* do something when a newer version is available online */
+                        }
+                    }
+                }
+            }
+            catch 
+            {
+            }
+        }
+
+        private static uint ReadUInt32LE(byte[] d, int o) => (uint)(d[o] | (d[o + 1] << 8) | (d[o + 2] << 16) | (d[o + 3] << 24));
+        private static int ReadInt32LE(byte[] d, int o) => d[o] | (d[o + 1] << 8) | (d[o + 2] << 16) | (d[o + 3] << 24);
+        private static ushort ReadUInt16LE(byte[] d, int o) => (ushort)(d[o] | (d[o + 1] << 8));
     }
+
+
+    // ###########################################################################################
+    // Raw SCPI client with basic IEEE 488.2 block read support
+    // ###########################################################################################
 
     internal sealed class RawScpiClient : IDisposable
     {
+
         private readonly TcpClient _client;
         private readonly NetworkStream _stream;
         private readonly byte[] _one = new byte[1];
@@ -1286,7 +1449,6 @@ namespace Oscilloscope_Network_Capture
             finally { _client.ReceiveTimeout = old; }
         }
 
-        // Siglent flexible image (raw or block)
         public byte[] TryQuerySiglentImage(string command, int maxBytes, int timeoutMs, out string mode)
         {
             mode = "";
@@ -1509,4 +1671,6 @@ namespace Oscilloscope_Network_Capture
             try { _client.Close(); } catch { }
         }
     }
+
+    // ###########################################################################################
 }

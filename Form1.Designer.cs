@@ -47,8 +47,8 @@
             this.labelAction = new System.Windows.Forms.Label();
             this.buttonCheckScope = new System.Windows.Forms.Button();
             this.tabControl1 = new System.Windows.Forms.TabControl();
-            this.tabPage1 = new System.Windows.Forms.TabPage();
-            this.button1 = new System.Windows.Forms.Button();
+            this.tabPageMeasurements = new System.Windows.Forms.TabPage();
+            this.buttonOpenFolder = new System.Windows.Forms.Button();
             this.panel4 = new System.Windows.Forms.Panel();
             this.checkBoxBeep = new System.Windows.Forms.CheckBox();
             this.textBoxPort = new System.Windows.Forms.TextBox();
@@ -60,19 +60,23 @@
             this.textBoxCapturePin = new System.Windows.Forms.TextBox();
             this.labelCapturePin = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.tabPage2 = new System.Windows.Forms.TabPage();
+            this.tabPageHelp = new System.Windows.Forms.TabPage();
+            this.richTextBox1 = new System.Windows.Forms.RichTextBox();
+            this.label1 = new System.Windows.Forms.Label();
+            this.tabPageAbout = new System.Windows.Forms.TabPage();
             this.textBoxAbout = new System.Windows.Forms.TextBox();
             this.labelProductVersion = new System.Windows.Forms.Label();
             this.labelProductName = new System.Windows.Forms.Label();
             this.pictureBoxIcon = new System.Windows.Forms.PictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxImage)).BeginInit();
             this.tabControl1.SuspendLayout();
-            this.tabPage1.SuspendLayout();
+            this.tabPageMeasurements.SuspendLayout();
             this.panel4.SuspendLayout();
             this.panel3.SuspendLayout();
             this.panel2.SuspendLayout();
             this.panel1.SuspendLayout();
-            this.tabPage2.SuspendLayout();
+            this.tabPageHelp.SuspendLayout();
+            this.tabPageAbout.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxIcon)).BeginInit();
             this.SuspendLayout();
             // 
@@ -271,8 +275,9 @@
             this.tabControl1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.tabControl1.Controls.Add(this.tabPage1);
-            this.tabControl1.Controls.Add(this.tabPage2);
+            this.tabControl1.Controls.Add(this.tabPageMeasurements);
+            this.tabControl1.Controls.Add(this.tabPageHelp);
+            this.tabControl1.Controls.Add(this.tabPageAbout);
             this.tabControl1.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.tabControl1.Location = new System.Drawing.Point(4, 4);
             this.tabControl1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
@@ -281,39 +286,39 @@
             this.tabControl1.Size = new System.Drawing.Size(905, 723);
             this.tabControl1.TabIndex = 17;
             // 
-            // tabPage1
+            // tabPageMeasurements
             // 
-            this.tabPage1.Controls.Add(this.button1);
-            this.tabPage1.Controls.Add(this.panel4);
-            this.tabPage1.Controls.Add(this.panel3);
-            this.tabPage1.Controls.Add(this.panel2);
-            this.tabPage1.Controls.Add(this.panel1);
-            this.tabPage1.Controls.Add(this.richTextBoxLog);
-            this.tabPage1.Controls.Add(this.labelAction);
-            this.tabPage1.Controls.Add(this.pictureBoxImage);
-            this.tabPage1.Controls.Add(this.richTextBoxAction);
-            this.tabPage1.Location = new System.Drawing.Point(4, 30);
-            this.tabPage1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.tabPage1.Name = "tabPage1";
-            this.tabPage1.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.tabPage1.Size = new System.Drawing.Size(897, 689);
-            this.tabPage1.TabIndex = 0;
-            this.tabPage1.Text = "Measurements";
-            this.tabPage1.UseVisualStyleBackColor = true;
+            this.tabPageMeasurements.Controls.Add(this.buttonOpenFolder);
+            this.tabPageMeasurements.Controls.Add(this.panel4);
+            this.tabPageMeasurements.Controls.Add(this.panel3);
+            this.tabPageMeasurements.Controls.Add(this.panel2);
+            this.tabPageMeasurements.Controls.Add(this.panel1);
+            this.tabPageMeasurements.Controls.Add(this.richTextBoxLog);
+            this.tabPageMeasurements.Controls.Add(this.labelAction);
+            this.tabPageMeasurements.Controls.Add(this.pictureBoxImage);
+            this.tabPageMeasurements.Controls.Add(this.richTextBoxAction);
+            this.tabPageMeasurements.Location = new System.Drawing.Point(4, 30);
+            this.tabPageMeasurements.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.tabPageMeasurements.Name = "tabPageMeasurements";
+            this.tabPageMeasurements.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.tabPageMeasurements.Size = new System.Drawing.Size(897, 689);
+            this.tabPageMeasurements.TabIndex = 0;
+            this.tabPageMeasurements.Text = "Measurements";
+            this.tabPageMeasurements.UseVisualStyleBackColor = true;
             // 
-            // button1
+            // buttonOpenFolder
             // 
-            this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.button1.BackColor = System.Drawing.Color.Cornsilk;
-            this.button1.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button1.Location = new System.Drawing.Point(6, 650);
-            this.button1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(352, 35);
-            this.button1.TabIndex = 12;
-            this.button1.Text = "Open capture folder";
-            this.button1.UseVisualStyleBackColor = false;
-            this.button1.Click += new System.EventHandler(this.button1_Click_1);
+            this.buttonOpenFolder.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.buttonOpenFolder.BackColor = System.Drawing.Color.Cornsilk;
+            this.buttonOpenFolder.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.buttonOpenFolder.Location = new System.Drawing.Point(6, 650);
+            this.buttonOpenFolder.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.buttonOpenFolder.Name = "buttonOpenFolder";
+            this.buttonOpenFolder.Size = new System.Drawing.Size(352, 35);
+            this.buttonOpenFolder.TabIndex = 12;
+            this.buttonOpenFolder.Text = "Open capture folder";
+            this.buttonOpenFolder.UseVisualStyleBackColor = false;
+            this.buttonOpenFolder.Click += new System.EventHandler(this.buttonOpenFolder_Click);
             // 
             // panel4
             // 
@@ -439,20 +444,51 @@
             this.panel1.Size = new System.Drawing.Size(352, 132);
             this.panel1.TabIndex = 19;
             // 
-            // tabPage2
+            // tabPageHelp
             // 
-            this.tabPage2.Controls.Add(this.textBoxAbout);
-            this.tabPage2.Controls.Add(this.labelProductVersion);
-            this.tabPage2.Controls.Add(this.labelProductName);
-            this.tabPage2.Controls.Add(this.pictureBoxIcon);
-            this.tabPage2.Location = new System.Drawing.Point(4, 30);
-            this.tabPage2.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.tabPage2.Name = "tabPage2";
-            this.tabPage2.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.tabPage2.Size = new System.Drawing.Size(897, 689);
-            this.tabPage2.TabIndex = 1;
-            this.tabPage2.Text = "About";
-            this.tabPage2.UseVisualStyleBackColor = true;
+            this.tabPageHelp.Controls.Add(this.richTextBox1);
+            this.tabPageHelp.Controls.Add(this.label1);
+            this.tabPageHelp.Location = new System.Drawing.Point(4, 30);
+            this.tabPageHelp.Name = "tabPageHelp";
+            this.tabPageHelp.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPageHelp.Size = new System.Drawing.Size(897, 689);
+            this.tabPageHelp.TabIndex = 2;
+            this.tabPageHelp.Text = "Help";
+            this.tabPageHelp.UseVisualStyleBackColor = true;
+            // 
+            // richTextBox1
+            // 
+            this.richTextBox1.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.richTextBox1.Location = new System.Drawing.Point(11, 63);
+            this.richTextBox1.Name = "richTextBox1";
+            this.richTextBox1.Size = new System.Drawing.Size(866, 620);
+            this.richTextBox1.TabIndex = 2;
+            this.richTextBox1.Text = "";
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Font = new System.Drawing.Font("Calibri", 16.2F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label1.Location = new System.Drawing.Point(6, 13);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(69, 35);
+            this.label1.TabIndex = 0;
+            this.label1.Text = "Help";
+            // 
+            // tabPageAbout
+            // 
+            this.tabPageAbout.Controls.Add(this.textBoxAbout);
+            this.tabPageAbout.Controls.Add(this.labelProductVersion);
+            this.tabPageAbout.Controls.Add(this.labelProductName);
+            this.tabPageAbout.Controls.Add(this.pictureBoxIcon);
+            this.tabPageAbout.Location = new System.Drawing.Point(4, 30);
+            this.tabPageAbout.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.tabPageAbout.Name = "tabPageAbout";
+            this.tabPageAbout.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.tabPageAbout.Size = new System.Drawing.Size(897, 689);
+            this.tabPageAbout.TabIndex = 1;
+            this.tabPageAbout.Text = "About";
+            this.tabPageAbout.UseVisualStyleBackColor = true;
             // 
             // textBoxAbout
             // 
@@ -515,8 +551,8 @@
             this.Text = "Oscilloscope Network Capture";
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxImage)).EndInit();
             this.tabControl1.ResumeLayout(false);
-            this.tabPage1.ResumeLayout(false);
-            this.tabPage1.PerformLayout();
+            this.tabPageMeasurements.ResumeLayout(false);
+            this.tabPageMeasurements.PerformLayout();
             this.panel4.ResumeLayout(false);
             this.panel4.PerformLayout();
             this.panel3.ResumeLayout(false);
@@ -525,8 +561,10 @@
             this.panel2.PerformLayout();
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
-            this.tabPage2.ResumeLayout(false);
-            this.tabPage2.PerformLayout();
+            this.tabPageHelp.ResumeLayout(false);
+            this.tabPageHelp.PerformLayout();
+            this.tabPageAbout.ResumeLayout(false);
+            this.tabPageAbout.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxIcon)).EndInit();
             this.ResumeLayout(false);
 
@@ -552,8 +590,8 @@
         private System.Windows.Forms.Label labelAction;
         private System.Windows.Forms.Button buttonCheckScope;
         private System.Windows.Forms.TabControl tabControl1;
-        private System.Windows.Forms.TabPage tabPage1;
-        private System.Windows.Forms.TabPage tabPage2;
+        private System.Windows.Forms.TabPage tabPageMeasurements;
+        private System.Windows.Forms.TabPage tabPageAbout;
         private System.Windows.Forms.PictureBox pictureBoxIcon;
         private System.Windows.Forms.Label labelProductVersion;
         private System.Windows.Forms.Label labelProductName;
@@ -564,12 +602,15 @@
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.Panel panel4;
         private System.Windows.Forms.Panel panel3;
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button buttonOpenFolder;
         private System.Windows.Forms.TextBox textBoxPort;
         private System.Windows.Forms.Label labelPort;
         private System.Windows.Forms.TextBox textBoxFilenameFormat;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.CheckBox checkBoxBeep;
+        private System.Windows.Forms.TabPage tabPageHelp;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.RichTextBox richTextBox1;
     }
 }
 
