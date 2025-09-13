@@ -61,10 +61,10 @@
             this.labelCapturePin = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
             this.tabPageHelp = new System.Windows.Forms.TabPage();
-            this.richTextBox1 = new System.Windows.Forms.RichTextBox();
+            this.richTextBoxHelp = new System.Windows.Forms.RichTextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.tabPageAbout = new System.Windows.Forms.TabPage();
-            this.textBoxAbout = new System.Windows.Forms.TextBox();
+            this.richTextBoxAbout = new System.Windows.Forms.RichTextBox();
             this.labelProductVersion = new System.Windows.Forms.Label();
             this.labelProductName = new System.Windows.Forms.Label();
             this.pictureBoxIcon = new System.Windows.Forms.PictureBox();
@@ -446,7 +446,7 @@
             // 
             // tabPageHelp
             // 
-            this.tabPageHelp.Controls.Add(this.richTextBox1);
+            this.tabPageHelp.Controls.Add(this.richTextBoxHelp);
             this.tabPageHelp.Controls.Add(this.label1);
             this.tabPageHelp.Location = new System.Drawing.Point(4, 30);
             this.tabPageHelp.Name = "tabPageHelp";
@@ -456,14 +456,14 @@
             this.tabPageHelp.Text = "Help";
             this.tabPageHelp.UseVisualStyleBackColor = true;
             // 
-            // richTextBox1
+            // richTextBoxHelp
             // 
-            this.richTextBox1.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.richTextBox1.Location = new System.Drawing.Point(11, 63);
-            this.richTextBox1.Name = "richTextBox1";
-            this.richTextBox1.Size = new System.Drawing.Size(866, 620);
-            this.richTextBox1.TabIndex = 2;
-            this.richTextBox1.Text = "";
+            this.richTextBoxHelp.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.richTextBoxHelp.Location = new System.Drawing.Point(11, 63);
+            this.richTextBoxHelp.Name = "richTextBoxHelp";
+            this.richTextBoxHelp.Size = new System.Drawing.Size(866, 620);
+            this.richTextBoxHelp.TabIndex = 2;
+            this.richTextBoxHelp.Text = "";
             // 
             // label1
             // 
@@ -477,7 +477,7 @@
             // 
             // tabPageAbout
             // 
-            this.tabPageAbout.Controls.Add(this.textBoxAbout);
+            this.tabPageAbout.Controls.Add(this.richTextBoxAbout);
             this.tabPageAbout.Controls.Add(this.labelProductVersion);
             this.tabPageAbout.Controls.Add(this.labelProductName);
             this.tabPageAbout.Controls.Add(this.pictureBoxIcon);
@@ -490,22 +490,16 @@
             this.tabPageAbout.Text = "About";
             this.tabPageAbout.UseVisualStyleBackColor = true;
             // 
-            // textBoxAbout
+            // richTextBoxAbout
             // 
-            this.textBoxAbout.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.textBoxAbout.BackColor = System.Drawing.Color.White;
-            this.textBoxAbout.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.textBoxAbout.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxAbout.Location = new System.Drawing.Point(19, 221);
-            this.textBoxAbout.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.textBoxAbout.Multiline = true;
-            this.textBoxAbout.Name = "textBoxAbout";
-            this.textBoxAbout.ReadOnly = true;
-            this.textBoxAbout.Size = new System.Drawing.Size(855, 416);
-            this.textBoxAbout.TabIndex = 3;
-            this.textBoxAbout.Text = resources.GetString("textBoxAbout.Text");
+            this.richTextBoxAbout.BackColor = System.Drawing.Color.White;
+            this.richTextBoxAbout.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.richTextBoxAbout.Location = new System.Drawing.Point(19, 221);
+            this.richTextBoxAbout.Name = "richTextBoxAbout";
+            this.richTextBoxAbout.ReadOnly = true;
+            this.richTextBoxAbout.Size = new System.Drawing.Size(855, 416);
+            this.richTextBoxAbout.TabIndex = 4;
+            this.richTextBoxAbout.Text = resources.GetString("richTextBoxAbout.Text");
             // 
             // labelProductVersion
             // 
@@ -595,7 +589,6 @@
         private System.Windows.Forms.PictureBox pictureBoxIcon;
         private System.Windows.Forms.Label labelProductVersion;
         private System.Windows.Forms.Label labelProductName;
-        private System.Windows.Forms.TextBox textBoxAbout;
         private System.Windows.Forms.Label labelCapturePin;
         private System.Windows.Forms.TextBox textBoxCapturePin;
         private System.Windows.Forms.Panel panel2;
@@ -610,7 +603,8 @@
         private System.Windows.Forms.CheckBox checkBoxBeep;
         private System.Windows.Forms.TabPage tabPageHelp;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.RichTextBox richTextBox1;
+        private System.Windows.Forms.RichTextBox richTextBoxHelp;
+        private System.Windows.Forms.RichTextBox richTextBoxAbout;
     }
 }
 
