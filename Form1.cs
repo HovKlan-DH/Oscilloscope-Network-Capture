@@ -113,21 +113,26 @@ namespace Oscilloscope_Network_Capture
             EnsureLog();
 
             string helpTxt = @"{\rtf1\ansi {\fs28{\b Rigol}}\line ";
-            helpTxt += @"Typical port is {\b 5555}.\line ";
+            helpTxt += @"Typical port is {\b 5555} (I am actually not sure on this - is this typical?).\line ";
             helpTxt += @"Confirmed working on:\line ";
             helpTxt += @"  * Rigol DS2202A\line ";
             helpTxt += @"\line ";
             helpTxt += @"{\fs28{\b Siglent}}\line ";
-            helpTxt += @"Typical port is {\b 5025}.\line ";
+            helpTxt += @"Typical port is {\b 5025} (I am actually not sure on this - is this typical?).\line ";
             helpTxt += @"Confirmed working on:\line ";
-            helpTxt += @"  * Siglent SDS 1204X - E \line";
+            helpTxt += @"    * Siglent SDS 1204X - E \line";
             helpTxt += @"\line";
             helpTxt += @"{\fs28{\b Variables to use in filename format}}\line ";
-            helpTxt += @"  * \{Region\}\line ";
-            helpTxt += @"  * \{Component\}\line ";
-            helpTxt += @"  * \{Pin\}\line ";
-            helpTxt += @"  * \{Date\} is YYYYMMDD - e.g. 20251231\line ";
-            helpTxt += @"  * \{Time\} is HHMMSS - e.g. 235959\line ";
+            helpTxt += @"    * \{Region\}\line ";
+            helpTxt += @"    * \{Component\}\line ";
+            helpTxt += @"    * \{Pin\}\line ";
+            helpTxt += @"    * \{Date\} is YYYYMMDD - e.g. 20251231\line ";
+            helpTxt += @"    * \{Time\} is HHMMSS - e.g. 235959\line ";
+            helpTxt += @"\line";
+            helpTxt += @"{\fs28{\b Troubleshoot no connectivity to you oscilloscope}}\line ";
+            helpTxt += @"If you do not get any connection to your oscilloscope, then please do validate that your computer can actually connect to the oscilloscope over network. You can do this by this simple commandline prompt, but it does require that you do have the ""telnet"" command installed (can be installed from ""Programs and Feaures > Turn Windows features on or off"" from Windows Control Panel):\line\line ";
+            helpTxt += @"    {\b telnet 192.168.0.100 5555}\line\line ";
+            helpTxt += @"If this results in a black screen, then you do have connectivity. You of course needs to adapt this for your scope, so it will have another IP address and probably also another port instead of ""5555"". Maybe also your scope has a web interface, so you can try also accessing it on its IP addresses for both HTTP and HTTPS.\line ";
             richTextBox1.Rtf = helpTxt;
 
             textBoxComponent.Text = component;
@@ -1373,7 +1378,8 @@ namespace Oscilloscope_Network_Capture
         }
 
         // ###########################################################################################
-        // Check if there is a newer version online
+        // Check if there is a newer version online.
+        // Test for now only, to see how stable this is.
         // ###########################################################################################
 
         private void GetOnlineVersion()
@@ -1403,7 +1409,7 @@ namespace Oscilloscope_Network_Capture
                         onlineAvailableVersion = onlineAvailableVersion.Substring(9);
                         if (onlineAvailableVersion != versionThis)
                         {
-                            /* do something when a newer version is available online */
+                            /* do something (inform user) when a newer version is available online */
                         }
                     }
                 }
