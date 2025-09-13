@@ -54,6 +54,8 @@
             this.textBoxPort = new System.Windows.Forms.TextBox();
             this.labelPort = new System.Windows.Forms.Label();
             this.panel3 = new System.Windows.Forms.Panel();
+            this.label3 = new System.Windows.Forms.Label();
+            this.textBoxCaptureFolder = new System.Windows.Forms.TextBox();
             this.textBoxFilenameFormat = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.panel2 = new System.Windows.Forms.Panel();
@@ -99,7 +101,7 @@
             this.comboBoxRegion.Items.AddRange(new object[] {
             "PAL",
             "NTSC"});
-            this.comboBoxRegion.Location = new System.Drawing.Point(9, 17);
+            this.comboBoxRegion.Location = new System.Drawing.Point(6, 12);
             this.comboBoxRegion.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.comboBoxRegion.Name = "comboBoxRegion";
             this.comboBoxRegion.Size = new System.Drawing.Size(78, 29);
@@ -108,7 +110,7 @@
             // textBoxIp
             // 
             this.textBoxIp.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxIp.Location = new System.Drawing.Point(10, 38);
+            this.textBoxIp.Location = new System.Drawing.Point(6, 26);
             this.textBoxIp.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.textBoxIp.Name = "textBoxIp";
             this.textBoxIp.Size = new System.Drawing.Size(135, 28);
@@ -147,7 +149,7 @@
             this.pictureBoxImage.Location = new System.Drawing.Point(364, 370);
             this.pictureBoxImage.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.pictureBoxImage.Name = "pictureBoxImage";
-            this.pictureBoxImage.Size = new System.Drawing.Size(525, 315);
+            this.pictureBoxImage.Size = new System.Drawing.Size(525, 370);
             this.pictureBoxImage.TabIndex = 5;
             this.pictureBoxImage.TabStop = false;
             // 
@@ -155,7 +157,7 @@
             // 
             this.labelIp.AutoSize = true;
             this.labelIp.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelIp.Location = new System.Drawing.Point(6, 13);
+            this.labelIp.Location = new System.Drawing.Point(2, 6);
             this.labelIp.Name = "labelIp";
             this.labelIp.Size = new System.Drawing.Size(126, 21);
             this.labelIp.TabIndex = 0;
@@ -165,7 +167,7 @@
             // 
             this.labelRegion.AutoSize = true;
             this.labelRegion.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelRegion.Location = new System.Drawing.Point(93, 20);
+            this.labelRegion.Location = new System.Drawing.Point(90, 15);
             this.labelRegion.Name = "labelRegion";
             this.labelRegion.Size = new System.Drawing.Size(57, 21);
             this.labelRegion.TabIndex = 0;
@@ -217,11 +219,11 @@
             | System.Windows.Forms.AnchorStyles.Left)));
             this.richTextBoxAction.BackColor = System.Drawing.Color.White;
             this.richTextBoxAction.Font = new System.Drawing.Font("Calibri", 13.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.richTextBoxAction.Location = new System.Drawing.Point(6, 569);
+            this.richTextBoxAction.Location = new System.Drawing.Point(6, 639);
             this.richTextBoxAction.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.richTextBoxAction.Name = "richTextBoxAction";
             this.richTextBoxAction.ReadOnly = true;
-            this.richTextBoxAction.Size = new System.Drawing.Size(352, 74);
+            this.richTextBoxAction.Size = new System.Drawing.Size(352, 59);
             this.richTextBoxAction.TabIndex = 0;
             this.richTextBoxAction.TabStop = false;
             this.richTextBoxAction.Text = "Ready to capture pin 1 of 40";
@@ -231,7 +233,7 @@
             this.labelComponent.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.labelComponent.AutoSize = true;
             this.labelComponent.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelComponent.Location = new System.Drawing.Point(93, 57);
+            this.labelComponent.Location = new System.Drawing.Point(90, 52);
             this.labelComponent.Name = "labelComponent";
             this.labelComponent.Size = new System.Drawing.Size(135, 21);
             this.labelComponent.TabIndex = 0;
@@ -241,17 +243,17 @@
             // 
             this.textBoxComponent.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.textBoxComponent.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxComponent.Location = new System.Drawing.Point(10, 54);
+            this.textBoxComponent.Location = new System.Drawing.Point(6, 49);
             this.textBoxComponent.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.textBoxComponent.Name = "textBoxComponent";
-            this.textBoxComponent.Size = new System.Drawing.Size(77, 28);
+            this.textBoxComponent.Size = new System.Drawing.Size(78, 28);
             this.textBoxComponent.TabIndex = 5;
             // 
             // labelAction
             // 
             this.labelAction.AutoSize = true;
             this.labelAction.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelAction.Location = new System.Drawing.Point(6, 547);
+            this.labelAction.Location = new System.Drawing.Point(6, 582);
             this.labelAction.Name = "labelAction";
             this.labelAction.Size = new System.Drawing.Size(54, 21);
             this.labelAction.TabIndex = 0;
@@ -262,10 +264,10 @@
             this.buttonCheckScope.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonCheckScope.BackColor = System.Drawing.Color.Cornsilk;
             this.buttonCheckScope.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonCheckScope.Location = new System.Drawing.Point(10, 74);
+            this.buttonCheckScope.Location = new System.Drawing.Point(6, 60);
             this.buttonCheckScope.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.buttonCheckScope.Name = "buttonCheckScope";
-            this.buttonCheckScope.Size = new System.Drawing.Size(330, 34);
+            this.buttonCheckScope.Size = new System.Drawing.Size(334, 34);
             this.buttonCheckScope.TabIndex = 3;
             this.buttonCheckScope.Text = "Check oscilloscope connectivity";
             this.buttonCheckScope.UseVisualStyleBackColor = false;
@@ -283,7 +285,7 @@
             this.tabControl1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(905, 723);
+            this.tabControl1.Size = new System.Drawing.Size(905, 778);
             this.tabControl1.TabIndex = 17;
             // 
             // tabPageMeasurements
@@ -301,7 +303,7 @@
             this.tabPageMeasurements.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.tabPageMeasurements.Name = "tabPageMeasurements";
             this.tabPageMeasurements.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.tabPageMeasurements.Size = new System.Drawing.Size(897, 689);
+            this.tabPageMeasurements.Size = new System.Drawing.Size(897, 744);
             this.tabPageMeasurements.TabIndex = 0;
             this.tabPageMeasurements.Text = "Measurements";
             this.tabPageMeasurements.UseVisualStyleBackColor = true;
@@ -311,7 +313,7 @@
             this.buttonOpenFolder.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.buttonOpenFolder.BackColor = System.Drawing.Color.Cornsilk;
             this.buttonOpenFolder.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonOpenFolder.Location = new System.Drawing.Point(6, 650);
+            this.buttonOpenFolder.Location = new System.Drawing.Point(6, 705);
             this.buttonOpenFolder.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.buttonOpenFolder.Name = "buttonOpenFolder";
             this.buttonOpenFolder.Size = new System.Drawing.Size(352, 35);
@@ -331,7 +333,7 @@
             this.panel4.Controls.Add(this.buttonCheckScope);
             this.panel4.Location = new System.Drawing.Point(6, 7);
             this.panel4.Name = "panel4";
-            this.panel4.Size = new System.Drawing.Size(352, 128);
+            this.panel4.Size = new System.Drawing.Size(352, 105);
             this.panel4.TabIndex = 22;
             // 
             // checkBoxBeep
@@ -339,7 +341,7 @@
             this.checkBoxBeep.AutoSize = true;
             this.checkBoxBeep.Checked = true;
             this.checkBoxBeep.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBoxBeep.Location = new System.Drawing.Point(250, 40);
+            this.checkBoxBeep.Location = new System.Drawing.Point(245, 28);
             this.checkBoxBeep.Name = "checkBoxBeep";
             this.checkBoxBeep.Size = new System.Drawing.Size(116, 25);
             this.checkBoxBeep.TabIndex = 4;
@@ -349,7 +351,7 @@
             // textBoxPort
             // 
             this.textBoxPort.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxPort.Location = new System.Drawing.Point(155, 38);
+            this.textBoxPort.Location = new System.Drawing.Point(155, 26);
             this.textBoxPort.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.textBoxPort.Name = "textBoxPort";
             this.textBoxPort.Size = new System.Drawing.Size(84, 28);
@@ -359,7 +361,7 @@
             // 
             this.labelPort.AutoSize = true;
             this.labelPort.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelPort.Location = new System.Drawing.Point(151, 13);
+            this.labelPort.Location = new System.Drawing.Point(151, 6);
             this.labelPort.Name = "labelPort";
             this.labelPort.Size = new System.Drawing.Size(115, 21);
             this.labelPort.TabIndex = 0;
@@ -368,25 +370,48 @@
             // panel3
             // 
             this.panel3.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel3.Controls.Add(this.label3);
+            this.panel3.Controls.Add(this.textBoxCaptureFolder);
             this.panel3.Controls.Add(this.textBoxFilenameFormat);
             this.panel3.Controls.Add(this.label2);
             this.panel3.Controls.Add(this.comboBoxRegion);
             this.panel3.Controls.Add(this.labelRegion);
             this.panel3.Controls.Add(this.textBoxComponent);
             this.panel3.Controls.Add(this.labelComponent);
-            this.panel3.Location = new System.Drawing.Point(6, 141);
+            this.panel3.Location = new System.Drawing.Point(6, 118);
             this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(352, 137);
+            this.panel3.Size = new System.Drawing.Size(352, 199);
             this.panel3.TabIndex = 21;
+            // 
+            // label3
+            // 
+            this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.label3.AutoSize = true;
+            this.label3.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label3.Location = new System.Drawing.Point(1, 137);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(110, 21);
+            this.label3.TabIndex = 8;
+            this.label3.Text = "Capture folder";
+            // 
+            // textBoxCaptureFolder
+            // 
+            this.textBoxCaptureFolder.BackColor = System.Drawing.Color.White;
+            this.textBoxCaptureFolder.Location = new System.Drawing.Point(6, 157);
+            this.textBoxCaptureFolder.Name = "textBoxCaptureFolder";
+            this.textBoxCaptureFolder.ReadOnly = true;
+            this.textBoxCaptureFolder.Size = new System.Drawing.Size(331, 28);
+            this.textBoxCaptureFolder.TabIndex = 7;
+            this.textBoxCaptureFolder.Click += new System.EventHandler(this.textBoxCaptureFolder_Click);
             // 
             // textBoxFilenameFormat
             // 
             this.textBoxFilenameFormat.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.textBoxFilenameFormat.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxFilenameFormat.Location = new System.Drawing.Point(9, 90);
+            this.textBoxFilenameFormat.Location = new System.Drawing.Point(6, 102);
             this.textBoxFilenameFormat.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.textBoxFilenameFormat.Name = "textBoxFilenameFormat";
-            this.textBoxFilenameFormat.Size = new System.Drawing.Size(196, 28);
+            this.textBoxFilenameFormat.Size = new System.Drawing.Size(331, 28);
             this.textBoxFilenameFormat.TabIndex = 6;
             // 
             // label2
@@ -394,7 +419,7 @@
             this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label2.AutoSize = true;
             this.label2.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label2.Location = new System.Drawing.Point(211, 93);
+            this.label2.Location = new System.Drawing.Point(1, 82);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(125, 21);
             this.label2.TabIndex = 0;
@@ -406,7 +431,7 @@
             this.panel2.Controls.Add(this.buttonCaptureOnce);
             this.panel2.Controls.Add(this.textBoxCapturePin);
             this.panel2.Controls.Add(this.labelCapturePin);
-            this.panel2.Location = new System.Drawing.Point(6, 288);
+            this.panel2.Location = new System.Drawing.Point(6, 323);
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(352, 99);
             this.panel2.TabIndex = 20;
@@ -439,7 +464,7 @@
             this.panel1.Controls.Add(this.labelCapturePinStart);
             this.panel1.Controls.Add(this.textBoxCapturePinEnd);
             this.panel1.Controls.Add(this.labelCapturePinEnd);
-            this.panel1.Location = new System.Drawing.Point(6, 402);
+            this.panel1.Location = new System.Drawing.Point(6, 437);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(352, 132);
             this.panel1.TabIndex = 19;
@@ -451,7 +476,7 @@
             this.tabPageHelp.Location = new System.Drawing.Point(4, 30);
             this.tabPageHelp.Name = "tabPageHelp";
             this.tabPageHelp.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPageHelp.Size = new System.Drawing.Size(897, 689);
+            this.tabPageHelp.Size = new System.Drawing.Size(897, 744);
             this.tabPageHelp.TabIndex = 2;
             this.tabPageHelp.Text = "Help";
             this.tabPageHelp.UseVisualStyleBackColor = true;
@@ -485,7 +510,7 @@
             this.tabPageAbout.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.tabPageAbout.Name = "tabPageAbout";
             this.tabPageAbout.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.tabPageAbout.Size = new System.Drawing.Size(897, 689);
+            this.tabPageAbout.Size = new System.Drawing.Size(897, 744);
             this.tabPageAbout.TabIndex = 1;
             this.tabPageAbout.Text = "About";
             this.tabPageAbout.UseVisualStyleBackColor = true;
@@ -535,7 +560,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 21F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(911, 732);
+            this.ClientSize = new System.Drawing.Size(911, 787);
             this.Controls.Add(this.tabControl1);
             this.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
@@ -605,6 +630,9 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.RichTextBox richTextBoxHelp;
         private System.Windows.Forms.RichTextBox richTextBoxAbout;
+        private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog1;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.TextBox textBoxCaptureFolder;
     }
 }
 

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Ookii.Dialogs.WinForms;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -135,6 +136,12 @@ namespace Oscilloscope_Network_Capture
             helpTxt += @"If this results in a black screen, then you do have connectivity. You of course needs to adapt this for your scope, so it will have another IP address and probably also another port instead of ""5555"". Maybe also your scope has a web interface, so you can try also accessing it on its IP addresses for both HTTP and HTTPS.\line ";
             richTextBoxHelp.Rtf = helpTxt;
 
+            // Resolve default folder name -> absolute path if still the literal "output"
+            EnsureDefaultOutputFolderResolved();
+
+            // Ensure textbox reflects current folder (if you have it on the form)
+            textBoxCaptureFolder.Text = outputFolder;
+
             textBoxComponent.Text = component;
             textBoxFilenameFormat.Text = filenameFormat;
 
@@ -168,6 +175,132 @@ namespace Oscilloscope_Network_Capture
             initializing = false;
 
             GetOnlineVersion();
+        }
+
+        // 3. Add this helper method somewhere among the private methods (e.g. near SetOutputFolder).
+        // Replace EnsureDefaultOutputFolderResolved with this simplified absolute-only logic
+        private void EnsureDefaultOutputFolderResolved()
+        {
+            if (string.IsNullOrWhiteSpace(outputFolder) ||
+                string.Equals(outputFolder, "output", StringComparison.OrdinalIgnoreCase))
+            {
+                string exeDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                if (string.IsNullOrEmpty(exeDir))
+                    exeDir = AppDomain.CurrentDomain.BaseDirectory;
+
+                outputFolder = Path.Combine(exeDir, "output");
+            }
+
+            // Force absolute if legacy relative slipped in
+            outputFolder = NormalizeOutputFolder(outputFolder);
+
+            try
+            {
+                if (!Directory.Exists(outputFolder))
+                    Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Log("Could not create output folder: " + ex.Message, LogLevel.Error);
+            }
+
+            if (textBoxCaptureFolder != null)
+                textBoxCaptureFolder.Text = outputFolder;
+
+            SaveConfig(); // persist absolute if changed
+        }
+
+        private void textBoxCaptureFolder_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                outputFolder = NormalizeOutputFolder(outputFolder);
+                string initial = outputFolder;
+
+                using (var dlg = new VistaFolderBrowserDialog
+                {
+                    Description = "Select folder for saving captured oscilloscope images",
+                    UseDescriptionForTitle = true,
+                    ShowNewFolderButton = true,
+                    SelectedPath = Directory.Exists(initial) ? initial : ""
+                })
+                {
+                    if (dlg.ShowDialog(this) == DialogResult.OK &&
+                        !string.IsNullOrWhiteSpace(dlg.SelectedPath))
+                    {
+                        SetOutputFolder(dlg.SelectedPath);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("Folder picker error: " + ex.Message, LogLevel.Error);
+            }
+        }
+
+        // In SetOutputFolder(), simplify (always absolute; no relative storage):
+        private void SetOutputFolder(string pathCandidate)
+        {
+            try
+            {
+                string abs = NormalizeOutputFolder(pathCandidate);
+                if (!string.Equals(abs, outputFolder, StringComparison.OrdinalIgnoreCase))
+                {
+                    outputFolder = abs;
+                    Log("Output folder set to (absolute): " + outputFolder, LogLevel.Info);
+                    SaveConfig();
+                }
+
+                if (!Directory.Exists(outputFolder))
+                {
+                    Directory.CreateDirectory(outputFolder);
+                    Log("Created output folder: " + outputFolder, LogLevel.Info);
+                }
+
+                if (textBoxCaptureFolder != null)
+                    textBoxCaptureFolder.Text = outputFolder;
+            }
+            catch (Exception ex)
+            {
+                Log("Failed to set output folder: " + ex.Message, LogLevel.Error);
+                if (textBoxCaptureFolder != null)
+                    textBoxCaptureFolder.Text = outputFolder;
+            }
+        }
+
+        private string NormalizeOutputFolder(string raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+                raw = "output";
+
+            // Trim and remove trailing separators
+            raw = raw.Trim().TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+            // If already rooted, just canonicalize
+            try
+            {
+                if (Path.IsPathRooted(raw))
+                    return Path.GetFullPath(raw);
+            }
+            catch
+            {
+                // Fall through and try to rebuild below
+            }
+
+            // Not rooted: make it absolute relative to exe directory
+            string baseDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            if (string.IsNullOrEmpty(baseDir))
+                baseDir = AppDomain.CurrentDomain.BaseDirectory;
+
+            try
+            {
+                return Path.GetFullPath(Path.Combine(baseDir, raw));
+            }
+            catch
+            {
+                // Final fallback: baseDir\output
+                return Path.Combine(baseDir, "output");
+            }
         }
 
         // ###########################################################################################
@@ -297,7 +430,16 @@ namespace Oscilloscope_Network_Capture
                                       beepStr.Equals("yes", StringComparison.OrdinalIgnoreCase);
                         if (checkBoxBeep != null) checkBoxBeep.Checked = beepEnabled;
                     }
-                    Log($"Loaded config: IP={scopeIp}, Port={scopePort}, Region={(comboBoxRegion?.SelectedItem as string) ?? ""}, FilenameFormat={filenameFormat}, Beep={(beepEnabled ? 1 : 0)}", LogLevel.Info);
+                    string outFolder;
+                    if (map.TryGetValue("OutputFolder", out outFolder) && !string.IsNullOrWhiteSpace(outFolder))
+                    {
+                        string before = outFolder;
+                        outputFolder = NormalizeOutputFolder(outFolder);
+                        if (textBoxCaptureFolder != null) textBoxCaptureFolder.Text = outputFolder;
+                        if (!string.Equals(before, outputFolder, StringComparison.OrdinalIgnoreCase))
+                            SaveConfig();
+                    }
+                    Log($"Loaded config: IP={scopeIp}, Port={scopePort}, Region={(comboBoxRegion?.SelectedItem as string) ?? ""}, FilenameFormat={filenameFormat}, CaptureFolder={outFolder}, Beep={(beepEnabled ? 1 : 0)}", LogLevel.Info);
                 }
                 else
                 {
@@ -330,9 +472,10 @@ namespace Oscilloscope_Network_Capture
                 string region = comboBoxRegion != null ? (comboBoxRegion.SelectedItem as string ?? "").Trim() : "";
                 sb.AppendLine("Region=" + region);
                 sb.AppendLine("FilenameFormat=" + filenameFormat);
+                sb.AppendLine("OutputFolder=" + outputFolder); // <-- added
                 sb.AppendLine("Beep=" + (beepEnabled ? "1" : "0"));
                 File.WriteAllText(configPath, sb.ToString());
-                Log($"Saved config: IP={scopeIp}, Port={scopePort}, Region={region}, FilenameFormat={filenameFormat}, Beep={(beepEnabled ? 1 : 0)}", LogLevel.Info);
+                Log($"Saved config: IP={scopeIp}, Port={scopePort}, Region={region}, FilenameFormat={filenameFormat}, OutputFolder={outputFolder}, Beep={(beepEnabled ? 1 : 0)}", LogLevel.Info);
             }
             catch (Exception ex)
             {
@@ -732,14 +875,17 @@ namespace Oscilloscope_Network_Capture
 
         private string BuildCaptureFileName(int? pinNumber)
         {
+            // Select effective format (allow user edits not yet applied to backing field)
             string format = (textBoxFilenameFormat != null && !string.IsNullOrWhiteSpace(textBoxFilenameFormat.Text))
                 ? textBoxFilenameFormat.Text
                 : filenameFormat;
 
+            // Component
             string componentVal = (textBoxComponent != null && !string.IsNullOrWhiteSpace(textBoxComponent.Text))
                 ? textBoxComponent.Text.Trim()
                 : "capture";
 
+            // Pin (priority: explicit parameter -> single pin box -> range start box)
             string pinVal;
             if (pinNumber.HasValue)
                 pinVal = pinNumber.Value.ToString();
@@ -750,27 +896,30 @@ namespace Oscilloscope_Network_Capture
             else
                 pinVal = "";
 
+            // Region
             string regionVal = (comboBoxRegion != null && comboBoxRegion.SelectedItem != null)
                 ? comboBoxRegion.SelectedItem.ToString().Trim()
                 : "default";
 
+            // Sanitize tokens
             componentVal = SanitizeForFile(componentVal);
             if (!string.IsNullOrWhiteSpace(pinVal)) pinVal = SanitizeForFile(pinVal);
             regionVal = SanitizeForFile(string.IsNullOrWhiteSpace(regionVal) ? "default" : regionVal);
 
-            // New date/time values
+            // Date/time tokens
             string dateVal = DateTime.Now.ToString("yyyyMMdd");
             string timeVal = DateTime.Now.ToString("HHmmss");
 
             var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                { "component", componentVal },
-                { "pin", pinVal },
-                { "region", regionVal },
-                { "date", dateVal },
-                { "time", timeVal }
-            };
+    {
+        { "component", componentVal },
+        { "pin", pinVal },
+        { "region", regionVal },
+        { "date", dateVal },
+        { "time", timeVal }
+    };
 
+            // Token replacement
             string expanded = Regex.Replace(
                 format,
                 @"\{(component|pin|region|date|time)\}",
@@ -785,6 +934,7 @@ namespace Oscilloscope_Network_Capture
             if (string.IsNullOrWhiteSpace(expanded))
                 expanded = "capture_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
+            // Final filename sanitization (defensive)
             char[] invalid = Path.GetInvalidFileNameChars();
             var sb = new StringBuilder(expanded.Length);
             foreach (char c in expanded)
@@ -797,6 +947,10 @@ namespace Oscilloscope_Network_Capture
             expanded = sb.ToString();
             if (expanded.Length == 0)
                 expanded = "capture_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
+
+            // Ensure outputFolder is absolute (NormalizeOutputFolder already guarantees this,
+            // but call defensively in case of external modification)
+            outputFolder = NormalizeOutputFolder(outputFolder);
 
             return Path.Combine(outputFolder, expanded + ".png");
         }
@@ -829,6 +983,9 @@ namespace Oscilloscope_Network_Capture
 
         private Task CaptureScreenToFileAsync(string regionTag, string outputFileName)
         {
+            // Safety: ensure folder path still normalized (e.g. if user edited config externally mid-session)
+            outputFolder = NormalizeOutputFolder(outputFolder);
+
             string host = scopeIp;
             int port = scopePort;
             const int connectTimeoutMs = 5000;
@@ -870,10 +1027,16 @@ namespace Oscilloscope_Network_Capture
                             return;
                         }
 
-                        if (!Directory.Exists(outputFolder))
-                            Directory.CreateDirectory(outputFolder);
+                        string targetDir = outputFolder;
+                        if (!Directory.Exists(targetDir))
+                            Directory.CreateDirectory(targetDir);
 
-                        SaveAndDisplay(rawImage, outputFileName);
+                        // If BuildCaptureFileName returned a relative path, normalize to targetDir
+                        string finalPath = Path.IsPathRooted(outputFileName)
+                            ? outputFileName
+                            : Path.Combine(targetDir, Path.GetFileName(outputFileName));
+
+                        SaveAndDisplay(rawImage, finalPath);
 
                         pictureBoxBorderColor = Color.Green;
                         success = true;
