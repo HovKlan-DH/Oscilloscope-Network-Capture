@@ -63,6 +63,8 @@ namespace Oscilloscope_Network_Capture
             initializing = true;
             InitializeComponent();
 
+            EnsureLog();
+
             // Version label
             // ---
             Assembly assemblyInfo = Assembly.GetExecutingAssembly();
@@ -100,6 +102,7 @@ namespace Oscilloscope_Network_Capture
             }
             versionThis = date + rev;
             labelProductVersion.Text = "Version " + versionThis;
+            Log("Application version: " + versionThis, LogLevel.Notice);
 
             if (textBoxIp != null) textBoxIp.Text = scopeIp;
 
@@ -113,7 +116,6 @@ namespace Oscilloscope_Network_Capture
             checkBoxBeep.CheckedChanged += checkBoxBeep_CheckedChanged;
 
             LoadConfig();
-            EnsureLog();
 
             string helpTxt = @"{\rtf1\ansi {\fs28{\b Rigol}}\line ";
             helpTxt += @"Typical port is {\b 5555} (I am actually not sure on this - is this typical?).\line ";
@@ -172,15 +174,38 @@ namespace Oscilloscope_Network_Capture
 
             checkBoxBeep.Checked = beepEnabled;
 
+            // Place the "label4" at top-right position of "richTextBoxLog"
+            labelNewVersionAvailable.Location = new Point(richTextBoxLog.Right - labelNewVersionAvailable.Width, richTextBoxLog.Top);
+            labelNewVersionAvailable.BringToFront();
+
             Log("Ready.", LogLevel.Info);
             richTextBoxAction.Text = "Ready for capture";
             initializing = false;
 
-            GetOnlineVersion();
+            this.Shown += Form1_Shown;
         }
 
-        // 3. Add this helper method somewhere among the private methods (e.g. near SetOutputFolder).
-        // Replace EnsureDefaultOutputFolderResolved with this simplified absolute-only logic
+        // ###########################################################################################
+        // On form shown: check online version after short delay
+        // ###########################################################################################
+
+        private async void Form1_Shown(object sender, EventArgs e)
+        {
+            try
+            {
+                await Task.Delay(5000).ConfigureAwait(true);
+                CheckOnlineVersion();
+            }
+            catch
+            {
+                // Swallow any unexpected exceptions to avoid crashing on startup
+            }
+        }
+
+        // ###########################################################################################
+        // Output folder selection and normalization
+        // ###########################################################################################
+
         private void EnsureDefaultOutputFolderResolved()
         {
             if (string.IsNullOrWhiteSpace(outputFolder) ||
@@ -1659,7 +1684,7 @@ namespace Oscilloscope_Network_Capture
         // Test for now only, to see how stable this is.
         // ###########################################################################################
 
-        private void GetOnlineVersion()
+        private void CheckOnlineVersion()
         {
             try
             {
@@ -1686,7 +1711,7 @@ namespace Oscilloscope_Network_Capture
                         onlineAvailableVersion = onlineAvailableVersion.Substring(9);
                         if (onlineAvailableVersion != versionThis)
                         {
-                            /* do something (inform user) when a newer version is available online */
+                            labelNewVersionAvailable.Visible = true;
                         }
                     }
                 }

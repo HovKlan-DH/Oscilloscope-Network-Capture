@@ -48,6 +48,7 @@
             this.buttonCheckScope = new System.Windows.Forms.Button();
             this.tabControl1 = new System.Windows.Forms.TabControl();
             this.tabPageMeasurements = new System.Windows.Forms.TabPage();
+            this.labelNewVersionAvailable = new System.Windows.Forms.Label();
             this.buttonOpenFolder = new System.Windows.Forms.Button();
             this.panel4 = new System.Windows.Forms.Panel();
             this.checkBoxBeep = new System.Windows.Forms.CheckBox();
@@ -290,6 +291,7 @@
             // 
             // tabPageMeasurements
             // 
+            this.tabPageMeasurements.Controls.Add(this.labelNewVersionAvailable);
             this.tabPageMeasurements.Controls.Add(this.buttonOpenFolder);
             this.tabPageMeasurements.Controls.Add(this.panel4);
             this.tabPageMeasurements.Controls.Add(this.panel3);
@@ -307,6 +309,19 @@
             this.tabPageMeasurements.TabIndex = 0;
             this.tabPageMeasurements.Text = "Measurements";
             this.tabPageMeasurements.UseVisualStyleBackColor = true;
+            // 
+            // labelNewVersionAvailable
+            // 
+            this.labelNewVersionAvailable.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.labelNewVersionAvailable.AutoSize = true;
+            this.labelNewVersionAvailable.BackColor = System.Drawing.Color.IndianRed;
+            this.labelNewVersionAvailable.ForeColor = System.Drawing.Color.White;
+            this.labelNewVersionAvailable.Location = new System.Drawing.Point(434, 14);
+            this.labelNewVersionAvailable.Name = "labelNewVersionAvailable";
+            this.labelNewVersionAvailable.Size = new System.Drawing.Size(460, 21);
+            this.labelNewVersionAvailable.TabIndex = 23;
+            this.labelNewVersionAvailable.Text = "There is a newer version available; view \"About\" for GitHub page";
+            this.labelNewVersionAvailable.Visible = false;
             // 
             // buttonOpenFolder
             // 
@@ -476,7 +491,7 @@
             this.tabPageHelp.Location = new System.Drawing.Point(4, 30);
             this.tabPageHelp.Name = "tabPageHelp";
             this.tabPageHelp.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPageHelp.Size = new System.Drawing.Size(897, 744);
+            this.tabPageHelp.Size = new System.Drawing.Size(897, 697);
             this.tabPageHelp.TabIndex = 2;
             this.tabPageHelp.Text = "Help";
             this.tabPageHelp.UseVisualStyleBackColor = true;
@@ -510,7 +525,7 @@
             this.tabPageAbout.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.tabPageAbout.Name = "tabPageAbout";
             this.tabPageAbout.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.tabPageAbout.Size = new System.Drawing.Size(897, 744);
+            this.tabPageAbout.Size = new System.Drawing.Size(897, 697);
             this.tabPageAbout.TabIndex = 1;
             this.tabPageAbout.Text = "About";
             this.tabPageAbout.UseVisualStyleBackColor = true;
@@ -565,7 +580,7 @@
             this.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.MinimumSize = new System.Drawing.Size(799, 779);
+            this.MinimumSize = new System.Drawing.Size(929, 787);
             this.Name = "Form1";
             this.Text = "Oscilloscope Network Capture";
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxImage)).EndInit();
@@ -630,9 +645,9 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.RichTextBox richTextBoxHelp;
         private System.Windows.Forms.RichTextBox richTextBoxAbout;
-        private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog1;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.TextBox textBoxCaptureFolder;
+        private System.Windows.Forms.Label labelNewVersionAvailable;
     }
 }
 
