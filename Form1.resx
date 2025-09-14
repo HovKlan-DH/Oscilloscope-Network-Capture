@@ -122,7 +122,7 @@
 
 "Make it easier and faster for me to capture oscilloscope measurements, when creating oscilloscope baseline images for my other project; Commodore Repair Toolbox."
 
-It has been designed to work specifically with my Rigol DS2202A oscilloscope, but it is my understanding that due to the VISA/SCPI protocol, then it should ideally work for other oscilloscopes also - but this is where I need some feedback, as I only have access to my own scope :-) The goal is not to make this a full-blown "Swiss army knife" that suits everyones need, but if can help someone other than myself, then I am happy to make this available.
+It has been designed to work specifically with my Rigol DS2202A oscilloscope, but as it uses the SCPI socket protocol, then it should also work for other oscilloscopes also - but this is where I need some feedback, as I only have access to my own scope :-) The goal is not to make this a full-blown "Swiss army knife" that suits everyones need, but if can help someone other than myself, then I am happy to make this available.
 
 You can check for a newer version on GitHub, https://github.com/HovKlan-DH/Oscilloscope-Network-Capture
 

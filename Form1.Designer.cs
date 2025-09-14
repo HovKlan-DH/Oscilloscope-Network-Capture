@@ -37,10 +37,10 @@
             this.pictureBoxImage = new System.Windows.Forms.PictureBox();
             this.labelIp = new System.Windows.Forms.Label();
             this.labelRegion = new System.Windows.Forms.Label();
-            this.textBoxCapturePinStart = new System.Windows.Forms.TextBox();
-            this.labelCapturePinStart = new System.Windows.Forms.Label();
-            this.labelCapturePinEnd = new System.Windows.Forms.Label();
-            this.textBoxCapturePinEnd = new System.Windows.Forms.TextBox();
+            this.textBoxCaptureNumberStart = new System.Windows.Forms.TextBox();
+            this.labelCaptureNumberStart = new System.Windows.Forms.Label();
+            this.labelCaptureNumberEnd = new System.Windows.Forms.Label();
+            this.textBoxCaptureNumberEnd = new System.Windows.Forms.TextBox();
             this.richTextBoxAction = new System.Windows.Forms.RichTextBox();
             this.labelComponent = new System.Windows.Forms.Label();
             this.textBoxComponent = new System.Windows.Forms.TextBox();
@@ -59,8 +59,8 @@
             this.textBoxFilenameFormat = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.panel2 = new System.Windows.Forms.Panel();
-            this.textBoxCapturePin = new System.Windows.Forms.TextBox();
-            this.labelCapturePin = new System.Windows.Forms.Label();
+            this.textBoxCaptureNumber = new System.Windows.Forms.TextBox();
+            this.labelCaptureNumber = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
             this.tabPageHelp = new System.Windows.Forms.TabPage();
             this.richTextBoxHelp = new System.Windows.Forms.RichTextBox();
@@ -125,7 +125,7 @@
             this.buttonCaptureContinuelsy.Name = "buttonCaptureContinuelsy";
             this.buttonCaptureContinuelsy.Size = new System.Drawing.Size(331, 35);
             this.buttonCaptureContinuelsy.TabIndex = 11;
-            this.buttonCaptureContinuelsy.Text = "Capture continuesly until end-pin or ESC";
+            this.buttonCaptureContinuelsy.Text = "Capture continuesly until end-number or ESC";
             this.buttonCaptureContinuelsy.UseVisualStyleBackColor = false;
             // 
             // richTextBoxLog
@@ -149,7 +149,7 @@
             this.pictureBoxImage.Location = new System.Drawing.Point(364, 370);
             this.pictureBoxImage.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.pictureBoxImage.Name = "pictureBoxImage";
-            this.pictureBoxImage.Size = new System.Drawing.Size(525, 370);
+            this.pictureBoxImage.Size = new System.Drawing.Size(525, 324);
             this.pictureBoxImage.TabIndex = 5;
             this.pictureBoxImage.TabStop = false;
             // 
@@ -173,45 +173,45 @@
             this.labelRegion.TabIndex = 0;
             this.labelRegion.Text = "Region";
             // 
-            // textBoxCapturePinStart
+            // textBoxCaptureNumberStart
             // 
-            this.textBoxCapturePinStart.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxCapturePinStart.Location = new System.Drawing.Point(10, 12);
-            this.textBoxCapturePinStart.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.textBoxCapturePinStart.Name = "textBoxCapturePinStart";
-            this.textBoxCapturePinStart.Size = new System.Drawing.Size(69, 28);
-            this.textBoxCapturePinStart.TabIndex = 9;
-            this.textBoxCapturePinStart.Text = "1";
+            this.textBoxCaptureNumberStart.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBoxCaptureNumberStart.Location = new System.Drawing.Point(10, 12);
+            this.textBoxCaptureNumberStart.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.textBoxCaptureNumberStart.Name = "textBoxCaptureNumberStart";
+            this.textBoxCaptureNumberStart.Size = new System.Drawing.Size(69, 28);
+            this.textBoxCaptureNumberStart.TabIndex = 9;
+            this.textBoxCaptureNumberStart.Text = "1";
             // 
-            // labelCapturePinStart
+            // labelCaptureNumberStart
             // 
-            this.labelCapturePinStart.AutoSize = true;
-            this.labelCapturePinStart.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelCapturePinStart.Location = new System.Drawing.Point(85, 15);
-            this.labelCapturePinStart.Name = "labelCapturePinStart";
-            this.labelCapturePinStart.Size = new System.Drawing.Size(165, 21);
-            this.labelCapturePinStart.TabIndex = 0;
-            this.labelCapturePinStart.Text = "Start capture from pin";
+            this.labelCaptureNumberStart.AutoSize = true;
+            this.labelCaptureNumberStart.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelCaptureNumberStart.Location = new System.Drawing.Point(85, 15);
+            this.labelCaptureNumberStart.Name = "labelCaptureNumberStart";
+            this.labelCaptureNumberStart.Size = new System.Drawing.Size(198, 21);
+            this.labelCaptureNumberStart.TabIndex = 0;
+            this.labelCaptureNumberStart.Text = "Start capture from number";
             // 
-            // labelCapturePinEnd
+            // labelCaptureNumberEnd
             // 
-            this.labelCapturePinEnd.AutoSize = true;
-            this.labelCapturePinEnd.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelCapturePinEnd.Location = new System.Drawing.Point(85, 51);
-            this.labelCapturePinEnd.Name = "labelCapturePinEnd";
-            this.labelCapturePinEnd.Size = new System.Drawing.Size(154, 21);
-            this.labelCapturePinEnd.TabIndex = 0;
-            this.labelCapturePinEnd.Text = "End capture with pin";
+            this.labelCaptureNumberEnd.AutoSize = true;
+            this.labelCaptureNumberEnd.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelCaptureNumberEnd.Location = new System.Drawing.Point(85, 51);
+            this.labelCaptureNumberEnd.Name = "labelCaptureNumberEnd";
+            this.labelCaptureNumberEnd.Size = new System.Drawing.Size(188, 21);
+            this.labelCaptureNumberEnd.TabIndex = 0;
+            this.labelCaptureNumberEnd.Text = "End capture after number";
             // 
-            // textBoxCapturePinEnd
+            // textBoxCaptureNumberEnd
             // 
-            this.textBoxCapturePinEnd.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxCapturePinEnd.Location = new System.Drawing.Point(10, 48);
-            this.textBoxCapturePinEnd.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.textBoxCapturePinEnd.Name = "textBoxCapturePinEnd";
-            this.textBoxCapturePinEnd.Size = new System.Drawing.Size(69, 28);
-            this.textBoxCapturePinEnd.TabIndex = 10;
-            this.textBoxCapturePinEnd.Text = "40";
+            this.textBoxCaptureNumberEnd.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBoxCaptureNumberEnd.Location = new System.Drawing.Point(10, 48);
+            this.textBoxCaptureNumberEnd.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.textBoxCaptureNumberEnd.Name = "textBoxCaptureNumberEnd";
+            this.textBoxCaptureNumberEnd.Size = new System.Drawing.Size(69, 28);
+            this.textBoxCaptureNumberEnd.TabIndex = 10;
+            this.textBoxCaptureNumberEnd.Text = "40";
             // 
             // richTextBoxAction
             // 
@@ -219,14 +219,14 @@
             | System.Windows.Forms.AnchorStyles.Left)));
             this.richTextBoxAction.BackColor = System.Drawing.Color.White;
             this.richTextBoxAction.Font = new System.Drawing.Font("Calibri", 13.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.richTextBoxAction.Location = new System.Drawing.Point(6, 639);
+            this.richTextBoxAction.Location = new System.Drawing.Point(6, 599);
             this.richTextBoxAction.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.richTextBoxAction.Name = "richTextBoxAction";
             this.richTextBoxAction.ReadOnly = true;
-            this.richTextBoxAction.Size = new System.Drawing.Size(352, 59);
+            this.richTextBoxAction.Size = new System.Drawing.Size(352, 53);
             this.richTextBoxAction.TabIndex = 0;
             this.richTextBoxAction.TabStop = false;
-            this.richTextBoxAction.Text = "Ready to capture pin 1 of 40";
+            this.richTextBoxAction.Text = "Ready to capture; number 1 of 40";
             // 
             // labelComponent
             // 
@@ -285,7 +285,7 @@
             this.tabControl1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(905, 778);
+            this.tabControl1.Size = new System.Drawing.Size(905, 731);
             this.tabControl1.TabIndex = 17;
             // 
             // tabPageMeasurements
@@ -303,7 +303,7 @@
             this.tabPageMeasurements.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.tabPageMeasurements.Name = "tabPageMeasurements";
             this.tabPageMeasurements.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.tabPageMeasurements.Size = new System.Drawing.Size(897, 744);
+            this.tabPageMeasurements.Size = new System.Drawing.Size(897, 697);
             this.tabPageMeasurements.TabIndex = 0;
             this.tabPageMeasurements.Text = "Measurements";
             this.tabPageMeasurements.UseVisualStyleBackColor = true;
@@ -313,7 +313,7 @@
             this.buttonOpenFolder.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.buttonOpenFolder.BackColor = System.Drawing.Color.Cornsilk;
             this.buttonOpenFolder.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonOpenFolder.Location = new System.Drawing.Point(6, 705);
+            this.buttonOpenFolder.Location = new System.Drawing.Point(6, 658);
             this.buttonOpenFolder.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.buttonOpenFolder.Name = "buttonOpenFolder";
             this.buttonOpenFolder.Size = new System.Drawing.Size(352, 35);
@@ -429,41 +429,41 @@
             // 
             this.panel2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.panel2.Controls.Add(this.buttonCaptureOnce);
-            this.panel2.Controls.Add(this.textBoxCapturePin);
-            this.panel2.Controls.Add(this.labelCapturePin);
+            this.panel2.Controls.Add(this.textBoxCaptureNumber);
+            this.panel2.Controls.Add(this.labelCaptureNumber);
             this.panel2.Location = new System.Drawing.Point(6, 323);
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(352, 99);
             this.panel2.TabIndex = 20;
             // 
-            // textBoxCapturePin
+            // textBoxCaptureNumber
             // 
-            this.textBoxCapturePin.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxCapturePin.Location = new System.Drawing.Point(9, 10);
-            this.textBoxCapturePin.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.textBoxCapturePin.Name = "textBoxCapturePin";
-            this.textBoxCapturePin.Size = new System.Drawing.Size(69, 28);
-            this.textBoxCapturePin.TabIndex = 7;
-            this.textBoxCapturePin.Text = "1";
+            this.textBoxCaptureNumber.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBoxCaptureNumber.Location = new System.Drawing.Point(9, 10);
+            this.textBoxCaptureNumber.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.textBoxCaptureNumber.Name = "textBoxCaptureNumber";
+            this.textBoxCaptureNumber.Size = new System.Drawing.Size(69, 28);
+            this.textBoxCaptureNumber.TabIndex = 7;
+            this.textBoxCaptureNumber.Text = "1";
             // 
-            // labelCapturePin
+            // labelCaptureNumber
             // 
-            this.labelCapturePin.AutoSize = true;
-            this.labelCapturePin.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelCapturePin.Location = new System.Drawing.Point(84, 13);
-            this.labelCapturePin.Name = "labelCapturePin";
-            this.labelCapturePin.Size = new System.Drawing.Size(121, 21);
-            this.labelCapturePin.TabIndex = 0;
-            this.labelCapturePin.Text = "Capture this pin";
+            this.labelCaptureNumber.AutoSize = true;
+            this.labelCaptureNumber.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelCaptureNumber.Location = new System.Drawing.Point(84, 13);
+            this.labelCaptureNumber.Name = "labelCaptureNumber";
+            this.labelCaptureNumber.Size = new System.Drawing.Size(124, 21);
+            this.labelCaptureNumber.TabIndex = 0;
+            this.labelCaptureNumber.Text = "Capture number";
             // 
             // panel1
             // 
             this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.panel1.Controls.Add(this.buttonCaptureContinuelsy);
-            this.panel1.Controls.Add(this.textBoxCapturePinStart);
-            this.panel1.Controls.Add(this.labelCapturePinStart);
-            this.panel1.Controls.Add(this.textBoxCapturePinEnd);
-            this.panel1.Controls.Add(this.labelCapturePinEnd);
+            this.panel1.Controls.Add(this.textBoxCaptureNumberStart);
+            this.panel1.Controls.Add(this.labelCaptureNumberStart);
+            this.panel1.Controls.Add(this.textBoxCaptureNumberEnd);
+            this.panel1.Controls.Add(this.labelCaptureNumberEnd);
             this.panel1.Location = new System.Drawing.Point(6, 437);
             this.panel1.Name = "panel1";
             this.panel1.Size = new System.Drawing.Size(352, 132);
@@ -560,7 +560,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 21F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(911, 787);
+            this.ClientSize = new System.Drawing.Size(911, 740);
             this.Controls.Add(this.tabControl1);
             this.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
@@ -599,10 +599,10 @@
         private System.Windows.Forms.PictureBox pictureBoxImage;
         private System.Windows.Forms.Label labelIp;
         private System.Windows.Forms.Label labelRegion;
-        private System.Windows.Forms.TextBox textBoxCapturePinStart;
-        private System.Windows.Forms.Label labelCapturePinStart;
-        private System.Windows.Forms.Label labelCapturePinEnd;
-        private System.Windows.Forms.TextBox textBoxCapturePinEnd;
+        private System.Windows.Forms.TextBox textBoxCaptureNumberStart;
+        private System.Windows.Forms.Label labelCaptureNumberStart;
+        private System.Windows.Forms.Label labelCaptureNumberEnd;
+        private System.Windows.Forms.TextBox textBoxCaptureNumberEnd;
         private System.Windows.Forms.RichTextBox richTextBoxAction;
         private System.Windows.Forms.Label labelComponent;
         private System.Windows.Forms.TextBox textBoxComponent;
@@ -614,8 +614,8 @@
         private System.Windows.Forms.PictureBox pictureBoxIcon;
         private System.Windows.Forms.Label labelProductVersion;
         private System.Windows.Forms.Label labelProductName;
-        private System.Windows.Forms.Label labelCapturePin;
-        private System.Windows.Forms.TextBox textBoxCapturePin;
+        private System.Windows.Forms.Label labelCaptureNumber;
+        private System.Windows.Forms.TextBox textBoxCaptureNumber;
         private System.Windows.Forms.Panel panel2;
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.Panel panel4;

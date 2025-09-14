@@ -22,7 +22,7 @@ namespace Oscilloscope_Network_Capture
         private int scopePort = 5555;
         private string component = "U1";
         private string outputFolder = "output";
-        private string filenameFormat = "{Component}_{Pin}_{Region}";
+        private string filenameFormat = "{Component}_{Number}_{Region}_{Date}_{Time}";
         private string oncPage = "https://commodore-repair-toolbox.dk";
         private string oncPageAutoUpdate = "/auto-update/";
         private bool beepEnabled = true;
@@ -34,17 +34,19 @@ namespace Oscilloscope_Network_Capture
         private readonly int pictureBoxBorderThickness = 2;
         private bool initializing = false;
 
+        private string lastSiglentTrigMode = null;
+
         // Hotkey mode
         private bool hotkeyMode = false;
         private bool captureInProgress = false;
         private bool failMode = false;
 
-        // Pin range
-        private int pinStart = 1;
-        private int pinEnd = 40;
-        private int originalPinStart;
-        private int originalPinEnd;
-        private bool pinRangeActive = false;
+        // Number range
+        private int numberStart = 1;
+        private int numberEnd = 40;
+        private int originalNumberStart;
+        private int originalNumberEnd;
+        private bool numberRangeActive = false;
 
         private enum LogLevel { Info, Warning, Error, Notice }
 
@@ -120,13 +122,13 @@ namespace Oscilloscope_Network_Capture
             helpTxt += @"\line ";
             helpTxt += @"{\fs28{\b Siglent}}\line ";
             helpTxt += @"Typical port is {\b 5025} (I am actually not sure on this - is this typical?).\line ";
-            helpTxt += @"Confirmed working on:\line ";
+            helpTxt += @"Confirmed working... but with mixed results:\line ";
             helpTxt += @"    * Siglent SDS 1204X - E \line";
             helpTxt += @"\line";
             helpTxt += @"{\fs28{\b Variables to use in filename format}}\line ";
             helpTxt += @"    * \{Region\}\line ";
             helpTxt += @"    * \{Component\}\line ";
-            helpTxt += @"    * \{Pin\}\line ";
+            helpTxt += @"    * \{Number\} is whatever number you may be meassuring (e.g. IC pin number 7)\line ";
             helpTxt += @"    * \{Date\} is YYYYMMDD - e.g. 20251231\line ";
             helpTxt += @"    * \{Time\} is HHMMSS - e.g. 235959\line ";
             helpTxt += @"\line";
@@ -164,9 +166,9 @@ namespace Oscilloscope_Network_Capture
             pictureBoxIcon.SizeMode = PictureBoxSizeMode.Zoom;
             textBoxIp.Leave += textBoxIp_Leave;
             textBoxIp.KeyDown += textBoxIp_KeyDown;
-            textBoxCapturePin.KeyDown += textBoxCapturePin_KeyDown;
-            textBoxCapturePinStart.KeyDown += textBoxPinRange_KeyDown;
-            textBoxCapturePinEnd.KeyDown += textBoxPinRange_KeyDown;
+            textBoxCaptureNumber.KeyDown += textBoxCaptureNumber_KeyDown;
+            textBoxCaptureNumberStart.KeyDown += textBoxNumberRange_KeyDown;
+            textBoxCaptureNumberEnd.KeyDown += textBoxNumberRange_KeyDown;
 
             checkBoxBeep.Checked = beepEnabled;
 
@@ -509,7 +511,7 @@ namespace Oscilloscope_Network_Capture
             if (string.IsNullOrWhiteSpace(raw))
             {
                 Log("Filename format empty; reverting to default.", LogLevel.Warning);
-                filenameFormat = "{Component}_{Pin}_{Region}";
+                filenameFormat = "{Component}_{Number}_{Region}";
                 textBoxFilenameFormat.Text = filenameFormat;
                 SaveConfig();
                 return;
@@ -680,11 +682,11 @@ namespace Oscilloscope_Network_Capture
         // Update "Action" textbox
         // ###########################################################################################
 
-        private void UpdatePinStatusText()
+        private void UpdateNumberStatusText()
         {
             if (richTextBoxAction == null) return;
-            if (pinStart <= pinEnd)
-                richTextBoxAction.Text = $"Ready to capture pin {pinStart} of {pinEnd}\r\nPress [ENTER] to capture, [ESC] to stop.";
+            if (numberStart <= numberEnd)
+                richTextBoxAction.Text = $"Ready to capture; number {numberStart} of {numberEnd}\r\nPress [ENTER] to capture, [ESC] to stop.";
             else
                 richTextBoxAction.Text = "Capture completed";
         }
@@ -700,25 +702,25 @@ namespace Oscilloscope_Network_Capture
                 Log("Already in hotkey mode. Press [ESC] to exit.", LogLevel.Warning);
                 return;
             }
-            if (!TryInitializePinRange()) return;
-            originalPinStart = pinStart;
-            originalPinEnd = pinEnd;
+            if (!TryInitializeNumberRange()) return;
+            originalNumberStart = numberStart;
+            originalNumberEnd = numberEnd;
             hotkeyMode = true;
-            pinRangeActive = true;
+            numberRangeActive = true;
 
             if (buttonCaptureOnce != null) buttonCaptureOnce.Enabled = false;
             if (buttonCaptureContinuelsy != null) buttonCaptureContinuelsy.Enabled = false;
             if (buttonCheckScope != null) buttonCheckScope.Enabled = false;
 
-            UpdatePinStatusText();
-            Log("Hotkey mode active. Press [ENTER] to capture current pin, [ESC] to stop.", LogLevel.Notice);
+            UpdateNumberStatusText();
+            Log("Hotkey mode active. Press [ENTER] to capture, [ESC] to stop.", LogLevel.Notice);
         }
 
         private void DisableHotkeyMode()
         {
             if (!hotkeyMode) return;
             hotkeyMode = false;
-            pinRangeActive = false;
+            numberRangeActive = false;
             if (buttonCaptureOnce != null) buttonCaptureOnce.Enabled = true;
             if (buttonCaptureContinuelsy != null) buttonCaptureContinuelsy.Enabled = true;
             if (buttonCheckScope != null) buttonCheckScope.Enabled = true;
@@ -732,37 +734,37 @@ namespace Oscilloscope_Network_Capture
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
-                if (pinRangeActive)
+                if (numberRangeActive)
                 {
-                    if (!RefreshPinRangeFromTextBoxes())
+                    if (!RefreshNumberRangeFromTextBoxes())
                     {
-                        if (richTextBoxAction != null) richTextBoxAction.Text = "Invalid pin range";
+                        if (richTextBoxAction != null) richTextBoxAction.Text = "Invalid number range";
                         return;
                     }
-                    if (pinStart > pinEnd)
+                    if (numberStart > numberEnd)
                     {
-                        Log("Pin range already complete.", LogLevel.Notice);
+                        Log("Number range already complete.", LogLevel.Notice);
                         DisableHotkeyMode();
                         if (richTextBoxAction != null) richTextBoxAction.Text = "Capture completed";
                         return;
                     }
-                    int currentPin = pinStart;
-                    await StartSingleCaptureAsync(currentPin, null);
-                    if (currentPin == pinEnd)
+                    int currentNumber = numberStart;
+                    await StartSingleCaptureAsync(currentNumber, null);
+                    if (currentNumber == numberEnd)
                     {
-                        Log("Finished capturing all pins.", LogLevel.Notice);
+                        Log("Finished capturing all.", LogLevel.Notice);
                         if (richTextBoxAction != null) richTextBoxAction.Text = "Capture completed";
-                        pinStart = originalPinStart;
-                        pinEnd = originalPinEnd;
-                        if (textBoxCapturePinStart != null) textBoxCapturePinStart.Text = pinStart.ToString();
-                        if (textBoxCapturePinEnd != null) textBoxCapturePinEnd.Text = pinEnd.ToString();
-                        Log($"Pin range reset to original [{pinStart}..{pinEnd}].", LogLevel.Info);
+                        numberStart = originalNumberStart;
+                        numberEnd = originalNumberEnd;
+                        if (textBoxCaptureNumberStart != null) textBoxCaptureNumberStart.Text = numberStart.ToString();
+                        if (textBoxCaptureNumberEnd != null) textBoxCaptureNumberEnd.Text = numberEnd.ToString();
+                        Log($"Number range reset to original [{numberStart}..{numberEnd}].", LogLevel.Info);
                         DisableHotkeyMode();
                         return;
                     }
-                    pinStart++;
-                    if (textBoxCapturePinStart != null) textBoxCapturePinStart.Text = pinStart.ToString();
-                    UpdatePinStatusText();
+                    numberStart++;
+                    if (textBoxCaptureNumberStart != null) textBoxCaptureNumberStart.Text = numberStart.ToString();
+                    UpdateNumberStatusText();
                 }
                 else
                 {
@@ -779,50 +781,50 @@ namespace Oscilloscope_Network_Capture
         }
 
         // ###########################################################################################
-        // Initialize and update "pinStart" and "pinEnd" in the continuesly capture
+        // Initialize and update "numberStart" and "numberEnd" in the continuesly capture
         // ###########################################################################################
 
-        private bool TryInitializePinRange()
+        private bool TryInitializeNumberRange()
         {
-            if (textBoxCapturePinStart == null || textBoxCapturePinEnd == null)
+            if (textBoxCaptureNumberStart == null || textBoxCaptureNumberEnd == null)
             {
-                Log("Pin range controls not found.", LogLevel.Error);
+                Log("Number range controls not found.", LogLevel.Error);
                 return false;
             }
             int startParsed, endParsed;
-            if (!int.TryParse(textBoxCapturePinStart.Text.Trim(), out startParsed) ||
-                !int.TryParse(textBoxCapturePinEnd.Text.Trim(), out endParsed) ||
+            if (!int.TryParse(textBoxCaptureNumberStart.Text.Trim(), out startParsed) ||
+                !int.TryParse(textBoxCaptureNumberEnd.Text.Trim(), out endParsed) ||
                 startParsed <= 0 || endParsed <= 0 || endParsed < startParsed)
             {
-                Log("Invalid pin range. Provide positive integers with start <= end.", LogLevel.Warning);
+                Log("Invalid number range. Provide positive integers with start <= end.", LogLevel.Warning);
                 return false;
             }
-            pinStart = startParsed;
-            pinEnd = endParsed;
+            numberStart = startParsed;
+            numberEnd = endParsed;
             return true;
         }
 
-        private bool RefreshPinRangeFromTextBoxes(bool logOnError = true)
+        private bool RefreshNumberRangeFromTextBoxes(bool logOnError = true)
         {
-            if (textBoxCapturePinStart == null || textBoxCapturePinEnd == null)
+            if (textBoxCaptureNumberStart == null || textBoxCaptureNumberEnd == null)
             {
-                if (logOnError) Log("Pin range controls not found.", LogLevel.Error);
+                if (logOnError) Log("Number range controls not found.", LogLevel.Error);
                 return false;
             }
             int startParsed, endParsed;
-            if (!int.TryParse(textBoxCapturePinStart.Text.Trim(), out startParsed) ||
-                !int.TryParse(textBoxCapturePinEnd.Text.Trim(), out endParsed))
+            if (!int.TryParse(textBoxCaptureNumberStart.Text.Trim(), out startParsed) ||
+                !int.TryParse(textBoxCaptureNumberEnd.Text.Trim(), out endParsed))
             {
-                if (logOnError) Log("Invalid pin numbers (non-numeric).", LogLevel.Warning);
+                if (logOnError) Log("Invalid number format (non-numeric).", LogLevel.Warning);
                 return false;
             }
             if (startParsed <= 0 || endParsed <= 0)
             {
-                if (logOnError) Log("Pin numbers must be positive.", LogLevel.Warning);
+                if (logOnError) Log("Numbers must be positive.", LogLevel.Warning);
                 return false;
             }
-            pinStart = startParsed;
-            pinEnd = endParsed;
+            numberStart = startParsed;
+            numberEnd = endParsed;
             return true;
         }
 
@@ -835,7 +837,7 @@ namespace Oscilloscope_Network_Capture
             await StartSingleCaptureAsync(null);
         }
 
-        private async Task StartSingleCaptureAsync(int? capturePinNumber, string regionOverride = null)
+        private async Task StartSingleCaptureAsync(int? captureNumber, string regionOverride = null)
         {
             if (captureInProgress)
             {
@@ -852,7 +854,7 @@ namespace Oscilloscope_Network_Capture
                 if (string.IsNullOrWhiteSpace(region)) region = "default";
                 region = SanitizeForFile(region.Trim());
 
-                string outputFileName = BuildCaptureFileName(capturePinNumber);
+                string outputFileName = BuildCaptureFileName(captureNumber);
                 await CaptureScreenToFileAsync(region, outputFileName);
                 if (richTextBoxAction != null)
                     richTextBoxAction.Text = failMode ? "Error occured" : "Ready for capture";
@@ -873,7 +875,7 @@ namespace Oscilloscope_Network_Capture
         // Build capture filename from format and inputs
         // ###########################################################################################
 
-        private string BuildCaptureFileName(int? pinNumber)
+        private string BuildCaptureFileName(int? number)
         {
             // Select effective format (allow user edits not yet applied to backing field)
             string format = (textBoxFilenameFormat != null && !string.IsNullOrWhiteSpace(textBoxFilenameFormat.Text))
@@ -885,16 +887,16 @@ namespace Oscilloscope_Network_Capture
                 ? textBoxComponent.Text.Trim()
                 : "capture";
 
-            // Pin (priority: explicit parameter -> single pin box -> range start box)
-            string pinVal;
-            if (pinNumber.HasValue)
-                pinVal = pinNumber.Value.ToString();
-            else if (textBoxCapturePin != null && !string.IsNullOrWhiteSpace(textBoxCapturePin.Text))
-                pinVal = textBoxCapturePin.Text.Trim();
-            else if (textBoxCapturePinStart != null && !string.IsNullOrWhiteSpace(textBoxCapturePinStart.Text))
-                pinVal = textBoxCapturePinStart.Text.Trim();
+            // Number (priority: explicit parameter -> single number box -> range start box)
+            string numberVal;
+            if (number.HasValue)
+                numberVal = number.Value.ToString();
+            else if (textBoxCaptureNumber != null && !string.IsNullOrWhiteSpace(textBoxCaptureNumber.Text))
+                numberVal = textBoxCaptureNumber.Text.Trim();
+            else if (textBoxCaptureNumberStart != null && !string.IsNullOrWhiteSpace(textBoxCaptureNumberStart.Text))
+                numberVal = textBoxCaptureNumberStart.Text.Trim();
             else
-                pinVal = "";
+                numberVal = "";
 
             // Region
             string regionVal = (comboBoxRegion != null && comboBoxRegion.SelectedItem != null)
@@ -903,7 +905,7 @@ namespace Oscilloscope_Network_Capture
 
             // Sanitize tokens
             componentVal = SanitizeForFile(componentVal);
-            if (!string.IsNullOrWhiteSpace(pinVal)) pinVal = SanitizeForFile(pinVal);
+            if (!string.IsNullOrWhiteSpace(numberVal)) numberVal = SanitizeForFile(numberVal);
             regionVal = SanitizeForFile(string.IsNullOrWhiteSpace(regionVal) ? "default" : regionVal);
 
             // Date/time tokens
@@ -913,7 +915,7 @@ namespace Oscilloscope_Network_Capture
             var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
         { "component", componentVal },
-        { "pin", pinVal },
+        { "number", numberVal },
         { "region", regionVal },
         { "date", dateVal },
         { "time", timeVal }
@@ -922,7 +924,7 @@ namespace Oscilloscope_Network_Capture
             // Token replacement
             string expanded = Regex.Replace(
                 format,
-                @"\{(component|pin|region|date|time)\}",
+                @"\{(component|number|region|date|time)\}",
                 m =>
                 {
                     string key = m.Groups[1].Value;
@@ -1138,7 +1140,44 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
-        private void ResumeAcquisition(RawScpiClient scpi) => TryRun(scpi);
+        private void ResumeAcquisition(RawScpiClient scpi)
+        {
+            try
+            {
+                if (detectedVendor == ScopeVendor.Siglent)
+                {
+                    if (!string.IsNullOrEmpty(lastSiglentTrigMode))
+                    {
+                        if (lastSiglentTrigMode == "AUTO" || lastSiglentTrigMode == "NORM")
+                        {
+                            TryWrite(scpi, "TRIG_MODE " + lastSiglentTrigMode);
+                            TryWrite(scpi, "RUN");
+                            scpi.WaitOpc(1500);
+                            Log("Acquisition restored to " + lastSiglentTrigMode + " (Siglent).", LogLevel.Info);
+                        }
+                        else
+                        {
+                            Log("Siglent previous mode was " + lastSiglentTrigMode + "; leaving instrument stopped.", LogLevel.Info);
+                        }
+                    }
+                    else
+                    {
+                        TryWrite(scpi, "RUN");
+                        Log("Siglent: Unknown previous mode; issued RUN.", LogLevel.Warning);
+                    }
+                    return;
+                }
+
+                // Rigol / generic
+                if (!TryWrite(scpi, ":RUN")) TryWrite(scpi, ":ACQ:STATE 1");
+                scpi.WaitOpc(1500);
+                Log("Acquisition resumed.", LogLevel.Info);
+            }
+            catch (Exception ex)
+            {
+                Log("Failed to resume scope acquisition: " + ex.Message, LogLevel.Warning);
+            }
+        }
 
         private void DrainInstrumentErrors(RawScpiClient scpi)
         {
@@ -1233,7 +1272,50 @@ namespace Oscilloscope_Network_Capture
 
         private bool DetectAndStopAcquisition(RawScpiClient scpi, string vendorUpper)
         {
-            bool running = true;
+            if (detectedVendor == ScopeVendor.Siglent)
+            {
+                // Siglent path
+                lastSiglentTrigMode = null;
+                string mode = scpi.TryQuery("TRIG_MODE?", timeoutMs: 800);
+                if (!string.IsNullOrWhiteSpace(mode))
+                {
+                    mode = mode.Trim().ToUpperInvariant();
+                    lastSiglentTrigMode = mode;
+                    Log("Siglent TRIG_MODE: " + mode, LogLevel.Info);
+                }
+                else
+                {
+                    Log("Siglent: TRIG_MODE? returned no data; assuming running.", LogLevel.Warning);
+                    // Fallback treat as running
+                    lastSiglentTrigMode = null;
+                    mode = "AUTO";
+                }
+
+                bool running = mode == "AUTO" || mode == "NORM";
+
+                if (running)
+                {
+                    // Stop acquisition for a stable screenshot
+                    if (TryWrite(scpi, "STOP"))
+                    {
+                        try { scpi.WaitOpc(1500); } catch { }
+                        System.Threading.Thread.Sleep(120);
+                        Log("Scope acquisition stopped for screenshot (Siglent).", LogLevel.Info);
+                    }
+                    else
+                    {
+                        Log("Failed to send STOP (Siglent). Proceeding anyway.", LogLevel.Warning);
+                    }
+                }
+                else
+                {
+                    Log("Scope acquisition already not running (Siglent mode = " + mode + ").", LogLevel.Info);
+                }
+                return running;
+            }
+
+            // Existing non‑Siglent logic (Rigol / generic) retained:
+            bool runningGeneric = true;
             string stat = scpi.TryQuery(":TRIG:STAT?", timeoutMs: 1200);
             if (string.IsNullOrWhiteSpace(stat)) stat = scpi.TryQuery(":TRIG:STATE?", timeoutMs: 1200);
             if (string.IsNullOrWhiteSpace(stat)) stat = scpi.TryQuery(":TRIG:STATUS?", timeoutMs: 1200);
@@ -1242,7 +1324,7 @@ namespace Oscilloscope_Network_Capture
             {
                 string s = stat.Trim().ToUpperInvariant();
                 if (s.Contains("STOP") || s.Contains("HALT") || s.Contains("IDLE") || s.Contains("WAIT"))
-                    running = false;
+                    runningGeneric = false;
                 Log("Trigger state: " + s, LogLevel.Info);
             }
             else
@@ -1250,7 +1332,7 @@ namespace Oscilloscope_Network_Capture
                 Log("No trigger state response; assuming running.", LogLevel.Warning);
             }
 
-            if (running)
+            if (runningGeneric)
             {
                 if (!TryWrite(scpi, ":STOP")) TryWrite(scpi, ":ACQ:STATE 0");
                 try { scpi.WaitOpc(1500); } catch { }
@@ -1261,9 +1343,10 @@ namespace Oscilloscope_Network_Capture
             {
                 Log("Scope acquisition already stopped.", LogLevel.Info);
             }
-            return running;
+            return runningGeneric;
         }
 
+        /*
         // ###########################################################################################
         // Resume scope acquisition if we stopped it
         // ###########################################################################################
@@ -1281,6 +1364,7 @@ namespace Oscilloscope_Network_Capture
                 Log("Failed to resume scope acquisition: " + ex.Message, LogLevel.Warning);
             }
         }
+        */
 
         // ###########################################################################################
         // Send a SCPI command and ignore errors
@@ -1294,7 +1378,7 @@ namespace Oscilloscope_Network_Capture
         // ###########################################################################################
         // Pressing ENTER should trigger capture in both places (once or continuesly)
 
-        private void textBoxCapturePin_KeyDown(object sender, KeyEventArgs e)
+        private void textBoxCaptureNumber_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
@@ -1305,7 +1389,7 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
-        private void textBoxPinRange_KeyDown(object sender, KeyEventArgs e)
+        private void textBoxNumberRange_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
             {
