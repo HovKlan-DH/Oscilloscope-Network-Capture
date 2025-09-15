@@ -33,7 +33,9 @@ namespace Oscilloscope_Network_Capture
         private Color pictureBoxBorderColor = Color.Red;
         private readonly int pictureBoxBorderThickness = 2;
         private bool initializing = false;
+        private static readonly object _gdiLock = new object();
 
+        private bool forceAcquisition = false;
         private string lastSiglentTrigMode = null;
 
         // Hotkey mode
@@ -119,13 +121,14 @@ namespace Oscilloscope_Network_Capture
 
             string helpTxt = @"{\rtf1\ansi {\fs28{\b Rigol}}\line ";
             helpTxt += @"Typical port is {\b 5555} (I am actually not sure on this - is this typical?).\line ";
-            helpTxt += @"Confirmed working on:\line ";
+            helpTxt += @"Confirmed working:\line ";
             helpTxt += @"  * Rigol DS2202A\line ";
             helpTxt += @"\line ";
             helpTxt += @"{\fs28{\b Siglent}}\line ";
             helpTxt += @"Typical port is {\b 5025} (I am actually not sure on this - is this typical?).\line ";
-            helpTxt += @"Confirmed working... but with mixed results:\line ";
-            helpTxt += @"    * Siglent SDS 1204X - E \line";
+            helpTxt += @"Confirmed working:\line ";
+            helpTxt += @"    * Siglent SDS 1104X - E\line ";
+            helpTxt += @"    * Siglent SDS 1204X - E\line ";
             helpTxt += @"\line";
             helpTxt += @"{\fs28{\b Variables to use in filename format}}\line ";
             helpTxt += @"    * \{Region\}\line ";
@@ -134,10 +137,15 @@ namespace Oscilloscope_Network_Capture
             helpTxt += @"    * \{Date\} is YYYYMMDD - e.g. 20251231\line ";
             helpTxt += @"    * \{Time\} is HHMMSS - e.g. 235959\line ";
             helpTxt += @"\line";
+            helpTxt += @"{\fs28{\b Standard and protocol used:}}\line ";
+            helpTxt += @"    * IEEE 488.2 standard\line ";
+            helpTxt += @"    * SCPI socket protocol\line ";
+            helpTxt += @"\line";
             helpTxt += @"{\fs28{\b Troubleshoot no connectivity to you oscilloscope}}\line ";
             helpTxt += @"If you do not get any connection to your oscilloscope, then please do validate that your computer can actually connect to the oscilloscope over network. You can do this by this simple commandline prompt, but it does require that you do have the ""telnet"" command installed (can be installed from ""Programs and Feaures > Turn Windows features on or off"" from Windows Control Panel):\line\line ";
             helpTxt += @"    {\b telnet 192.168.0.100 5555}\line\line ";
             helpTxt += @"If this results in a black screen, then you do have connectivity. You of course needs to adapt this for your scope, so it will have another IP address and probably also another port instead of ""5555"". Maybe also your scope has a web interface, so you can try also accessing it on its IP addresses for both HTTP and HTTPS.\line ";
+            helpTxt += @"Also, it might help restarting your scope with a power recycle.\line ";
             richTextBoxHelp.Rtf = helpTxt;
 
             // Resolve default folder name -> absolute path if still the literal "output"
@@ -147,6 +155,8 @@ namespace Oscilloscope_Network_Capture
             textBoxCaptureFolder.Text = outputFolder;
 
             textBoxComponent.Text = component;
+            textBoxComponent.Leave += textBoxComponent_Leave;
+            textBoxComponent.KeyDown += textBoxComponent_KeyDown;
             textBoxFilenameFormat.Text = filenameFormat;
 
             textBoxPort.Text = scopePort.ToString();
@@ -171,6 +181,8 @@ namespace Oscilloscope_Network_Capture
             textBoxCaptureNumber.KeyDown += textBoxCaptureNumber_KeyDown;
             textBoxCaptureNumberStart.KeyDown += textBoxNumberRange_KeyDown;
             textBoxCaptureNumberEnd.KeyDown += textBoxNumberRange_KeyDown;
+            checkBoxForceAcquisition.CheckedChanged += checkBoxForceAcquisition_CheckedChanged;
+            checkBoxForceAcquisition.Checked = forceAcquisition;
 
             checkBoxBeep.Checked = beepEnabled;
 
@@ -200,6 +212,18 @@ namespace Oscilloscope_Network_Capture
             {
                 // Swallow any unexpected exceptions to avoid crashing on startup
             }
+        }
+
+        // ###########################################################################################
+        // Force acquisition checkbox
+        // ###########################################################################################
+
+        private void checkBoxForceAcquisition_CheckedChanged(object sender, EventArgs e)
+        {
+            if (checkBoxForceAcquisition == null) return;
+            forceAcquisition = checkBoxForceAcquisition.Checked;
+            Log("Force acquisition after capture: " + (forceAcquisition ? "ON" : "OFF"), LogLevel.Info);
+            if (!initializing) SaveConfig();
         }
 
         // ###########################################################################################
@@ -390,6 +414,36 @@ namespace Oscilloscope_Network_Capture
         }
 
         // ###########################################################################################
+
+        private void textBoxComponent_Leave(object sender, EventArgs e) => ApplyComponentFromTextBox();
+
+        private void textBoxComponent_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                ApplyComponentFromTextBox();
+                e.SuppressKeyPress = true;
+            }
+        }
+
+        private void ApplyComponentFromTextBox()
+        {
+            if (textBoxComponent == null) return;
+            string raw = textBoxComponent.Text.Trim();
+            if (string.IsNullOrEmpty(raw))
+            {
+                raw = "U1";
+                textBoxComponent.Text = raw;
+            }
+            if (raw != component)
+            {
+                component = raw;
+                if (!initializing) SaveConfig();
+            }
+        }
+
+
+        // ###########################################################################################
         // Load configuration file
         // ###########################################################################################
 
@@ -443,6 +497,12 @@ namespace Oscilloscope_Network_Capture
                             if (textBoxPort != null) textBoxPort.Text = scopePort.ToString();
                         }
                     }
+                    string comp;
+                    if (map.TryGetValue("Component", out comp) && !string.IsNullOrWhiteSpace(comp))
+                    {
+                        component = comp.Trim();
+                        if (textBoxComponent != null) textBoxComponent.Text = component;
+                    }
                     string fmt;
                     if (map.TryGetValue("FilenameFormat", out fmt) && !string.IsNullOrWhiteSpace(fmt))
                     {
@@ -466,7 +526,23 @@ namespace Oscilloscope_Network_Capture
                         if (!string.Equals(before, outputFolder, StringComparison.OrdinalIgnoreCase))
                             SaveConfig();
                     }
-                    Log($"Loaded config: IP={scopeIp}, Port={scopePort}, Region={(comboBoxRegion?.SelectedItem as string) ?? ""}, FilenameFormat={filenameFormat}, CaptureFolder={outFolder}, Beep={(beepEnabled ? 1 : 0)}", LogLevel.Info);
+                    string resumeStr;
+                    if (map.TryGetValue("ForceAcquisition", out resumeStr))
+                    {
+                        forceAcquisition = resumeStr == "1" ||
+                                           resumeStr.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+                                           resumeStr.Equals("yes", StringComparison.OrdinalIgnoreCase);
+                        if (checkBoxForceAcquisition != null) checkBoxForceAcquisition.Checked = forceAcquisition;
+                    }
+                    Log($"Loaded config:", LogLevel.Info);
+                    Log($"    IP={scopeIp}", LogLevel.Info);
+                    Log($"    Port={scopePort}", LogLevel.Info);
+                    Log($"    Region={(comboBoxRegion?.SelectedItem as string) ?? ""}", LogLevel.Info);
+                    Log($"    Component={component}", LogLevel.Info);
+                    Log($"    FilenameFormat={filenameFormat}", LogLevel.Info);
+                    Log($"    CaptureFolder={outFolder}", LogLevel.Info);
+                    Log($"    Beep={(beepEnabled ? 1 : 0)}", LogLevel.Info);
+                    Log($"    ForceAcquisition={(forceAcquisition ? 1 : 0)}", LogLevel.Info);
                 }
                 else
                 {
@@ -498,11 +574,21 @@ namespace Oscilloscope_Network_Capture
                 sb.AppendLine("Port=" + scopePort);
                 string region = comboBoxRegion != null ? (comboBoxRegion.SelectedItem as string ?? "").Trim() : "";
                 sb.AppendLine("Region=" + region);
+                sb.AppendLine("Component=" + component);
                 sb.AppendLine("FilenameFormat=" + filenameFormat);
                 sb.AppendLine("OutputFolder=" + outputFolder); // <-- added
                 sb.AppendLine("Beep=" + (beepEnabled ? "1" : "0"));
+                sb.AppendLine("ForceAcquisition=" + (forceAcquisition ? "1" : "0"));
                 File.WriteAllText(configPath, sb.ToString());
-                Log($"Saved config: IP={scopeIp}, Port={scopePort}, Region={region}, FilenameFormat={filenameFormat}, OutputFolder={outputFolder}, Beep={(beepEnabled ? 1 : 0)}", LogLevel.Info);
+                Log($"Saved config:", LogLevel.Info);
+                Log($"    IP={scopeIp}", LogLevel.Info);
+                Log($"    Port={scopePort}", LogLevel.Info);
+                Log($"    Region={region}", LogLevel.Info);
+                Log($"    Component={component}", LogLevel.Info);
+                Log($"    FilenameFormat={filenameFormat}", LogLevel.Info);
+                Log($"    OutputFolder={outputFolder}", LogLevel.Info);
+                Log($"    Beep={(beepEnabled ? 1 : 0)}", LogLevel.Info);
+                Log($"    ForceAcquisition={(forceAcquisition ? 1 : 0)}", LogLevel.Info);
             }
             catch (Exception ex)
             {
@@ -875,6 +961,8 @@ namespace Oscilloscope_Network_Capture
             if (buttonCheckScope != null) buttonCheckScope.Enabled = false;
             try
             {
+                ApplyComponentFromTextBox(); // Ensure latest typed component is captured & saved
+
                 string region = regionOverride ?? (comboBoxRegion != null ? comboBoxRegion.SelectedItem as string : null);
                 if (string.IsNullOrWhiteSpace(region)) region = "default";
                 region = SanitizeForFile(region.Trim());
@@ -1070,7 +1158,11 @@ namespace Oscilloscope_Network_Capture
                         failMode = false;
                         Beep("after");
 
-                        if (wasRunning) ResumeAcquisition(scpi);
+                        bool forceResume = forceAcquisition;
+                        if (wasRunning || forceResume)
+                        {
+                            ForceAcquisition(scpi, forceResume && !wasRunning);
+                        }
                         DrainInstrumentErrors(scpi);
                     }
                 }
@@ -1091,7 +1183,7 @@ namespace Oscilloscope_Network_Capture
                 }
                 catch (Exception ex)
                 {
-                    Log("Capture failed: " + ex.Message, LogLevel.Error);
+                    Log("Capture failed: " + ex.ToString(), LogLevel.Error);
                     Beep("error");
                 }
                 finally
@@ -1155,22 +1247,125 @@ namespace Oscilloscope_Network_Capture
 
         private void SaveAndDisplay(byte[] rawImage, string outputFileName)
         {
-            using (var ms = new MemoryStream(rawImage))
-            using (var img = Image.FromStream(ms, false, false))
+            // Detect (again, cheap) for logging/fallback naming
+            ImageKind kind = DetectImageKind(rawImage);
+
+            string dir = Path.GetDirectoryName(outputFileName);
+            try
             {
-                bool existed = File.Exists(outputFileName);
-                img.Save(outputFileName, ImageFormat.Png);
-                Log((existed ? "Overwrote " : "Saved ") + Path.GetFullPath(outputFileName), LogLevel.Notice);
-                SetPictureBoxImage((Image)img.Clone());
+                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+            }
+            catch (Exception ex)
+            {
+                Log("SaveAndDisplay: Directory creation failed: " + ex.ToString(), LogLevel.Error);
+                throw;
+            }
+
+            // Pre-log a short signature
+            Log($"SaveAndDisplay: start kind={kind}, len={rawImage?.Length}, head={HexPreview(rawImage, 16)}, path={outputFileName}", LogLevel.Info);
+
+            try
+            {
+                using (var ms = new MemoryStream(rawImage, false))
+                {
+                    // Force full validation of the image data (third param = validateImageData: true)
+                    Image decoded = null;
+                    try
+                    {
+                        decoded = Image.FromStream(ms, useEmbeddedColorManagement: false, validateImageData: true);
+                    }
+                    catch (Exception exDecode)
+                    {
+                        Log("SaveAndDisplay: Decode failed before save: " + exDecode.ToString(), LogLevel.Error);
+                        DumpRawOnFailure(rawImage, outputFileName, kind, "decode");
+                        throw;
+                    }
+
+                    using (decoded)
+                    {
+                        // Serialize GDI+ encode operations
+                        lock (_gdiLock)
+                        {
+                            try
+                            {
+                                using (var fs = new FileStream(outputFileName, FileMode.Create, FileAccess.Write, FileShare.Read))
+                                {
+                                    decoded.Save(fs, ImageFormat.Png);
+                                    fs.Flush(true);
+                                }
+                            }
+                            catch (Exception exSave)
+                            {
+                                Log("SaveAndDisplay: Save failed: " + exSave.ToString(), LogLevel.Error);
+                                DumpRawOnFailure(rawImage, outputFileName, kind, "save");
+                                throw;
+                            }
+                        }
+
+                        Log((File.Exists(outputFileName) ? "Saved " : "Created ") + Path.GetFullPath(outputFileName), LogLevel.Notice);
+
+                        // Clone for UI thread so original can dispose
+                        Image uiCopy = null;
+                        try { uiCopy = (Image)decoded.Clone(); }
+                        catch (Exception exClone)
+                        {
+                            Log("SaveAndDisplay: Clone failed (continuing without preview): " + exClone.ToString(), LogLevel.Warning);
+                        }
+                        if (uiCopy != null)
+                            SetPictureBoxImage(uiCopy);
+                    }
+                }
+            }
+            catch
+            {
+                failMode = true;
+                Beep("error");
+                throw;
+            }
+            finally
+            {
+                // End marker
+                Log("SaveAndDisplay: end path=" + outputFileName, LogLevel.Info);
             }
         }
 
-        private void ResumeAcquisition(RawScpiClient scpi)
+        // Helper to dump raw data for diagnostics
+        private void DumpRawOnFailure(byte[] raw, string targetPath, ImageKind kind, string stage)
+        {
+            try
+            {
+                string fallbackExt = (kind == ImageKind.Bmp) ? ".bmp" :
+                                     (kind == ImageKind.Png) ? ".png" : ".bin";
+
+                string dumpPath = Path.Combine(
+                    Path.GetDirectoryName(targetPath) ?? "",
+                    Path.GetFileNameWithoutExtension(targetPath) + $"_{stage}_raw" + fallbackExt);
+
+                File.WriteAllBytes(dumpPath, raw);
+                Log("Fallback raw dump written: " + dumpPath, LogLevel.Warning);
+            }
+            catch (Exception ex)
+            {
+                Log("Fallback raw dump failed: " + ex.ToString(), LogLevel.Error);
+            }
+        }
+
+        private void ForceAcquisition(RawScpiClient scpi, bool forceResume = false)
         {
             try
             {
                 if (detectedVendor == ScopeVendor.Siglent)
                 {
+                    if (forceResume)
+                    {
+                        // Force RUN regardless of previous mode
+                        TryWrite(scpi, "RUN");
+                        try { scpi.WaitOpc(1500); } catch { }
+                        Log("Acquisition forced to RUN (Siglent).", LogLevel.Info);
+                        return;
+                    }
+
                     if (!string.IsNullOrEmpty(lastSiglentTrigMode))
                     {
                         if (lastSiglentTrigMode == "AUTO" || lastSiglentTrigMode == "NORM")
@@ -1194,6 +1389,14 @@ namespace Oscilloscope_Network_Capture
                 }
 
                 // Rigol / generic
+                if (forceResume)
+                {
+                    if (!TryWrite(scpi, ":RUN")) TryWrite(scpi, ":ACQ:STATE 1");
+                    try { scpi.WaitOpc(1500); } catch { }
+                    Log("Acquisition forced to RUN (generic).", LogLevel.Info);
+                    return;
+                }
+
                 if (!TryWrite(scpi, ":RUN")) TryWrite(scpi, ":ACQ:STATE 1");
                 scpi.WaitOpc(1500);
                 Log("Acquisition resumed.", LogLevel.Info);
@@ -1220,7 +1423,10 @@ namespace Oscilloscope_Network_Capture
             Log(message, LogLevel.Error);
             failMode = true;
             Beep("error");
-            if (wasRunning) ResumeAcquisition(scpi);
+            if (wasRunning || forceAcquisition)
+            {
+                ForceAcquisition(scpi, forceAcquisition && !wasRunning);
+            }
         }
 
         // ###########################################################################################
@@ -1255,15 +1461,24 @@ namespace Oscilloscope_Network_Capture
                 ":DISP:DATA? ON,0,BMP",
                 ":SCDP?"
             };
-            foreach (var cmd in attempts)
+
+            for (int i = 0; i < attempts.Length; i++)
             {
+                string cmd = attempts[i];
                 Log("Trying screenshot command (Rigol path): " + cmd, LogLevel.Info);
-                byte[] data = scpi.TryQueryBinaryBlock(cmd, 50 * 1024 * 1024, 8000);
+
+                // Use a shorter timeout for the very first plain command; longer for subsequent ones.
+                int timeoutMs = (i == 0) ? 5000 : 8000;
+
+                byte[] data = scpi.TryQueryBinaryBlock(cmd, 50 * 1024 * 1024, timeoutMs);
                 if (data != null && data.Length > 64)
                 {
                     Log("Command " + cmd + " succeeded (block, bytes=" + data.Length + ", head=" + HexPreview(data, 16) + ")", LogLevel.Info);
                     return data;
                 }
+
+                // Drain any partial or late data before next attempt to avoid desynchronization.
+                try { scpi.DrainInput(4096); } catch { }
             }
             return null;
         }
@@ -1401,7 +1616,7 @@ namespace Oscilloscope_Network_Capture
         }
 
         // ###########################################################################################
-        // Pressing ENTER should trigger capture in both places (once or continuesly)
+        // Pressing ENTER should capture in both places ("once" or "continuesly")
 
         private void textBoxCaptureNumber_KeyDown(object sender, KeyEventArgs e)
         {
@@ -1533,57 +1748,144 @@ namespace Oscilloscope_Network_Capture
         // ###########################################################################################
 
         private bool ValidateScopeBmp(byte[] data,
-                                      out int width,
-                                      out int height,
-                                      out int bitsPerPixel,
-                                      out string reason,
-                                      bool patchHeader)
+                              out int width,
+                              out int height,
+                              out int bitsPerPixel,
+                              out string reason,
+                              bool patchHeader)
         {
-            width = 0; height = 0; bitsPerPixel = 0; reason = "";
-            if (data == null || data.Length < 54) { reason = "Too small for BMP header."; return false; }
-            if (data[0] != 0x42 || data[1] != 0x4D) { reason = "Missing BM signature."; return false; }
+            width = 0;
+            height = 0;
+            bitsPerPixel = 0;
+            reason = "";
+
+            if (data == null || data.Length < 54)
+            {
+                reason = "Too small for BMP header.";
+                return false;
+            }
+
+            // Signature
+            if (data[0] != 0x42 || data[1] != 0x4D)
+            {
+                reason = "Missing BM signature.";
+                return false;
+            }
+
             uint headerFileSize = ReadUInt32LE(data, 2);
+            uint reserved1 = ReadUInt16LE(data, 6);
+            uint reserved2 = ReadUInt16LE(data, 8);
             uint pixelDataOffset = ReadUInt32LE(data, 10);
             uint dibHeaderSize = ReadUInt32LE(data, 14);
-            if (dibHeaderSize < 40) { reason = "Unsupported DIB header (<40)."; return false; }
+
+            if (dibHeaderSize < 40)
+            {
+                reason = "Unsupported DIB header (<40).";
+                return false;
+            }
+
             width = ReadInt32LE(data, 18);
-            height = ReadInt32LE(data, 22);
+            height = ReadInt32LE(data, 22); // May be negative for top‑down; accept.
             ushort planes = ReadUInt16LE(data, 26);
             bitsPerPixel = ReadUInt16LE(data, 28);
-            Log($"Header: fileSizeField={headerFileSize}, pixelOffset={pixelDataOffset}, dibSize={dibHeaderSize}, w={width}, h={height}, bpp={bitsPerPixel}", LogLevel.Info);
-            if (planes != 1) { reason = "Planes != 1."; return false; }
-            if (bitsPerPixel != 24 && bitsPerPixel != 16 && bitsPerPixel != 32) { reason = "Unsupported bpp " + bitsPerPixel; return false; }
-            if (width <= 0 || Math.Abs(height) <= 0 || width > 10000 || Math.Abs(height) > 10000) { reason = "Unreasonable dimensions " + width + "x" + height; return false; }
+            uint compression = ReadUInt32LE(data, 30); // BI_RGB = 0, BI_BITFIELDS = 3 (sometimes for 16/32bpp)
+
+            Log($"Header: fileSizeField={headerFileSize}, pixelOffset={pixelDataOffset}, dibSize={dibHeaderSize}, w={width}, h={height}, bpp={bitsPerPixel}, comp={compression}", LogLevel.Info);
+
+            // Basic structural checks
+            if (planes != 1)
+            {
+                reason = "Planes != 1.";
+                return false;
+            }
+
+            if (bitsPerPixel != 24 && bitsPerPixel != 16 && bitsPerPixel != 32)
+            {
+                reason = "Unsupported bpp " + bitsPerPixel;
+                return false;
+            }
+
+            if (compression != 0 && !(compression == 3 && (bitsPerPixel == 16 || bitsPerPixel == 32)))
+            {
+                reason = "Unsupported compression mode " + compression;
+                return false;
+            }
+
+            if (width <= 0 || Math.Abs(height) <= 0 || width > 10000 || Math.Abs(height) > 10000)
+            {
+                reason = "Unreasonable dimensions " + width + "x" + height;
+                return false;
+            }
+
+            if (pixelDataOffset < 54 || pixelDataOffset > data.Length - 8)
+            {
+                reason = $"Suspicious pixel data offset {pixelDataOffset}";
+                return false;
+            }
+
+            // Compute stride
             int rowBytesRaw = (width * bitsPerPixel + 7) / 8;
             int stride = (rowBytesRaw + 3) & ~3;
-            long needed = pixelDataOffset + (long)stride * Math.Abs(height);
-            if (needed > data.Length) { reason = "Pixel data truncated. Need " + needed + ", have " + data.Length; return false; }
+
+            long expectedPixelsBytes = (long)stride * Math.Abs(height);
+            long neededTotal = pixelDataOffset + expectedPixelsBytes;
+
+            // Truncation?
+            if (neededTotal > data.Length)
+            {
+                reason = $"Pixel data truncated. Need {neededTotal}, have {data.Length}";
+                return false;
+            }
+
+            // If computed total differs from actual length, log (not necessarily fatal).
+            if (neededTotal != data.Length)
+            {
+                Log($"Notice: ComputedSizeMismatch needed={neededTotal} actual={data.Length} (delta={(long)data.Length - neededTotal})", LogLevel.Warning);
+            }
+
+            // Header file size sanity
             if (headerFileSize != data.Length)
             {
-                if (headerFileSize == 0 || headerFileSize + pixelDataOffset == data.Length)
+                // Some Rigol devices put 0 or an approximate length.
+                long diff = (long)headerFileSize - data.Length;
+
+                if (headerFileSize == 0 ||
+                    headerFileSize + pixelDataOffset == data.Length) // (Very odd edge case the original code hinted at)
                 {
                     Log("Notice: Non-standard [FileSize] field; patching.", LogLevel.Notice);
-                    if (patchHeader) PatchFileSize(data, (uint)data.Length);
+                    if (patchHeader)
+                        PatchFileSize(data, (uint)data.Length);
                 }
-                else if (Math.Abs((long)headerFileSize - data.Length) <= 8)
+                else if (Math.Abs(diff) <= 32)
                 {
-                    Log("Minor [FileSize] mismatch tolerated.", LogLevel.Warning);
+                    // Small difference: warn but continue.
+                    Log($"Minor [FileSize] mismatch tolerated. Header={headerFileSize}, Actual={data.Length}, Diff={diff}", LogLevel.Warning);
                 }
                 else
                 {
-                    reason = $"File size mismatch. Header={headerFileSize}, Actual={data.Length}";
+                    reason = $"File size mismatch. Header={headerFileSize}, Actual={data.Length}, Diff={diff}";
                     return false;
                 }
             }
+
+            // Quick pixel data sanity probe (sample bytes)
             bool anyNonZero = false;
             int pixelStart = (int)pixelDataOffset;
-            int pixelEnd = data.Length;
+            int pixelEnd = (int)Math.Min(data.Length, pixelDataOffset + expectedPixelsBytes);
             int sampleStep = Math.Max(1, stride / 32);
+
             for (int i = pixelStart; i < pixelEnd; i += sampleStep)
             {
-                if (data[i] != 0) { anyNonZero = true; break; }
+                if (data[i] != 0)
+                {
+                    anyNonZero = true;
+                    break;
+                }
             }
-            if (!anyNonZero) Log("Warning: Capture appears black; continuing.", LogLevel.Warning);
+
+            if (!anyNonZero)
+                Log("Warning: Capture appears fully black (all sampled pixels zero); continuing.", LogLevel.Warning);
+
             return true;
         }
 
@@ -1627,9 +1929,9 @@ namespace Oscilloscope_Network_Capture
             switch (level)
             {
                 case LogLevel.Warning: color = Color.Khaki; break;
-                case LogLevel.Error: color = Color.OrangeRed; break;
-                case LogLevel.Notice: color = Color.DeepSkyBlue; break;
-                default: color = Color.LightGreen; break;
+                case LogLevel.Error: color = Color.LightPink; break;
+                case LogLevel.Notice: color = Color.SkyBlue; break;
+                default: color = Color.DarkSeaGreen; break;
             }
             string line = $"{DateTime.Now:HH:mm:ss.fff} {message}{Environment.NewLine}";
             int start = richTextBoxLog.TextLength;
