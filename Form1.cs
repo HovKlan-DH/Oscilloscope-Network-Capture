@@ -26,7 +26,7 @@ namespace Oscilloscope_Network_Capture
         private string oncPage = "https://commodore-repair-toolbox.dk";
         private string oncPageAutoUpdate = "/auto-update/";
         private bool beepEnabled = true;
-       
+
         private string versionThis = "";
         private readonly string configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Oscilloscope Network Capture.cfg");
 
@@ -164,10 +164,14 @@ namespace Oscilloscope_Network_Capture
             textBoxPort.KeyDown += textBoxPort_KeyDown;
             textBoxFilenameFormat.Leave += textBoxFilenameFormat_Leave;
             textBoxFilenameFormat.KeyDown += textBoxFilenameFormat_KeyDown;
-            buttonCaptureOnce.Click += buttonCaptureOnce_Click;
             buttonCaptureContinuelsy.Click += buttonCaptureContinuelsy_Click;
             buttonCheckScope.Click += buttonCheckScope_Click;
             richTextBoxAbout.LinkClicked += richTextBoxAbout_LinkClicked;
+
+            // New: capture mode checkbox handling
+            checkBoxContinueslyCapture.CheckedChanged += checkBoxContinueslyCapture_CheckedChanged;
+            // Apply initial state (designer text default is continuous, we override if unchecked)
+            UpdateCaptureModeUI();
 
             this.KeyPreview = true;
             this.KeyDown += Form_KeyDown;
@@ -178,11 +182,11 @@ namespace Oscilloscope_Network_Capture
             pictureBoxIcon.SizeMode = PictureBoxSizeMode.Zoom;
             textBoxIp.Leave += textBoxIp_Leave;
             textBoxIp.KeyDown += textBoxIp_KeyDown;
-            textBoxCaptureNumber.KeyDown += textBoxCaptureNumber_KeyDown;
             textBoxCaptureNumberStart.KeyDown += textBoxNumberRange_KeyDown;
             textBoxCaptureNumberEnd.KeyDown += textBoxNumberRange_KeyDown;
             checkBoxForceAcquisition.CheckedChanged += checkBoxForceAcquisition_CheckedChanged;
             checkBoxForceAcquisition.Checked = forceAcquisition;
+            splitContainer1.SplitterMoved += splitContainer1_SplitterMoved;
 
             checkBoxBeep.Checked = beepEnabled;
 
@@ -195,6 +199,67 @@ namespace Oscilloscope_Network_Capture
             initializing = false;
 
             this.Shown += Form1_Shown;
+        }
+
+        private void splitContainer1_SplitterMoved(object sender, SplitterEventArgs e)
+        {
+            if (initializing) return;
+            SaveConfig();
+        }
+
+        private void ApplySplitterDistance(int distance)
+        {
+            if (splitContainer1 == null) return;
+            try
+            {
+                int min = splitContainer1.Panel1MinSize;
+                int max;
+                if (splitContainer1.Orientation == Orientation.Vertical)
+                    max = splitContainer1.Width - splitContainer1.Panel2MinSize - 1;
+                else
+                    max = splitContainer1.Height - splitContainer1.Panel2MinSize - 1;
+
+                if (max < min) max = min;
+                if (distance < min) distance = min;
+                if (distance > max) distance = max;
+
+                splitContainer1.SplitterDistance = distance;
+            }
+            catch { /* ignore layout timing issues */ }
+        }
+
+        // ###########################################################################################
+        // Handle checkbox toggling between single and continuesly capture
+        // ###########################################################################################
+
+        private void checkBoxContinueslyCapture_CheckedChanged(object sender, EventArgs e)
+        {
+            if (hotkeyMode && !checkBoxContinueslyCapture.Checked)
+            {
+                // If user turns off continuous mode while active, terminate hotkey mode.
+                DisableHotkeyMode();
+            }
+            UpdateCaptureModeUI();
+
+            // Persist the new state (avoid saving during constructor)
+            if (!initializing)
+            {
+                SaveConfig();
+            }
+        }
+
+        private void UpdateCaptureModeUI()
+        {
+            bool cont = checkBoxContinueslyCapture.Checked;
+
+            if (textBoxCaptureNumberEnd != null) textBoxCaptureNumberEnd.Enabled = cont;
+            if (labelCaptureNumberEnd != null) labelCaptureNumberEnd.Enabled = cont;
+
+            if (buttonCaptureContinuelsy != null)
+            {
+                buttonCaptureContinuelsy.Text = cont ? "Capture continuesly" : "Capture once";
+                buttonCaptureContinuelsy.Enabled = true;
+            }
         }
 
         // ###########################################################################################
@@ -397,7 +462,7 @@ namespace Oscilloscope_Network_Capture
                 e.SuppressKeyPress = true;
             }
         }
-        
+
         // ###########################################################################################
         // Port textbox handlers
         // ###########################################################################################
@@ -474,6 +539,7 @@ namespace Oscilloscope_Network_Capture
                         scopeIp = ip;
                         if (textBoxIp != null) textBoxIp.Text = scopeIp;
                     }
+
                     string region;
                     if (comboBoxRegion != null && map.TryGetValue("Region", out region) && !string.IsNullOrWhiteSpace(region))
                     {
@@ -487,6 +553,7 @@ namespace Oscilloscope_Network_Capture
                             }
                         }
                     }
+
                     string portStr;
                     if (map.TryGetValue("Port", out portStr))
                     {
@@ -497,18 +564,21 @@ namespace Oscilloscope_Network_Capture
                             if (textBoxPort != null) textBoxPort.Text = scopePort.ToString();
                         }
                     }
+
                     string comp;
                     if (map.TryGetValue("Component", out comp) && !string.IsNullOrWhiteSpace(comp))
                     {
                         component = comp.Trim();
                         if (textBoxComponent != null) textBoxComponent.Text = component;
                     }
+
                     string fmt;
                     if (map.TryGetValue("FilenameFormat", out fmt) && !string.IsNullOrWhiteSpace(fmt))
                     {
                         filenameFormat = fmt;
                         if (textBoxFilenameFormat != null) textBoxFilenameFormat.Text = filenameFormat;
                     }
+
                     string beepStr;
                     if (map.TryGetValue("Beep", out beepStr))
                     {
@@ -517,6 +587,7 @@ namespace Oscilloscope_Network_Capture
                                       beepStr.Equals("yes", StringComparison.OrdinalIgnoreCase);
                         if (checkBoxBeep != null) checkBoxBeep.Checked = beepEnabled;
                     }
+
                     string outFolder;
                     if (map.TryGetValue("OutputFolder", out outFolder) && !string.IsNullOrWhiteSpace(outFolder))
                     {
@@ -526,6 +597,7 @@ namespace Oscilloscope_Network_Capture
                         if (!string.Equals(before, outputFolder, StringComparison.OrdinalIgnoreCase))
                             SaveConfig();
                     }
+
                     string resumeStr;
                     if (map.TryGetValue("ForceAcquisition", out resumeStr))
                     {
@@ -534,6 +606,27 @@ namespace Oscilloscope_Network_Capture
                                            resumeStr.Equals("yes", StringComparison.OrdinalIgnoreCase);
                         if (checkBoxForceAcquisition != null) checkBoxForceAcquisition.Checked = forceAcquisition;
                     }
+
+                    string contStr;
+                    if (map.TryGetValue("ContinuousCapture", out contStr))
+                    {
+                        bool cont = contStr == "1" ||
+                                    contStr.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+                                    contStr.Equals("yes", StringComparison.OrdinalIgnoreCase);
+                        if (checkBoxContinueslyCapture != null)
+                            checkBoxContinueslyCapture.Checked = cont; // event not yet hooked when this runs
+                    }
+
+                    string splitStr;
+                    if (map.TryGetValue("SplitterDistance", out splitStr))
+                    {
+                        int sd;
+                        if (int.TryParse(splitStr, out sd))
+                        {
+                            ApplySplitterDistance(sd);
+                        }
+                    }
+
                     Log($"Loaded config:", LogLevel.Info);
                     Log($"    IP={scopeIp}", LogLevel.Info);
                     Log($"    Port={scopePort}", LogLevel.Info);
@@ -543,6 +636,8 @@ namespace Oscilloscope_Network_Capture
                     Log($"    CaptureFolder={outFolder}", LogLevel.Info);
                     Log($"    Beep={(beepEnabled ? 1 : 0)}", LogLevel.Info);
                     Log($"    ForceAcquisition={(forceAcquisition ? 1 : 0)}", LogLevel.Info);
+                    Log($"    ContinuousCapture={(checkBoxContinueslyCapture != null && checkBoxContinueslyCapture.Checked ? 1 : 0)}", LogLevel.Info);
+                    Log($"    SplitterDistance={(splitContainer1 != null ? splitContainer1.SplitterDistance : 0)}", LogLevel.Info);
                 }
                 else
                 {
@@ -579,6 +674,8 @@ namespace Oscilloscope_Network_Capture
                 sb.AppendLine("OutputFolder=" + outputFolder); // <-- added
                 sb.AppendLine("Beep=" + (beepEnabled ? "1" : "0"));
                 sb.AppendLine("ForceAcquisition=" + (forceAcquisition ? "1" : "0"));
+                sb.AppendLine("ContinuousCapture=" + (checkBoxContinueslyCapture != null && checkBoxContinueslyCapture.Checked ? "1" : "0"));
+                sb.AppendLine("SplitterDistance=" + (splitContainer1 != null ? splitContainer1.SplitterDistance.ToString() : "0"));
                 File.WriteAllText(configPath, sb.ToString());
                 Log($"Saved config:", LogLevel.Info);
                 Log($"    IP={scopeIp}", LogLevel.Info);
@@ -589,6 +686,8 @@ namespace Oscilloscope_Network_Capture
                 Log($"    OutputFolder={outputFolder}", LogLevel.Info);
                 Log($"    Beep={(beepEnabled ? 1 : 0)}", LogLevel.Info);
                 Log($"    ForceAcquisition={(forceAcquisition ? 1 : 0)}", LogLevel.Info);
+                Log($"    ContinuousCapture={(checkBoxContinueslyCapture != null && checkBoxContinueslyCapture.Checked ? 1 : 0)}", LogLevel.Info);
+                Log($"    SplitterDistance={(splitContainer1 != null ? splitContainer1.SplitterDistance : 0)}", LogLevel.Info);
             }
             catch (Exception ex)
             {
@@ -687,13 +786,11 @@ namespace Oscilloscope_Network_Capture
 
         private async void buttonCheckScope_Click(object sender, EventArgs e)
         {
-            if (buttonCaptureOnce != null) buttonCaptureOnce.Enabled = false;
             if (buttonCaptureContinuelsy != null) buttonCaptureContinuelsy.Enabled = false;
             if (buttonCheckScope != null) buttonCheckScope.Enabled = false;
             await CheckScopeConnectivityAsync();
             if (!hotkeyMode)
             {
-                if (buttonCaptureOnce != null) buttonCaptureOnce.Enabled = true;
                 if (buttonCaptureContinuelsy != null) buttonCaptureContinuelsy.Enabled = true;
                 if (buttonCheckScope != null) buttonCheckScope.Enabled = true;
             }
@@ -803,11 +900,23 @@ namespace Oscilloscope_Network_Capture
         }
 
         // ###########################################################################################
-        // Hotkey mode
+        // Hotkey mode / unified capture button
         // ###########################################################################################
 
         private void buttonCaptureContinuelsy_Click(object sender, EventArgs e)
         {
+            // If checkbox is NOT checked, this button acts as "Capture once"
+            if (!checkBoxContinueslyCapture.Checked)
+            {
+                // Mirror original single-capture button behavior
+                if (!captureInProgress)
+                {
+                    _ = StartSingleCaptureAsync(null);
+                }
+                return;
+            }
+
+            // Original continuesly (hotkey) logic unchanged
             if (hotkeyMode)
             {
                 Log("Already in hotkey mode. Press [ESC] to exit.", LogLevel.Warning);
@@ -819,7 +928,6 @@ namespace Oscilloscope_Network_Capture
             hotkeyMode = true;
             numberRangeActive = true;
 
-            if (buttonCaptureOnce != null) buttonCaptureOnce.Enabled = false;
             if (buttonCaptureContinuelsy != null) buttonCaptureContinuelsy.Enabled = false;
             if (buttonCheckScope != null) buttonCheckScope.Enabled = false;
 
@@ -832,7 +940,6 @@ namespace Oscilloscope_Network_Capture
             if (!hotkeyMode) return;
             hotkeyMode = false;
             numberRangeActive = false;
-            if (buttonCaptureOnce != null) buttonCaptureOnce.Enabled = true;
             if (buttonCaptureContinuelsy != null) buttonCaptureContinuelsy.Enabled = true;
             if (buttonCheckScope != null) buttonCheckScope.Enabled = true;
             Log("Hotkey capture mode disabled.", LogLevel.Notice);
@@ -956,7 +1063,6 @@ namespace Oscilloscope_Network_Capture
                 return;
             }
             captureInProgress = true;
-            if (buttonCaptureOnce != null) buttonCaptureOnce.Enabled = false;
             if (buttonCaptureContinuelsy != null) buttonCaptureContinuelsy.Enabled = false;
             if (buttonCheckScope != null) buttonCheckScope.Enabled = false;
             try
@@ -976,7 +1082,6 @@ namespace Oscilloscope_Network_Capture
             {
                 if (!hotkeyMode)
                 {
-                    if (buttonCaptureOnce != null) buttonCaptureOnce.Enabled = true;
                     if (buttonCaptureContinuelsy != null) buttonCaptureContinuelsy.Enabled = true;
                     if (buttonCheckScope != null) buttonCheckScope.Enabled = true;
                 }
@@ -1004,8 +1109,6 @@ namespace Oscilloscope_Network_Capture
             string numberVal;
             if (number.HasValue)
                 numberVal = number.Value.ToString();
-            else if (textBoxCaptureNumber != null && !string.IsNullOrWhiteSpace(textBoxCaptureNumber.Text))
-                numberVal = textBoxCaptureNumber.Text.Trim();
             else if (textBoxCaptureNumberStart != null && !string.IsNullOrWhiteSpace(textBoxCaptureNumberStart.Text))
                 numberVal = textBoxCaptureNumberStart.Text.Trim();
             else
@@ -1618,17 +1721,6 @@ namespace Oscilloscope_Network_Capture
         // ###########################################################################################
         // Pressing ENTER should capture in both places ("once" or "continuesly")
 
-        private void textBoxCaptureNumber_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.Enter)
-            {
-                e.Handled = true;
-                e.SuppressKeyPress = true;
-                if (!captureInProgress && buttonCaptureOnce != null && buttonCaptureOnce.Enabled)
-                    buttonCaptureOnce.PerformClick();
-            }
-        }
-
         private void textBoxNumberRange_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
@@ -2018,7 +2110,7 @@ namespace Oscilloscope_Network_Capture
                     }
                 }
             }
-            catch 
+            catch
             {
             }
         }
