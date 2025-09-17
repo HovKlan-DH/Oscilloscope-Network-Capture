@@ -5,11 +5,15 @@ A very simple oscilloscope network capture application. Primarily developed for 
 # Confirmed working on following oscilloscopes
 
 * Rigol DS2202A
-  - Typical port is 5555 
 * Siglent SDS 1104X - E
-  - Typical port is 5025 
 * Siglent SDS 1204X - E
-  - Typical port is 5025 
+
+# Typical ports used (I expect, but not fully sure)
+
+* Rigol
+  - Typical port is `5555` 
+* Siglent
+  - Typical port is `5025` 
 
 # Requirements
 
