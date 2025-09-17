@@ -13,7 +13,7 @@ The tool has been made as a helper-tool for my other project _Commodore Repair T
 
 # Screenshots
 
-<img width="1087" height="955" alt="image" src="https://github.com/user-attachments/assets/e7000d1e-b883-48b8-abac-f0fb152bed0b" />
+<img width="1087" height="955" alt="image" src="https://github.com/user-attachments/assets/62d1c5ba-3461-4169-b5bf-dfd401e2cb14" />
 
 <img width="1087" height="955" alt="image" src="https://github.com/user-attachments/assets/0e85df11-dd1b-4e92-a07f-120b3f4130f4" />
 
