@@ -13,8 +13,8 @@ The tool has been made as a helper-tool for my other project _Commodore Repair T
 
 # Screenshots
 
-<img width="900" height="768" alt="image" src="https://github.com/user-attachments/assets/85f0160b-8f50-4773-89ad-87f54999c2da" />
+<img width="1087" height="955" alt="image" src="https://github.com/user-attachments/assets/e7000d1e-b883-48b8-abac-f0fb152bed0b" />
 
-<img width="900" height="768" alt="image" src="https://github.com/user-attachments/assets/715ba5e3-de8f-4a74-bb99-ad1026361d06" />
+<img width="1087" height="955" alt="image" src="https://github.com/user-attachments/assets/0e85df11-dd1b-4e92-a07f-120b3f4130f4" />
 
-<img width="900" height="768" alt="image" src="https://github.com/user-attachments/assets/d2f426d2-f189-4197-9547-598805969925" />
+<img width="1087" height="955" alt="image" src="https://github.com/user-attachments/assets/e5acecef-3dd7-4131-8aa7-708dc036f253" />
