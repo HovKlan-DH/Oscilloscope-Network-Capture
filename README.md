@@ -1,6 +1,15 @@
 # Oscilloscope Network Capture
 
-A very simple oscilloscope network capture application. Primarily developed for own usage, but would be happy to know if this also works for other oscilloscopes - it _should_ work, as it uses a standard VISA/SCPI protocol but ...
+A very simple oscilloscope network capture application. Primarily developed for own usage, but would be happy to know if this also works for other oscilloscopes - it _should_ work, as it uses a standard SCPI socket protocol and IEEE 488.2 standard but ...
+
+# Confirmed working on following oscilloscopes
+
+* Rigol DS2202A
+  - Typical port is 5555 
+* Siglent SDS 1104X - E
+  - Typical port is 5025 
+* Siglent SDS 1204X - E
+  - Typical port is 5025 
 
 # Requirements
 
