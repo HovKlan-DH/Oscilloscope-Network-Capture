@@ -258,6 +258,7 @@ namespace Oscilloscope_Network_Capture
             if (buttonCaptureContinuelsy != null)
             {
                 buttonCaptureContinuelsy.Text = cont ? "Capture continuesly" : "Capture once";
+                labelCaptureNumberStart.Text = cont ? "Start capture from number (variable)" : "Capture number or text (variable)";
                 buttonCaptureContinuelsy.Enabled = true;
             }
         }
