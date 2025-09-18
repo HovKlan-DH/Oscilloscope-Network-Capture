@@ -1,6 +1,19 @@
 # Oscilloscope Network Capture
 
-A very simple oscilloscope network capture application. Primarily developed for own usage, but would be happy to know if this also works for other oscilloscopes - it _should_ work, as it uses a standard VISA/SCPI protocol but ...
+A very simple oscilloscope network capture application. Primarily developed for own usage, but would be happy to know if this also works for other oscilloscopes - it _should_ work, as it uses a standard SCPI socket protocol and IEEE 488.2 standard but ...
+
+# Confirmed working on following oscilloscopes
+
+* Rigol DS2202A
+* Siglent SDS 1104X - E
+* Siglent SDS 1204X - E
+
+# Typical ports used (I assume, but not fully sure)
+
+* Rigol
+  - Typical port is `5555` 
+* Siglent
+  - Typical port is `5025` 
 
 # Requirements
 
@@ -13,8 +26,8 @@ The tool has been made as a helper-tool for my other project _Commodore Repair T
 
 # Screenshots
 
-<img width="900" height="768" alt="image" src="https://github.com/user-attachments/assets/85f0160b-8f50-4773-89ad-87f54999c2da" />
+<img width="1087" height="955" alt="image" src="https://github.com/user-attachments/assets/62d1c5ba-3461-4169-b5bf-dfd401e2cb14" />
 
-<img width="900" height="768" alt="image" src="https://github.com/user-attachments/assets/715ba5e3-de8f-4a74-bb99-ad1026361d06" />
+<img width="1087" height="955" alt="image" src="https://github.com/user-attachments/assets/0e85df11-dd1b-4e92-a07f-120b3f4130f4" />
 
-<img width="900" height="768" alt="image" src="https://github.com/user-attachments/assets/d2f426d2-f189-4197-9547-598805969925" />
+<img width="1087" height="955" alt="image" src="https://github.com/user-attachments/assets/e5acecef-3dd7-4131-8aa7-708dc036f253" />
