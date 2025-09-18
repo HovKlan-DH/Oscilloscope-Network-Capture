@@ -50,6 +50,22 @@ namespace Oscilloscope_Network_Capture
         private int originalNumberEnd;
         private bool numberRangeActive = false;
 
+        // Standard 1-2-5 progression across decades (seconds/div)
+        private static readonly double[] _timeDivSteps = new double[]
+        {
+            1e-9, 2e-9, 5e-9,
+            10e-9, 20e-9, 50e-9,
+            100e-9, 200e-9, 500e-9,
+            1e-6, 2e-6, 5e-6,
+            10e-6, 20e-6, 50e-6,
+            100e-6, 200e-6, 500e-6,
+            1e-3, 2e-3, 5e-3,
+            10e-3, 20e-3, 50e-3,
+            100e-3, 200e-3, 500e-3,
+            1, 2, 5, 10, 20, 50
+        };
+        private bool _timebaseAdjustInProgress = false;
+
         private enum LogLevel { Info, Warning, Error, Notice }
 
         private enum ScopeVendor { Unknown, Rigol, Siglent }
@@ -948,7 +964,45 @@ namespace Oscilloscope_Network_Capture
 
         private async void Form_KeyDown(object sender, KeyEventArgs e)
         {
+            // --- Timebase increase (plus key: main keyboard or numpad)
+            if (e.KeyCode == Keys.Add || e.KeyCode == Keys.Oemplus)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                await AdjustTimebaseAsync(true);
+                return;
+            }
+
+            // --- Timebase decrease (minus key: main keyboard or numpad)
+            if (e.KeyCode == Keys.Subtract || e.KeyCode == Keys.OemMinus)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                await AdjustTimebaseAsync(false);
+                return;
+            }
+
+            // --- Snapshot toggle (0 / NumPad0) : pause/freeze or re-take (RUN → STOP or STOP → SINGLE→STOP)
+            if (e.KeyCode == Keys.D0 || e.KeyCode == Keys.NumPad0)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                await SnapshotToggleAsync();
+                return;
+            }
+
+            // --- Resume acquisition (1 / NumPad1)
+            if (e.KeyCode == Keys.D1 || e.KeyCode == Keys.NumPad1)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                await ResumeAcquisitionAsync();
+                return;
+            }
+
+            // Existing hotkey capture logic (unchanged)
             if (!hotkeyMode) return;
+
             if (e.KeyCode == Keys.Enter)
             {
                 e.Handled = true;
@@ -977,7 +1031,7 @@ namespace Oscilloscope_Network_Capture
                         numberEnd = originalNumberEnd;
                         if (textBoxCaptureNumberStart != null) textBoxCaptureNumberStart.Text = numberStart.ToString();
                         if (textBoxCaptureNumberEnd != null) textBoxCaptureNumberEnd.Text = numberEnd.ToString();
-                        Log($"Number range reset to original [{numberStart}..{numberEnd}].", LogLevel.Info);
+                        Log("Number range reset to original [" + numberStart + ".." + numberEnd + "].", LogLevel.Info);
                         DisableHotkeyMode();
                         return;
                     }
@@ -2114,6 +2168,397 @@ namespace Oscilloscope_Network_Capture
             catch
             {
             }
+        }
+
+        // ###########################################################################################
+        // Timebase (seconds/div) adjustment via +/- keys
+        // ###########################################################################################
+        private async Task AdjustTimebaseAsync(bool increase)
+        {
+            if (_timebaseAdjustInProgress)
+            {
+                Log("Timebase change already in progress.", LogLevel.Warning);
+                return;
+            }
+            _timebaseAdjustInProgress = true;
+            try
+            {
+                string host = scopeIp;
+                int port = scopePort;
+
+                await Task.Run(delegate
+                {
+                    try
+                    {
+                        using (var scpi = RawScpiClient.Connect(host, port, 4000, 4000))
+                        {
+                            scpi.DrainInput();
+                            scpi.ClearStatus();
+
+                            // Refresh vendor if still unknown
+                            if (detectedVendor == ScopeVendor.Unknown)
+                            {
+                                string idn = scpi.TryQuery("*IDN?", timeoutMs: 1500);
+                                if (!string.IsNullOrWhiteSpace(idn))
+                                {
+                                    lastIdn = idn;
+                                    detectedVendor = DetermineVendor(idn);
+                                    Log("IDN (timebase adjust): " + idn.Trim(), LogLevel.Info);
+                                    Log("Vendor classification: " + detectedVendor, LogLevel.Notice);
+                                }
+                            }
+
+                            double current = QueryCurrentTimeDiv(scpi);
+                            if (double.IsNaN(current) || current <= 0)
+                            {
+                                Log("Could not query current timebase scale.", LogLevel.Error);
+                                return;
+                            }
+
+                            int idx = FindNearestTimeDivIndex(current);
+                            if (idx < 0) idx = 0;
+
+                            int newIdx = idx;
+                            if (increase && idx < _timeDivSteps.Length - 1) newIdx++;
+                            if (!increase && idx > 0) newIdx--;
+
+                            double target = _timeDivSteps[newIdx];
+
+                            // If already very close to a defined step, nudge one more step
+                            if (Math.Abs(target - current) < current * 0.0005)
+                            {
+                                if (increase && newIdx < _timeDivSteps.Length - 1)
+                                {
+                                    newIdx++;
+                                    target = _timeDivSteps[newIdx];
+                                }
+                                else if (!increase && newIdx > 0)
+                                {
+                                    newIdx--;
+                                    target = _timeDivSteps[newIdx];
+                                }
+                            }
+
+                            if (Math.Abs(target - current) < current * 0.0005)
+                            {
+                                Log("Timebase already at boundary step: " + FormatSeconds(current) + "/div", LogLevel.Notice);
+                                return;
+                            }
+
+                            if (SetTimeDiv(scpi, target))
+                            {
+                                Log("Timebase " + (increase ? "increased" : "decreased") + " from " +
+                                    FormatSeconds(current) + " to " + FormatSeconds(target) + " per division.", LogLevel.Notice);
+                            }
+                            else
+                            {
+                                Log("Failed to set new timebase value.", LogLevel.Error);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log("Timebase adjustment failed: " + ex.Message, LogLevel.Error);
+                    }
+                });
+            }
+            finally
+            {
+                _timebaseAdjustInProgress = false;
+            }
+        }
+
+        private double QueryCurrentTimeDiv(RawScpiClient scpi)
+        {
+            string raw = null;
+            if (detectedVendor == ScopeVendor.Siglent)
+            {
+                raw = scpi.TryQuery("TIME_DIV?", timeoutMs: 1200);
+                if (string.IsNullOrWhiteSpace(raw))
+                    raw = scpi.TryQuery("TDIV?", timeoutMs: 1200);
+            }
+            else
+            {
+                raw = scpi.TryQuery(":TIM:SCAL?", timeoutMs: 1200);
+                if (string.IsNullOrWhiteSpace(raw))
+                    raw = scpi.TryQuery(":TIMEBASE:SCAL?", timeoutMs: 1200);
+            }
+
+            if (string.IsNullOrWhiteSpace(raw)) return double.NaN;
+
+            raw = raw.Trim().ToUpperInvariant();
+            // Some instruments return trailing 'S'
+            if (raw.EndsWith("S")) raw = raw.Substring(0, raw.Length - 1);
+
+            double val;
+            if (!double.TryParse(raw, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out val))
+                return double.NaN;
+            return val;
+        }
+
+        private bool SetTimeDiv(RawScpiClient scpi, double seconds)
+        {
+            string val = seconds.ToString("0.###############E+0", System.Globalization.CultureInfo.InvariantCulture);
+            bool ok;
+            if (detectedVendor == ScopeVendor.Siglent)
+            {
+                ok = TryWrite(scpi, "TIME_DIV " + val) || TryWrite(scpi, "TDIV " + val);
+            }
+            else
+            {
+                ok = TryWrite(scpi, ":TIM:SCAL " + val) || TryWrite(scpi, ":TIMEBASE:SCAL " + val);
+            }
+            if (ok)
+            {
+                try { scpi.WaitOpc(2000); } catch { }
+            }
+            return ok;
+        }
+
+        private int FindNearestTimeDivIndex(double current)
+        {
+            int best = -1;
+            double bestDiff = double.MaxValue;
+            for (int i = 0; i < _timeDivSteps.Length; i++)
+            {
+                double d = Math.Abs(_timeDivSteps[i] - current);
+                if (d < bestDiff)
+                {
+                    bestDiff = d;
+                    best = i;
+                }
+            }
+            return best;
+        }
+
+        private string FormatSeconds(double seconds)
+        {
+            double abs = Math.Abs(seconds);
+            string unit;
+            double value;
+            if (abs < 1e-9) { value = seconds * 1e12; unit = "ps"; }
+            else if (abs < 1e-6) { value = seconds * 1e9; unit = "ns"; }
+            else if (abs < 1e-3) { value = seconds * 1e6; unit = "µs"; }
+            else if (abs < 1) { value = seconds * 1e3; unit = "ms"; }
+            else { value = seconds; unit = "s"; }
+            return value.ToString(value < 10 ? "0.###" : "0.#", System.Globalization.CultureInfo.InvariantCulture) + unit;
+        }
+
+        /// <summary>
+        /// Toggle snapshot: if running -> STOP (freeze current waveform).
+        /// If already stopped -> acquire one fresh waveform (single) and stop again.
+        /// No file saving.
+        /// </summary>
+        private async Task SnapshotToggleAsync()
+        {
+            if (captureInProgress)
+            {
+                Log("Snapshot ignored: capture in progress.", LogLevel.Warning);
+                return;
+            }
+
+            string host = scopeIp;
+            int port = scopePort;
+
+            await Task.Run(() =>
+            {
+                try
+                {
+                    using (var scpi = RawScpiClient.Connect(host, port, 4000, 4000))
+                    {
+                        scpi.DrainInput();
+                        scpi.ClearStatus();
+
+                        // Identify vendor if still unknown
+                        if (detectedVendor == ScopeVendor.Unknown)
+                        {
+                            string idn = scpi.TryQuery("*IDN?", timeoutMs: 1200);
+                            if (!string.IsNullOrWhiteSpace(idn))
+                            {
+                                lastIdn = idn;
+                                detectedVendor = DetermineVendor(idn);
+                                Log("IDN (snapshot): " + idn.Trim(), LogLevel.Info);
+                            }
+                        }
+
+                        bool running = QueryIsRunning(scpi);
+
+                        if (running)
+                        {
+                            if (StopAcq(scpi))
+                                Log("Snapshot: acquisition stopped (display frozen).", LogLevel.Notice);
+                            else
+                                Log("Snapshot: failed to stop acquisition.", LogLevel.Warning);
+                        }
+                        else
+                        {
+                            // Already stopped -> try a single acquisition
+                            bool singleOk = TrySingleAcq(scpi);
+                            if (!singleOk)
+                            {
+                                // Fallback: brief RUN then STOP
+                                if (RunAcq(scpi))
+                                {
+                                    System.Threading.Thread.Sleep(180);
+                                    StopAcq(scpi);
+                                }
+                            }
+
+                            bool nowRunning = QueryIsRunning(scpi);
+                            if (!nowRunning)
+                                Log("Snapshot: refreshed single waveform.", LogLevel.Notice);
+                            else
+                                Log("Snapshot: waveform refresh uncertain (still running).", LogLevel.Warning);
+                        }
+
+                        var err = scpi.TryQuery(":SYST:ERR?", timeoutMs: 600);
+                        if (!string.IsNullOrWhiteSpace(err) && !err.StartsWith("0,", StringComparison.Ordinal))
+                            Log("Instrument error (snapshot): " + err, LogLevel.Warning);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log("Snapshot toggle failed: " + ex.Message, LogLevel.Error);
+                }
+            });
+        }
+
+        /// <summary>
+        /// Resume continuous acquisition (RUN). Uses vendor‑specific fallbacks.
+        /// </summary>
+        private async Task ResumeAcquisitionAsync()
+        {
+            if (captureInProgress)
+            {
+                Log("Resume ignored: capture in progress.", LogLevel.Warning);
+                return;
+            }
+
+            string host = scopeIp;
+            int port = scopePort;
+
+            await Task.Run(() =>
+            {
+                try
+                {
+                    using (var scpi = RawScpiClient.Connect(host, port, 4000, 4000))
+                    {
+                        scpi.DrainInput();
+                        scpi.ClearStatus();
+
+                        if (detectedVendor == ScopeVendor.Unknown)
+                        {
+                            string idn = scpi.TryQuery("*IDN?", timeoutMs: 1200);
+                            if (!string.IsNullOrWhiteSpace(idn))
+                            {
+                                lastIdn = idn;
+                                detectedVendor = DetermineVendor(idn);
+                                Log("IDN (resume): " + idn.Trim(), LogLevel.Info);
+                            }
+                        }
+
+                        bool before = QueryIsRunning(scpi);
+                        bool sent = ForceRun(scpi);
+                        System.Threading.Thread.Sleep(120);
+                        bool after = QueryIsRunning(scpi);
+
+                        if (sent && after)
+                            Log("Acquisition resumed.", LogLevel.Notice);
+                        else if (!after)
+                            Log("Resume attempt failed (still stopped).", LogLevel.Warning);
+                        else
+                            Log("Resume command uncertain.", LogLevel.Warning);
+
+                        var err = scpi.TryQuery(":SYST:ERR?", timeoutMs: 600);
+                        if (!string.IsNullOrWhiteSpace(err) && !err.StartsWith("0,", StringComparison.Ordinal))
+                            Log("Instrument error (resume): " + err, LogLevel.Warning);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log("Resume acquisition failed: " + ex.Message, LogLevel.Error);
+                }
+            });
+        }
+
+        // ---------------- Internal helpers for snapshot / resume ----------------
+
+        private bool QueryIsRunning(RawScpiClient scpi)
+        {
+            try
+            {
+                if (detectedVendor == ScopeVendor.Siglent)
+                {
+                    string mode = scpi.TryQuery("TRIG_MODE?", timeoutMs: 800);
+                    if (string.IsNullOrWhiteSpace(mode)) return true; // assume running
+                    mode = mode.Trim().ToUpperInvariant();
+                    return mode == "AUTO" || mode == "NORM";
+                }
+                else
+                {
+                    string stat = scpi.TryQuery(":TRIG:STAT?", timeoutMs: 800) ??
+                                  scpi.TryQuery(":TRIG:STATE?", timeoutMs: 800) ??
+                                  scpi.TryQuery(":TRIG:STATUS?", timeoutMs: 800);
+                    if (string.IsNullOrWhiteSpace(stat)) return true;
+                    stat = stat.Trim().ToUpperInvariant();
+                    if (stat.Contains("STOP") || stat.Contains("HALT") || stat.Contains("IDLE") || stat.Contains("WAIT"))
+                        return false;
+                    return true;
+                }
+            }
+            catch { return true; }
+        }
+
+        private bool StopAcq(RawScpiClient scpi)
+        {
+            if (detectedVendor == ScopeVendor.Siglent)
+                return TryWrite(scpi, "STOP");
+            return TryWrite(scpi, ":STOP") || TryWrite(scpi, ":ACQ:STATE 0");
+        }
+
+        private bool RunAcq(RawScpiClient scpi)
+        {
+            if (detectedVendor == ScopeVendor.Siglent)
+                return TryWrite(scpi, "RUN");
+            return TryWrite(scpi, ":RUN") || TryWrite(scpi, ":ACQ:STATE 1");
+        }
+
+        /// <summary>
+        /// Force RUN robustly (used by Resume). Adds trigger mode fallback for Siglent.
+        /// </summary>
+        private bool ForceRun(RawScpiClient scpi)
+        {
+            bool ok;
+            if (detectedVendor == ScopeVendor.Siglent)
+            {
+                ok = TryWrite(scpi, "RUN");
+                if (!QueryIsRunning(scpi))
+                {
+                    TryWrite(scpi, "TRIG_MODE AUTO");
+                    System.Threading.Thread.Sleep(50);
+                    ok = TryWrite(scpi, "RUN") || ok;
+                }
+                return ok;
+            }
+            ok = TryWrite(scpi, ":RUN");
+            if (!ok) ok = TryWrite(scpi, "RUN");
+            if (!ok) ok = TryWrite(scpi, ":ACQ:STATE 1");
+            return ok;
+        }
+
+        private bool TrySingleAcq(RawScpiClient scpi)
+        {
+            bool ok;
+            if (detectedVendor == ScopeVendor.Siglent)
+                ok = TryWrite(scpi, "SINGLE");
+            else
+                ok = TryWrite(scpi, ":SINGle") || TryWrite(scpi, ":RUN;:STOP");
+
+            if (ok)
+            {
+                try { scpi.WaitOpc(3000); } catch { /* ignore */ }
+            }
+            return ok;
         }
 
         private static uint ReadUInt32LE(byte[] d, int o) => (uint)(d[o] | (d[o + 1] << 8) | (d[o + 2] << 16) | (d[o + 3] << 24));

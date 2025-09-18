@@ -101,7 +101,7 @@
             this.comboBoxRegion.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.comboBoxRegion.Name = "comboBoxRegion";
             this.comboBoxRegion.Size = new System.Drawing.Size(69, 29);
-            this.comboBoxRegion.TabIndex = 4;
+            this.comboBoxRegion.TabIndex = 10;
             // 
             // buttonCaptureContinuelsy
             // 
@@ -111,7 +111,7 @@
             this.buttonCaptureContinuelsy.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.buttonCaptureContinuelsy.Name = "buttonCaptureContinuelsy";
             this.buttonCaptureContinuelsy.Size = new System.Drawing.Size(344, 27);
-            this.buttonCaptureContinuelsy.TabIndex = 11;
+            this.buttonCaptureContinuelsy.TabIndex = 14;
             this.buttonCaptureContinuelsy.Text = "Capture continuesly";
             this.buttonCaptureContinuelsy.UseVisualStyleBackColor = false;
             // 
@@ -123,7 +123,8 @@
             this.richTextBoxLog.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.richTextBoxLog.Name = "richTextBoxLog";
             this.richTextBoxLog.Size = new System.Drawing.Size(488, 383);
-            this.richTextBoxLog.TabIndex = 4;
+            this.richTextBoxLog.TabIndex = 100;
+            this.richTextBoxLog.TabStop = false;
             this.richTextBoxLog.Text = "";
             // 
             // pictureBoxImage
@@ -144,7 +145,7 @@
             this.labelRegion.Location = new System.Drawing.Point(81, 69);
             this.labelRegion.Name = "labelRegion";
             this.labelRegion.Size = new System.Drawing.Size(126, 21);
-            this.labelRegion.TabIndex = 0;
+            this.labelRegion.TabIndex = 100;
             this.labelRegion.Text = "Region (variable)";
             // 
             // textBoxCaptureNumberStart
@@ -154,7 +155,7 @@
             this.textBoxCaptureNumberStart.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.textBoxCaptureNumberStart.Name = "textBoxCaptureNumberStart";
             this.textBoxCaptureNumberStart.Size = new System.Drawing.Size(69, 28);
-            this.textBoxCaptureNumberStart.TabIndex = 9;
+            this.textBoxCaptureNumberStart.TabIndex = 12;
             this.textBoxCaptureNumberStart.Text = "1";
             // 
             // labelCaptureNumberStart
@@ -164,7 +165,7 @@
             this.labelCaptureNumberStart.Location = new System.Drawing.Point(81, 136);
             this.labelCaptureNumberStart.Name = "labelCaptureNumberStart";
             this.labelCaptureNumberStart.Size = new System.Drawing.Size(267, 21);
-            this.labelCaptureNumberStart.TabIndex = 0;
+            this.labelCaptureNumberStart.TabIndex = 100;
             this.labelCaptureNumberStart.Text = "Start capture from number (variable)";
             // 
             // labelCaptureNumberEnd
@@ -174,7 +175,7 @@
             this.labelCaptureNumberEnd.Location = new System.Drawing.Point(81, 168);
             this.labelCaptureNumberEnd.Name = "labelCaptureNumberEnd";
             this.labelCaptureNumberEnd.Size = new System.Drawing.Size(188, 21);
-            this.labelCaptureNumberEnd.TabIndex = 0;
+            this.labelCaptureNumberEnd.TabIndex = 100;
             this.labelCaptureNumberEnd.Text = "End capture after number";
             // 
             // textBoxCaptureNumberEnd
@@ -184,7 +185,7 @@
             this.textBoxCaptureNumberEnd.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.textBoxCaptureNumberEnd.Name = "textBoxCaptureNumberEnd";
             this.textBoxCaptureNumberEnd.Size = new System.Drawing.Size(69, 28);
-            this.textBoxCaptureNumberEnd.TabIndex = 10;
+            this.textBoxCaptureNumberEnd.TabIndex = 13;
             this.textBoxCaptureNumberEnd.Text = "40";
             // 
             // richTextBoxAction
@@ -199,7 +200,7 @@
             this.richTextBoxAction.Name = "richTextBoxAction";
             this.richTextBoxAction.ReadOnly = true;
             this.richTextBoxAction.Size = new System.Drawing.Size(344, 49);
-            this.richTextBoxAction.TabIndex = 0;
+            this.richTextBoxAction.TabIndex = 100;
             this.richTextBoxAction.TabStop = false;
             this.richTextBoxAction.Text = "Ready to capture; number 1 of 40";
             // 
@@ -211,7 +212,7 @@
             this.labelComponent.Location = new System.Drawing.Point(81, 103);
             this.labelComponent.Name = "labelComponent";
             this.labelComponent.Size = new System.Drawing.Size(204, 21);
-            this.labelComponent.TabIndex = 0;
+            this.labelComponent.TabIndex = 100;
             this.labelComponent.Text = "Component name (variable)";
             // 
             // textBoxComponent
@@ -222,7 +223,7 @@
             this.textBoxComponent.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.textBoxComponent.Name = "textBoxComponent";
             this.textBoxComponent.Size = new System.Drawing.Size(69, 28);
-            this.textBoxComponent.TabIndex = 5;
+            this.textBoxComponent.TabIndex = 11;
             // 
             // labelAction
             // 
@@ -231,7 +232,7 @@
             this.labelAction.Location = new System.Drawing.Point(2, 5);
             this.labelAction.Name = "labelAction";
             this.labelAction.Size = new System.Drawing.Size(55, 21);
-            this.labelAction.TabIndex = 0;
+            this.labelAction.TabIndex = 100;
             this.labelAction.Text = "Action";
             // 
             // tabControl1
@@ -298,7 +299,7 @@
             this.labelNewVersionAvailable.Location = new System.Drawing.Point(28, 2);
             this.labelNewVersionAvailable.Name = "labelNewVersionAvailable";
             this.labelNewVersionAvailable.Size = new System.Drawing.Size(460, 21);
-            this.labelNewVersionAvailable.TabIndex = 23;
+            this.labelNewVersionAvailable.TabIndex = 100;
             this.labelNewVersionAvailable.Text = "There is a newer version available; view \"About\" for GitHub page";
             this.labelNewVersionAvailable.Visible = false;
             // 
@@ -326,7 +327,7 @@
             this.label7.Location = new System.Drawing.Point(2, 5);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(105, 21);
-            this.label7.TabIndex = 16;
+            this.label7.TabIndex = 100;
             this.label7.Text = "Configuration";
             // 
             // checkBoxForceAcquisition
@@ -335,7 +336,7 @@
             this.checkBoxForceAcquisition.Location = new System.Drawing.Point(7, 85);
             this.checkBoxForceAcquisition.Name = "checkBoxForceAcquisition";
             this.checkBoxForceAcquisition.Size = new System.Drawing.Size(242, 25);
-            this.checkBoxForceAcquisition.TabIndex = 5;
+            this.checkBoxForceAcquisition.TabIndex = 3;
             this.checkBoxForceAcquisition.Text = "Force acquisition after capture";
             this.checkBoxForceAcquisition.UseVisualStyleBackColor = true;
             // 
@@ -367,7 +368,7 @@
             this.labelPort.Location = new System.Drawing.Point(151, 32);
             this.labelPort.Name = "labelPort";
             this.labelPort.Size = new System.Drawing.Size(115, 21);
-            this.labelPort.TabIndex = 0;
+            this.labelPort.TabIndex = 100;
             this.labelPort.Text = "Scope TCP port";
             // 
             // textBoxIp
@@ -386,7 +387,7 @@
             this.labelIp.Location = new System.Drawing.Point(3, 32);
             this.labelIp.Name = "labelIp";
             this.labelIp.Size = new System.Drawing.Size(126, 21);
-            this.labelIp.TabIndex = 0;
+            this.labelIp.TabIndex = 100;
             this.labelIp.Text = "Scope IP address";
             // 
             // buttonCheckScope
@@ -398,7 +399,7 @@
             this.buttonCheckScope.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.buttonCheckScope.Name = "buttonCheckScope";
             this.buttonCheckScope.Size = new System.Drawing.Size(344, 27);
-            this.buttonCheckScope.TabIndex = 3;
+            this.buttonCheckScope.TabIndex = 5;
             this.buttonCheckScope.Text = "Check oscilloscope connectivity";
             this.buttonCheckScope.UseVisualStyleBackColor = false;
             // 
@@ -437,7 +438,7 @@
             this.label4.Location = new System.Drawing.Point(2, 5);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(75, 21);
-            this.label4.TabIndex = 13;
+            this.label4.TabIndex = 100;
             this.label4.Text = "Filename";
             // 
             // label3
@@ -448,7 +449,7 @@
             this.label3.Location = new System.Drawing.Point(2, 88);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(110, 21);
-            this.label3.TabIndex = 8;
+            this.label3.TabIndex = 100;
             this.label3.Text = "Capture folder";
             // 
             // buttonOpenFolder
@@ -459,7 +460,7 @@
             this.buttonOpenFolder.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.buttonOpenFolder.Name = "buttonOpenFolder";
             this.buttonOpenFolder.Size = new System.Drawing.Size(343, 27);
-            this.buttonOpenFolder.TabIndex = 12;
+            this.buttonOpenFolder.TabIndex = 8;
             this.buttonOpenFolder.Text = "Open capture folder";
             this.buttonOpenFolder.UseVisualStyleBackColor = false;
             this.buttonOpenFolder.Click += new System.EventHandler(this.buttonOpenFolder_Click);
@@ -492,7 +493,7 @@
             this.label2.Location = new System.Drawing.Point(2, 33);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(226, 21);
-            this.label2.TabIndex = 0;
+            this.label2.TabIndex = 100;
             this.label2.Text = "Filename format with variables";
             // 
             // panel1
@@ -521,7 +522,7 @@
             this.checkBoxContinueslyCapture.Location = new System.Drawing.Point(7, 34);
             this.checkBoxContinueslyCapture.Name = "checkBoxContinueslyCapture";
             this.checkBoxContinueslyCapture.Size = new System.Drawing.Size(203, 25);
-            this.checkBoxContinueslyCapture.TabIndex = 6;
+            this.checkBoxContinueslyCapture.TabIndex = 9;
             this.checkBoxContinueslyCapture.Text = "Do a continuesly capture";
             this.checkBoxContinueslyCapture.UseVisualStyleBackColor = true;
             // 
@@ -532,7 +533,7 @@
             this.label6.Location = new System.Drawing.Point(2, 5);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(78, 21);
-            this.label6.TabIndex = 15;
+            this.label6.TabIndex = 100;
             this.label6.Text = "Capturing";
             // 
             // tabPageHelp
