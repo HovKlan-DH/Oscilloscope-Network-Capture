@@ -526,10 +526,13 @@
             // 
             // richTextBoxHelp
             // 
+            this.richTextBoxHelp.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.richTextBoxHelp.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.richTextBoxHelp.Location = new System.Drawing.Point(11, 63);
+            this.richTextBoxHelp.Location = new System.Drawing.Point(12, 66);
             this.richTextBoxHelp.Name = "richTextBoxHelp";
-            this.richTextBoxHelp.Size = new System.Drawing.Size(866, 620);
+            this.richTextBoxHelp.Size = new System.Drawing.Size(834, 551);
             this.richTextBoxHelp.TabIndex = 2;
             this.richTextBoxHelp.Text = "";
             // 
@@ -560,14 +563,17 @@
             // 
             // richTextBoxAbout
             // 
+            this.richTextBoxAbout.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.richTextBoxAbout.BackColor = System.Drawing.Color.White;
             this.richTextBoxAbout.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.richTextBoxAbout.Location = new System.Drawing.Point(19, 221);
             this.richTextBoxAbout.Name = "richTextBoxAbout";
             this.richTextBoxAbout.ReadOnly = true;
-            this.richTextBoxAbout.Size = new System.Drawing.Size(855, 416);
+            this.richTextBoxAbout.Size = new System.Drawing.Size(813, 380);
             this.richTextBoxAbout.TabIndex = 4;
-            this.richTextBoxAbout.Text = resources.GetString("richTextBoxAbout.Text");
+            this.richTextBoxAbout.Text = "Text ...";
             // 
             // labelProductVersion
             // 
@@ -599,7 +605,7 @@
             this.pictureBoxIcon.TabIndex = 0;
             this.pictureBoxIcon.TabStop = false;
             // 
-            // Form1
+            // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 21F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -608,7 +614,7 @@
             this.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.Name = "Form1";
+            this.Name = "Main";
             this.Text = "Oscilloscope Network Capture";
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxImage)).EndInit();
             this.tabControl1.ResumeLayout(false);

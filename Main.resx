@@ -117,19 +117,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="richTextBoxAbout.Text" xml:space="preserve">
-    <value>This is a very simple and rudimentary application, which has been designed for one purpose only:
-
-"Make it easier and faster for me to capture oscilloscope measurements, when creating oscilloscope baseline images for my other project; Commodore Repair Toolbox."
-
-It has been designed to work specifically with my Rigol DS2202A oscilloscope, but as it uses the SCPI socket protocol, then it should also work for other oscilloscopes also - but this is where I need some feedback, as I only have access to my own scope :-) The goal is not to make this a full-blown "Swiss army knife" that suits everyones need, but if can help someone other than myself, then I am happy to make this available.
-
-You can check for a newer version on GitHub, https://github.com/HovKlan-DH/Oscilloscope-Network-Capture
-
-Kind regards,
-
-Dennis Helligsø, dennis@commodore-repair-toolbox.dk</value>
-  </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="pictureBoxIcon.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>

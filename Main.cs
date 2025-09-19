@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -99,6 +100,7 @@ namespace Oscilloscope_Network_Capture
 
             LoadConfig();
             LoadHelpText();
+            LoadAboutText();
 
             // Resolve default folder name -> absolute path if still the literal "output"
             EnsureDefaultOutputFolderResolved();
@@ -169,7 +171,7 @@ namespace Oscilloscope_Network_Capture
             try
             {
                 await Task.Delay(5000).ConfigureAwait(true);
-                CheckOnlineVersion();
+                await CheckOnlineVersionAsync();
             }
             catch
             {
@@ -1102,12 +1104,22 @@ namespace Oscilloscope_Network_Capture
         // ################################################################################################
         private void UpdateNumberStatusText()
         {
-            if (richTextBoxAction == null) return;
+            if(richTextBoxAction == null) return;
 
-            string actionTxt = @"{\rtf1\ansi {\fs28";
-            actionTxt += @"Ready to capture; [{\b " + component + @"}] number [{\b " + numberStart + @"}}]\line ";
-            actionTxt += @"Press [ENTER] to capture, [ESC] to stop.";
-            richTextBoxAction.Rtf = actionTxt;
+            string comp = EscapeRtf(component ?? "");
+            string rtf =
+                "{\\rtf1\\ansi" +
+                "\\fs28 Ready to capture; [\\b " + comp + "] number [\\b " + numberStart + "]\\line " +
+                "Press [ENTER] to capture, [ESC] to stop." +
+                "}";
+
+            richTextBoxAction.Rtf = rtf;
+        }
+
+        private static string EscapeRtf(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            return s.Replace("\\", "\\\\").Replace("{", "\\{").Replace("}", "\\}");
         }
 
         // ################################################################################################
@@ -1306,7 +1318,8 @@ namespace Oscilloscope_Network_Capture
             helpTxt += @"If you do not get any connection to your oscilloscope, then please do validate that your computer can actually connect to the oscilloscope over network. You can do this by this simple commandline prompt, but it does require that you do have the ""telnet"" command installed (can be installed from ""Programs and Feaures > Turn Windows features on or off"" from Windows Control Panel):\line\line ";
             helpTxt += @"    {\b telnet 192.168.0.100 5555}\line\line ";
             helpTxt += @"If this results in a black screen, then you do have connectivity. You of course needs to adapt this for your scope, so it will have another IP address and probably also another port instead of ""5555"". Maybe also your scope has a web interface, so you can try also accessing it on its IP addresses for both HTTP and HTTPS.\line ";
-            helpTxt += @"Also, it might help restarting your scope with a power recycle.\line ";
+            helpTxt += @"Also, it might help power cycling your scope.\line ";
+            helpTxt += @"}}";
             richTextBoxHelp.Rtf = helpTxt;
         }
 
@@ -1341,33 +1354,75 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
+        // Populates the "About" rich text box with the same content currently stored in the .resx.
+        // Populates the "About" rich text box and makes the quoted sentence italic.
+        private void LoadAboutText()
+        {
+            if (richTextBoxAbout == null) return;
+
+            richTextBoxAbout.ReadOnly = true;
+            richTextBoxAbout.DetectUrls = true; // keep URLs clickable
+
+            var sb = new StringBuilder();
+            sb.Append(@"{\rtf1\ansi ");
+            sb.Append(EscapeRtf("This is a very simple and rudimentary application, which has been designed for one purpose only:"));
+            sb.Append(@"\line\line ");
+
+            // Italicized quoted line
+            string quoted = "\"Make it easier and faster for me to capture oscilloscope measurements, when creating oscilloscope baseline images for my other project; Commodore Repair Toolbox.\"";
+            sb.Append(@"{\i " + EscapeRtf(quoted) + "}");
+            sb.Append(@"\line\line ");
+
+            sb.Append(EscapeRtf("The application is 99% \"vibe coded\" in Visual Studio 2022, as I initially just wanted a quick PoC for myselves, where I could capture files in a specific format from my scope."));
+            sb.Append(@"\line "); 
+            
+            sb.Append(EscapeRtf("It has been designed to work specifically with my Rigol DS2202A oscilloscope, but as it uses the SCPI socket protocol, then it should also work for other oscilloscopes also - but this is where I need some feedback, as I only have access to my own scope :-) The goal is not to make this a full-blown \"Swiss army knife\" that suits everyones need, but if can help someone other than myself, then I am happy to make this available."));
+            sb.Append(@"\line\line ");
+
+            sb.Append(EscapeRtf("You can check for a newer version on GitHub, https://github.com/HovKlan-DH/Oscilloscope-Network-Capture"));
+            sb.Append(@"\line\line ");
+
+            sb.Append(EscapeRtf("Kind regards,"));
+            sb.Append(@"\line\line ");
+
+            sb.Append(EscapeRtf("Dennis Helligsø, dennis@commodore-repair-toolbox.dk"));
+            sb.Append("}");
+
+            richTextBoxAbout.Rtf = sb.ToString();
+        }
+
         // ################################################################################################
         // Queries the remote service for a newer version and shows a UI hint if one is available.
         // ################################################################################################
-        private void CheckOnlineVersion()
+        private async Task CheckOnlineVersionAsync()
         {
             try
             {
-                using (WebClient webClient = new WebClient())
+                using (var http = new HttpClient() { Timeout = TimeSpan.FromSeconds(5) })
                 {
-                    ServicePointManager.Expect100Continue = true;
-                    ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12 | SecurityProtocolType.Tls13;
-                    webClient.Headers.Add("user-agent", "ONC " + versionThis);
-
-                    var postData = new System.Collections.Specialized.NameValueCollection
+                    var baseUri = new Uri(oncPage);
+                    var reqUri = new Uri(baseUri, oncPageAutoUpdate ?? "");
+                    var content = new FormUrlEncodedContent(new[]
                     {
-                        { "control", "ONC" }
-                    };
+                new KeyValuePair<string,string>("control", "ONC"),
+            });
 
-                    byte[] responseBytes = webClient.UploadValues(oncPage + oncPageAutoUpdate, postData);
-                    string onlineAvailableVersion = Encoding.UTF8.GetString(responseBytes);
+                    http.DefaultRequestHeaders.UserAgent.ParseAdd("ONC " + (versionThis ?? ""));
 
-                    if (onlineAvailableVersion.Substring(0, 7) == "Version")
+                    var resp = await http.PostAsync(reqUri, content).ConfigureAwait(true);
+                    if (!resp.IsSuccessStatusCode) return;
+
+                    var body = (await resp.Content.ReadAsStringAsync().ConfigureAwait(true))?.Trim() ?? "";
+
+                    // Accept lines like: "Version 2025-September-19 (rev. 1)" or "Version: 2025-09-19"
+                    var m = Regex.Match(body, @"^Version\s*:?\s*(.+)$", RegexOptions.IgnoreCase | RegexOptions.Multiline);
+                    if (m.Success)
                     {
-                        onlineAvailableVersion = onlineAvailableVersion.Substring(9);
-                        if (onlineAvailableVersion != versionThis)
+                        var onlineAvailableVersion = m.Groups[1].Value.Trim();
+                        if (!string.Equals(onlineAvailableVersion, versionThis, StringComparison.OrdinalIgnoreCase))
                         {
-                            labelNewVersionAvailable.Visible = true;
+                            if (labelNewVersionAvailable != null)
+                                labelNewVersionAvailable.Visible = true;
                         }
                     }
                 }
