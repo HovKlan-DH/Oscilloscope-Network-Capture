@@ -1,6 +1,6 @@
 ﻿namespace Oscilloscope_Network_Capture
 {
-    partial class Form1
+    partial class Main
     {
         /// <summary>
         /// Required designer variable.
@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
             this.comboBoxRegion = new System.Windows.Forms.ComboBox();
             this.buttonCaptureContinuelsy = new System.Windows.Forms.Button();
             this.richTextBoxLog = new System.Windows.Forms.RichTextBox();
