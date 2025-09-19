@@ -36,8 +36,6 @@
             this.labelRegion = new System.Windows.Forms.Label();
             this.textBoxCaptureNumberStart = new System.Windows.Forms.TextBox();
             this.labelCaptureNumberStart = new System.Windows.Forms.Label();
-            this.labelCaptureNumberEnd = new System.Windows.Forms.Label();
-            this.textBoxCaptureNumberEnd = new System.Windows.Forms.TextBox();
             this.richTextBoxAction = new System.Windows.Forms.RichTextBox();
             this.labelComponent = new System.Windows.Forms.Label();
             this.textBoxComponent = new System.Windows.Forms.TextBox();
@@ -47,6 +45,7 @@
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.labelNewVersionAvailable = new System.Windows.Forms.Label();
             this.panel4 = new System.Windows.Forms.Panel();
+            this.checkBoxDebug = new System.Windows.Forms.CheckBox();
             this.label7 = new System.Windows.Forms.Label();
             this.checkBoxForceAcquisition = new System.Windows.Forms.CheckBox();
             this.checkBoxBeep = new System.Windows.Forms.CheckBox();
@@ -64,7 +63,6 @@
             this.textBoxFilenameFormat = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
-            this.checkBoxContinueslyCapture = new System.Windows.Forms.CheckBox();
             this.label6 = new System.Windows.Forms.Label();
             this.tabPageHelp = new System.Windows.Forms.TabPage();
             this.richTextBoxHelp = new System.Windows.Forms.RichTextBox();
@@ -97,7 +95,7 @@
             this.comboBoxRegion.Items.AddRange(new object[] {
             "PAL",
             "NTSC"});
-            this.comboBoxRegion.Location = new System.Drawing.Point(6, 66);
+            this.comboBoxRegion.Location = new System.Drawing.Point(6, 36);
             this.comboBoxRegion.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.comboBoxRegion.Name = "comboBoxRegion";
             this.comboBoxRegion.Size = new System.Drawing.Size(69, 29);
@@ -107,7 +105,7 @@
             // 
             this.buttonCaptureContinuelsy.BackColor = System.Drawing.Color.Gold;
             this.buttonCaptureContinuelsy.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonCaptureContinuelsy.Location = new System.Drawing.Point(6, 199);
+            this.buttonCaptureContinuelsy.Location = new System.Drawing.Point(6, 138);
             this.buttonCaptureContinuelsy.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.buttonCaptureContinuelsy.Name = "buttonCaptureContinuelsy";
             this.buttonCaptureContinuelsy.Size = new System.Drawing.Size(344, 27);
@@ -122,7 +120,7 @@
             this.richTextBoxLog.Location = new System.Drawing.Point(0, 0);
             this.richTextBoxLog.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.richTextBoxLog.Name = "richTextBoxLog";
-            this.richTextBoxLog.Size = new System.Drawing.Size(488, 383);
+            this.richTextBoxLog.Size = new System.Drawing.Size(488, 325);
             this.richTextBoxLog.TabIndex = 100;
             this.richTextBoxLog.TabStop = false;
             this.richTextBoxLog.Text = "";
@@ -142,7 +140,7 @@
             // 
             this.labelRegion.AutoSize = true;
             this.labelRegion.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelRegion.Location = new System.Drawing.Point(81, 69);
+            this.labelRegion.Location = new System.Drawing.Point(81, 39);
             this.labelRegion.Name = "labelRegion";
             this.labelRegion.Size = new System.Drawing.Size(126, 21);
             this.labelRegion.TabIndex = 100;
@@ -151,7 +149,7 @@
             // textBoxCaptureNumberStart
             // 
             this.textBoxCaptureNumberStart.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxCaptureNumberStart.Location = new System.Drawing.Point(6, 133);
+            this.textBoxCaptureNumberStart.Location = new System.Drawing.Point(6, 103);
             this.textBoxCaptureNumberStart.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.textBoxCaptureNumberStart.Name = "textBoxCaptureNumberStart";
             this.textBoxCaptureNumberStart.Size = new System.Drawing.Size(69, 28);
@@ -162,31 +160,11 @@
             // 
             this.labelCaptureNumberStart.AutoSize = true;
             this.labelCaptureNumberStart.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelCaptureNumberStart.Location = new System.Drawing.Point(81, 136);
+            this.labelCaptureNumberStart.Location = new System.Drawing.Point(81, 106);
             this.labelCaptureNumberStart.Name = "labelCaptureNumberStart";
             this.labelCaptureNumberStart.Size = new System.Drawing.Size(267, 21);
             this.labelCaptureNumberStart.TabIndex = 100;
             this.labelCaptureNumberStart.Text = "Start capture from number (variable)";
-            // 
-            // labelCaptureNumberEnd
-            // 
-            this.labelCaptureNumberEnd.AutoSize = true;
-            this.labelCaptureNumberEnd.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelCaptureNumberEnd.Location = new System.Drawing.Point(81, 168);
-            this.labelCaptureNumberEnd.Name = "labelCaptureNumberEnd";
-            this.labelCaptureNumberEnd.Size = new System.Drawing.Size(188, 21);
-            this.labelCaptureNumberEnd.TabIndex = 100;
-            this.labelCaptureNumberEnd.Text = "End capture after number";
-            // 
-            // textBoxCaptureNumberEnd
-            // 
-            this.textBoxCaptureNumberEnd.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxCaptureNumberEnd.Location = new System.Drawing.Point(6, 165);
-            this.textBoxCaptureNumberEnd.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.textBoxCaptureNumberEnd.Name = "textBoxCaptureNumberEnd";
-            this.textBoxCaptureNumberEnd.Size = new System.Drawing.Size(69, 28);
-            this.textBoxCaptureNumberEnd.TabIndex = 13;
-            this.textBoxCaptureNumberEnd.Text = "40";
             // 
             // richTextBoxAction
             // 
@@ -199,7 +177,7 @@
             this.richTextBoxAction.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.richTextBoxAction.Name = "richTextBoxAction";
             this.richTextBoxAction.ReadOnly = true;
-            this.richTextBoxAction.Size = new System.Drawing.Size(344, 49);
+            this.richTextBoxAction.Size = new System.Drawing.Size(344, 48);
             this.richTextBoxAction.TabIndex = 100;
             this.richTextBoxAction.TabStop = false;
             this.richTextBoxAction.Text = "Ready to capture; number 1 of 40";
@@ -209,7 +187,7 @@
             this.labelComponent.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.labelComponent.AutoSize = true;
             this.labelComponent.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelComponent.Location = new System.Drawing.Point(81, 103);
+            this.labelComponent.Location = new System.Drawing.Point(81, 73);
             this.labelComponent.Name = "labelComponent";
             this.labelComponent.Size = new System.Drawing.Size(204, 21);
             this.labelComponent.TabIndex = 100;
@@ -219,7 +197,7 @@
             // 
             this.textBoxComponent.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.textBoxComponent.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxComponent.Location = new System.Drawing.Point(6, 100);
+            this.textBoxComponent.Location = new System.Drawing.Point(6, 70);
             this.textBoxComponent.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.textBoxComponent.Name = "textBoxComponent";
             this.textBoxComponent.Size = new System.Drawing.Size(69, 28);
@@ -248,7 +226,7 @@
             this.tabControl1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(860, 715);
+            this.tabControl1.Size = new System.Drawing.Size(860, 657);
             this.tabControl1.TabIndex = 17;
             // 
             // tabPageMeasurements
@@ -262,7 +240,7 @@
             this.tabPageMeasurements.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.tabPageMeasurements.Name = "tabPageMeasurements";
             this.tabPageMeasurements.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.tabPageMeasurements.Size = new System.Drawing.Size(852, 681);
+            this.tabPageMeasurements.Size = new System.Drawing.Size(852, 623);
             this.tabPageMeasurements.TabIndex = 0;
             this.tabPageMeasurements.Text = "Measurements";
             this.tabPageMeasurements.UseVisualStyleBackColor = true;
@@ -286,8 +264,8 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.pictureBoxImage);
             this.splitContainer1.Panel2MinSize = 50;
-            this.splitContainer1.Size = new System.Drawing.Size(488, 681);
-            this.splitContainer1.SplitterDistance = 383;
+            this.splitContainer1.Size = new System.Drawing.Size(488, 623);
+            this.splitContainer1.SplitterDistance = 325;
             this.splitContainer1.TabIndex = 26;
             // 
             // labelNewVersionAvailable
@@ -307,6 +285,7 @@
             // 
             this.panel4.BackColor = System.Drawing.Color.WhiteSmoke;
             this.panel4.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel4.Controls.Add(this.checkBoxDebug);
             this.panel4.Controls.Add(this.label7);
             this.panel4.Controls.Add(this.checkBoxForceAcquisition);
             this.panel4.Controls.Add(this.checkBoxBeep);
@@ -319,6 +298,16 @@
             this.panel4.Name = "panel4";
             this.panel4.Size = new System.Drawing.Size(358, 172);
             this.panel4.TabIndex = 25;
+            // 
+            // checkBoxDebug
+            // 
+            this.checkBoxDebug.AutoSize = true;
+            this.checkBoxDebug.Location = new System.Drawing.Point(155, 85);
+            this.checkBoxDebug.Name = "checkBoxDebug";
+            this.checkBoxDebug.Size = new System.Drawing.Size(125, 25);
+            this.checkBoxDebug.TabIndex = 101;
+            this.checkBoxDebug.Text = "Enable debug";
+            this.checkBoxDebug.UseVisualStyleBackColor = true;
             // 
             // label7
             // 
@@ -333,7 +322,7 @@
             // checkBoxForceAcquisition
             // 
             this.checkBoxForceAcquisition.AutoSize = true;
-            this.checkBoxForceAcquisition.Location = new System.Drawing.Point(7, 85);
+            this.checkBoxForceAcquisition.Location = new System.Drawing.Point(7, 108);
             this.checkBoxForceAcquisition.Name = "checkBoxForceAcquisition";
             this.checkBoxForceAcquisition.Size = new System.Drawing.Size(242, 25);
             this.checkBoxForceAcquisition.TabIndex = 3;
@@ -345,7 +334,7 @@
             this.checkBoxBeep.AutoSize = true;
             this.checkBoxBeep.Checked = true;
             this.checkBoxBeep.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBoxBeep.Location = new System.Drawing.Point(7, 106);
+            this.checkBoxBeep.Location = new System.Drawing.Point(7, 85);
             this.checkBoxBeep.Name = "checkBoxBeep";
             this.checkBoxBeep.Size = new System.Drawing.Size(116, 25);
             this.checkBoxBeep.TabIndex = 4;
@@ -411,9 +400,9 @@
             this.panel5.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.panel5.Controls.Add(this.richTextBoxAction);
             this.panel5.Controls.Add(this.labelAction);
-            this.panel5.Location = new System.Drawing.Point(3, 601);
+            this.panel5.Location = new System.Drawing.Point(3, 544);
             this.panel5.Name = "panel5";
-            this.panel5.Size = new System.Drawing.Size(358, 80);
+            this.panel5.Size = new System.Drawing.Size(358, 79);
             this.panel5.TabIndex = 24;
             // 
             // panel3
@@ -500,31 +489,18 @@
             // 
             this.panel1.BackColor = System.Drawing.Color.WhiteSmoke;
             this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.panel1.Controls.Add(this.checkBoxContinueslyCapture);
             this.panel1.Controls.Add(this.label6);
             this.panel1.Controls.Add(this.buttonCaptureContinuelsy);
             this.panel1.Controls.Add(this.textBoxCaptureNumberStart);
             this.panel1.Controls.Add(this.labelCaptureNumberStart);
-            this.panel1.Controls.Add(this.textBoxCaptureNumberEnd);
             this.panel1.Controls.Add(this.comboBoxRegion);
             this.panel1.Controls.Add(this.labelRegion);
-            this.panel1.Controls.Add(this.labelCaptureNumberEnd);
             this.panel1.Controls.Add(this.textBoxComponent);
             this.panel1.Controls.Add(this.labelComponent);
             this.panel1.Location = new System.Drawing.Point(3, 362);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(358, 233);
+            this.panel1.Size = new System.Drawing.Size(358, 176);
             this.panel1.TabIndex = 19;
-            // 
-            // checkBoxContinueslyCapture
-            // 
-            this.checkBoxContinueslyCapture.AutoSize = true;
-            this.checkBoxContinueslyCapture.Location = new System.Drawing.Point(7, 34);
-            this.checkBoxContinueslyCapture.Name = "checkBoxContinueslyCapture";
-            this.checkBoxContinueslyCapture.Size = new System.Drawing.Size(203, 25);
-            this.checkBoxContinueslyCapture.TabIndex = 9;
-            this.checkBoxContinueslyCapture.Text = "Do a continuesly capture";
-            this.checkBoxContinueslyCapture.UseVisualStyleBackColor = true;
             // 
             // label6
             // 
@@ -543,7 +519,7 @@
             this.tabPageHelp.Location = new System.Drawing.Point(4, 30);
             this.tabPageHelp.Name = "tabPageHelp";
             this.tabPageHelp.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPageHelp.Size = new System.Drawing.Size(852, 681);
+            this.tabPageHelp.Size = new System.Drawing.Size(852, 623);
             this.tabPageHelp.TabIndex = 2;
             this.tabPageHelp.Text = "Help";
             this.tabPageHelp.UseVisualStyleBackColor = true;
@@ -577,7 +553,7 @@
             this.tabPageAbout.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.tabPageAbout.Name = "tabPageAbout";
             this.tabPageAbout.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.tabPageAbout.Size = new System.Drawing.Size(852, 681);
+            this.tabPageAbout.Size = new System.Drawing.Size(852, 623);
             this.tabPageAbout.TabIndex = 1;
             this.tabPageAbout.Text = "About";
             this.tabPageAbout.UseVisualStyleBackColor = true;
@@ -627,12 +603,11 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 21F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(866, 724);
+            this.ClientSize = new System.Drawing.Size(866, 666);
             this.Controls.Add(this.tabControl1);
             this.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.MinimumSize = new System.Drawing.Size(884, 771);
             this.Name = "Form1";
             this.Text = "Oscilloscope Network Capture";
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxImage)).EndInit();
@@ -668,8 +643,6 @@
         private System.Windows.Forms.Label labelRegion;
         private System.Windows.Forms.TextBox textBoxCaptureNumberStart;
         private System.Windows.Forms.Label labelCaptureNumberStart;
-        private System.Windows.Forms.Label labelCaptureNumberEnd;
-        private System.Windows.Forms.TextBox textBoxCaptureNumberEnd;
         private System.Windows.Forms.RichTextBox richTextBoxAction;
         private System.Windows.Forms.Label labelComponent;
         private System.Windows.Forms.TextBox textBoxComponent;
@@ -704,8 +677,8 @@
         private System.Windows.Forms.TextBox textBoxIp;
         private System.Windows.Forms.Label labelIp;
         private System.Windows.Forms.Button buttonCheckScope;
-        private System.Windows.Forms.CheckBox checkBoxContinueslyCapture;
         private System.Windows.Forms.SplitContainer splitContainer1;
+        private System.Windows.Forms.CheckBox checkBoxDebug;
     }
 }
 

@@ -45,10 +45,14 @@ namespace Oscilloscope_Network_Capture
 
         // Number range
         private int numberStart = 1;
-        private int numberEnd = 40;
+        //        private int numberEnd = 40;
         private int originalNumberStart;
-        private int originalNumberEnd;
+        //        private int originalNumberEnd;
         private bool numberRangeActive = false;
+
+        private bool _suppressSplitterSave = true;
+        private bool windowMaximized = false;
+        private FormWindowState _lastNonMinimizedState = FormWindowState.Normal;
 
         // Standard 1-2-5 progression across decades (seconds/div)
         private static readonly double[] _timeDivSteps = new double[]
@@ -66,7 +70,7 @@ namespace Oscilloscope_Network_Capture
         };
         private bool _timebaseAdjustInProgress = false;
 
-        private enum LogLevel { Info, Warning, Error, Notice }
+        private enum LogLevel { Debug, Info, Notice, Highlight, Warning, Error }
 
         private enum ScopeVendor { Unknown, Rigol, Siglent }
         private ScopeVendor detectedVendor = ScopeVendor.Unknown;
@@ -153,6 +157,19 @@ namespace Oscilloscope_Network_Capture
             helpTxt += @"    * \{Date\} is YYYYMMDD - e.g. 20251231\line ";
             helpTxt += @"    * \{Time\} is HHMMSS - e.g. 235959\line ";
             helpTxt += @"\line";
+            helpTxt += @"{\fs28{\b Keyboard commands}}\line ";
+            helpTxt += @"    * {\b ENTER } at application launch will start capture mode\line ";
+            helpTxt += @"    * {\b ENTER } in capture mode will capture and save image from scope\line ";
+            helpTxt += @"    * {\b ESCAPE } in capture mode will exit capture mode\line ";
+            helpTxt += @"    * {\b + } (plus) to decrease timespan (zoom-in)\line ";
+            helpTxt += @"    * {\b - } (minus) to increase timespan (zoom-out)\line ";
+            helpTxt += @"    * {\b * } (multiply) to STOP acquisition on scope\line ";
+            helpTxt += @"    * {\b * } (multiply) to take a new snapshot on scope\line ";
+            helpTxt += @"    * {\b / } (forslash) to RESUME acquisition in scope\line ";
+            helpTxt += @"\line";
+            helpTxt += @"{\fs28{\b General}}\line ";
+            helpTxt += @"In capture mode you can change the variables on-the-fly and it will be used for the next saved file.\line ";
+            helpTxt += @"\line";
             helpTxt += @"{\fs28{\b Standard and protocol used:}}\line ";
             helpTxt += @"    * IEEE 488.2 standard\line ";
             helpTxt += @"    * SCPI socket protocol\line ";
@@ -169,6 +186,8 @@ namespace Oscilloscope_Network_Capture
 
             // Ensure textbox reflects current folder (if you have it on the form)
             textBoxCaptureFolder.Text = outputFolder;
+            textBoxCaptureNumberStart.KeyUp += textBoxCaptureNumberStart_KeyUp;
+            textBoxCaptureNumberStart.Enter += textBoxCaptureNumberStart_Enter;
 
             textBoxComponent.Text = component;
             textBoxComponent.Leave += textBoxComponent_Leave;
@@ -184,10 +203,8 @@ namespace Oscilloscope_Network_Capture
             buttonCheckScope.Click += buttonCheckScope_Click;
             richTextBoxAbout.LinkClicked += richTextBoxAbout_LinkClicked;
 
-            // New: capture mode checkbox handling
-            checkBoxContinueslyCapture.CheckedChanged += checkBoxContinueslyCapture_CheckedChanged;
-            // Apply initial state (designer text default is continuous, we override if unchecked)
-            UpdateCaptureModeUI();
+            //            // Apply initial state for capture button/labels (always continuous)
+            //            UpdateCaptureModeUI();
 
             this.KeyPreview = true;
             this.KeyDown += Form_KeyDown;
@@ -198,8 +215,8 @@ namespace Oscilloscope_Network_Capture
             pictureBoxIcon.SizeMode = PictureBoxSizeMode.Zoom;
             textBoxIp.Leave += textBoxIp_Leave;
             textBoxIp.KeyDown += textBoxIp_KeyDown;
-            textBoxCaptureNumberStart.KeyDown += textBoxNumberRange_KeyDown;
-            textBoxCaptureNumberEnd.KeyDown += textBoxNumberRange_KeyDown;
+            textBoxCaptureNumberStart.KeyUp += textBoxCaptureNumberStart_KeyUp;
+            // Removed: textBoxCaptureNumberEnd.KeyDown += textBoxNumberRange_KeyDown;
             checkBoxForceAcquisition.CheckedChanged += checkBoxForceAcquisition_CheckedChanged;
             checkBoxForceAcquisition.Checked = forceAcquisition;
             splitContainer1.SplitterMoved += splitContainer1_SplitterMoved;
@@ -210,16 +227,25 @@ namespace Oscilloscope_Network_Capture
             labelNewVersionAvailable.Location = new Point(richTextBoxLog.Right - labelNewVersionAvailable.Width, richTextBoxLog.Top);
             labelNewVersionAvailable.BringToFront();
 
-            Log("Ready.", LogLevel.Info);
+            //            Log("Ready.", LogLevel.Info);
             richTextBoxAction.Text = "Ready for capture";
             initializing = false;
 
             this.Shown += Form1_Shown;
         }
 
+        private void textBoxCaptureNumberStart_Enter(object sender, EventArgs e)
+        {
+            var tb = sender as TextBox;
+            if (tb == null) return;
+            // Caret at end, no selection
+            tb.SelectionStart = tb.TextLength;
+            tb.SelectionLength = 0;
+        }
+
         private void splitContainer1_SplitterMoved(object sender, SplitterEventArgs e)
         {
-            if (initializing) return;
+            if (initializing || _suppressSplitterSave) return;
             SaveConfig();
         }
 
@@ -244,40 +270,21 @@ namespace Oscilloscope_Network_Capture
             catch { /* ignore layout timing issues */ }
         }
 
-        // ###########################################################################################
-        // Handle checkbox toggling between single and continuesly capture
-        // ###########################################################################################
+        /*
+                // ###########################################################################################
+                // Handle checkbox toggling between single and continuesly capture
+                // ###########################################################################################
 
-        private void checkBoxContinueslyCapture_CheckedChanged(object sender, EventArgs e)
-        {
-            if (hotkeyMode && !checkBoxContinueslyCapture.Checked)
-            {
-                // If user turns off continuous mode while active, terminate hotkey mode.
-                DisableHotkeyMode();
-            }
-            UpdateCaptureModeUI();
-
-            // Persist the new state (avoid saving during constructor)
-            if (!initializing)
-            {
-                SaveConfig();
-            }
-        }
-
-        private void UpdateCaptureModeUI()
-        {
-            bool cont = checkBoxContinueslyCapture.Checked;
-
-            if (textBoxCaptureNumberEnd != null) textBoxCaptureNumberEnd.Enabled = cont;
-            if (labelCaptureNumberEnd != null) labelCaptureNumberEnd.Enabled = cont;
-
-            if (buttonCaptureContinuelsy != null)
-            {
-                buttonCaptureContinuelsy.Text = cont ? "Capture continuesly" : "Capture once";
-                labelCaptureNumberStart.Text = cont ? "Start capture from number (variable)" : "Capture number or text (variable)";
-                buttonCaptureContinuelsy.Enabled = true;
-            }
-        }
+                private void checkBoxContinueslyCapture_CheckedChanged(object sender, EventArgs e)
+                {
+                    // No checkbox anymore. Keep UI consistent and persist other settings.
+                    UpdateCaptureModeUI();
+                    if (!initializing)
+                    {
+                        SaveConfig();
+                    }
+                }
+        */
 
         // ###########################################################################################
         // On form shown: check online version after short delay
@@ -285,6 +292,12 @@ namespace Oscilloscope_Network_Capture
 
         private async void Form1_Shown(object sender, EventArgs e)
         {
+            _suppressSplitterSave = false; // allow future splitter saves
+            buttonCaptureContinuelsy.Focus();
+
+            // Run the same connectivity check as the button does
+            var ok = await CheckScopeConnectivityAsync();
+
             try
             {
                 await Task.Delay(5000).ConfigureAwait(true);
@@ -314,6 +327,8 @@ namespace Oscilloscope_Network_Capture
 
         private void EnsureDefaultOutputFolderResolved()
         {
+            string before = outputFolder;
+
             if (string.IsNullOrWhiteSpace(outputFolder) ||
                 string.Equals(outputFolder, "output", StringComparison.OrdinalIgnoreCase))
             {
@@ -340,7 +355,9 @@ namespace Oscilloscope_Network_Capture
             if (textBoxCaptureFolder != null)
                 textBoxCaptureFolder.Text = outputFolder;
 
-            SaveConfig(); // persist absolute if changed
+            // Persist only if it actually changed
+            if (!string.Equals(before, outputFolder, StringComparison.OrdinalIgnoreCase))
+                SaveConfig();
         }
 
         private void textBoxCaptureFolder_Click(object sender, EventArgs e)
@@ -380,7 +397,7 @@ namespace Oscilloscope_Network_Capture
                 if (!string.Equals(abs, outputFolder, StringComparison.OrdinalIgnoreCase))
                 {
                     outputFolder = abs;
-                    Log("Output folder set to (absolute): " + outputFolder, LogLevel.Info);
+                    Log("Output folder set to: " + outputFolder, LogLevel.Info);
                     SaveConfig();
                 }
 
@@ -457,7 +474,7 @@ namespace Oscilloscope_Network_Capture
                 {
                     UseShellExecute = true
                 });
-                Log("Opened URL: " + url, LogLevel.Info);
+                Log("Opened URL: " + url, LogLevel.Debug);
             }
             catch (Exception ex)
             {
@@ -624,16 +641,6 @@ namespace Oscilloscope_Network_Capture
                         if (checkBoxForceAcquisition != null) checkBoxForceAcquisition.Checked = forceAcquisition;
                     }
 
-                    string contStr;
-                    if (map.TryGetValue("ContinuousCapture", out contStr))
-                    {
-                        bool cont = contStr == "1" ||
-                                    contStr.Equals("true", StringComparison.OrdinalIgnoreCase) ||
-                                    contStr.Equals("yes", StringComparison.OrdinalIgnoreCase);
-                        if (checkBoxContinueslyCapture != null)
-                            checkBoxContinueslyCapture.Checked = cont; // event not yet hooked when this runs
-                    }
-
                     string splitStr;
                     if (map.TryGetValue("SplitterDistance", out splitStr))
                     {
@@ -644,17 +651,27 @@ namespace Oscilloscope_Network_Capture
                         }
                     }
 
-                    Log($"Loaded config:", LogLevel.Info);
-                    Log($"    IP={scopeIp}", LogLevel.Info);
-                    Log($"    Port={scopePort}", LogLevel.Info);
-                    Log($"    Region={(comboBoxRegion?.SelectedItem as string) ?? ""}", LogLevel.Info);
-                    Log($"    Component={component}", LogLevel.Info);
-                    Log($"    FilenameFormat={filenameFormat}", LogLevel.Info);
-                    Log($"    CaptureFolder={outFolder}", LogLevel.Info);
-                    Log($"    Beep={(beepEnabled ? 1 : 0)}", LogLevel.Info);
-                    Log($"    ForceAcquisition={(forceAcquisition ? 1 : 0)}", LogLevel.Info);
-                    Log($"    ContinuousCapture={(checkBoxContinueslyCapture != null && checkBoxContinueslyCapture.Checked ? 1 : 0)}", LogLevel.Info);
-                    Log($"    SplitterDistance={(splitContainer1 != null ? splitContainer1.SplitterDistance : 0)}", LogLevel.Info);
+                    // NEW: window state
+                    string winMax;
+                    if (map.TryGetValue("WindowMaximized", out winMax))
+                    {
+                        windowMaximized = winMax == "1" ||
+                                          winMax.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+                                          winMax.Equals("yes", StringComparison.OrdinalIgnoreCase);
+                        this.WindowState = windowMaximized ? FormWindowState.Maximized : FormWindowState.Normal;
+                        _lastNonMinimizedState = this.WindowState;
+                    }
+
+                    Log($"Loaded configuration:", LogLevel.Debug);
+                    Log($"    IP: {scopeIp}:{scopePort}", LogLevel.Debug);
+                    Log($"    Region: {(comboBoxRegion?.SelectedItem as string) ?? ""}", LogLevel.Debug);
+                    Log($"    Component: {component}", LogLevel.Debug);
+                    Log($"    FilenameFormat: {filenameFormat}", LogLevel.Debug);
+                    Log($"    CaptureFolder: {outFolder}", LogLevel.Debug);
+                    Log($"    Beep: {(beepEnabled ? 1 : 0)}", LogLevel.Debug);
+                    Log($"    ForceAcquisition: {(forceAcquisition ? 1 : 0)}", LogLevel.Debug);
+                    Log($"    SplitterDistance: {(splitContainer1 != null ? splitContainer1.SplitterDistance : 0)}", LogLevel.Debug);
+                    Log($"    WindowMaximized: {(windowMaximized ? 1 : 0)}", LogLevel.Debug);
                 }
                 else
                 {
@@ -663,7 +680,7 @@ namespace Oscilloscope_Network_Capture
                     {
                         scopeIp = txt;
                         if (textBoxIp != null) textBoxIp.Text = scopeIp;
-                        Log("Loaded legacy IP [" + scopeIp + "] from configuration file.", LogLevel.Info);
+                        Log("Loaded legacy IP [" + scopeIp + "] from configuration file.", LogLevel.Warning);
                     }
                 }
             }
@@ -688,28 +705,56 @@ namespace Oscilloscope_Network_Capture
                 sb.AppendLine("Region=" + region);
                 sb.AppendLine("Component=" + component);
                 sb.AppendLine("FilenameFormat=" + filenameFormat);
-                sb.AppendLine("OutputFolder=" + outputFolder); // <-- added
+                sb.AppendLine("OutputFolder=" + outputFolder);
                 sb.AppendLine("Beep=" + (beepEnabled ? "1" : "0"));
                 sb.AppendLine("ForceAcquisition=" + (forceAcquisition ? "1" : "0"));
-                sb.AppendLine("ContinuousCapture=" + (checkBoxContinueslyCapture != null && checkBoxContinueslyCapture.Checked ? "1" : "0"));
                 sb.AppendLine("SplitterDistance=" + (splitContainer1 != null ? splitContainer1.SplitterDistance.ToString() : "0"));
+                // NEW: persist window state (only maximized vs windowed)
+                sb.AppendLine("WindowMaximized=" + (windowMaximized ? "1" : "0"));
+
                 File.WriteAllText(configPath, sb.ToString());
-                Log($"Saved config:", LogLevel.Info);
-                Log($"    IP={scopeIp}", LogLevel.Info);
-                Log($"    Port={scopePort}", LogLevel.Info);
-                Log($"    Region={region}", LogLevel.Info);
-                Log($"    Component={component}", LogLevel.Info);
-                Log($"    FilenameFormat={filenameFormat}", LogLevel.Info);
-                Log($"    OutputFolder={outputFolder}", LogLevel.Info);
-                Log($"    Beep={(beepEnabled ? 1 : 0)}", LogLevel.Info);
-                Log($"    ForceAcquisition={(forceAcquisition ? 1 : 0)}", LogLevel.Info);
-                Log($"    ContinuousCapture={(checkBoxContinueslyCapture != null && checkBoxContinueslyCapture.Checked ? 1 : 0)}", LogLevel.Info);
-                Log($"    SplitterDistance={(splitContainer1 != null ? splitContainer1.SplitterDistance : 0)}", LogLevel.Info);
+
+                Log($"Saved configuration:", LogLevel.Debug);
+                Log($"    IP: {scopeIp}:{scopePort}", LogLevel.Debug);
+                Log($"    Region: {region}", LogLevel.Debug);
+                Log($"    Component: {component}", LogLevel.Debug);
+                Log($"    FilenameFormat: {filenameFormat}", LogLevel.Debug);
+                Log($"    OutputFolder: {outputFolder}", LogLevel.Debug);
+                Log($"    Beep: {(beepEnabled ? 1 : 0)}", LogLevel.Debug);
+                Log($"    ForceAcquisition: {(forceAcquisition ? 1 : 0)}", LogLevel.Debug);
+                Log($"    SplitterDistance: {(splitContainer1 != null ? splitContainer1.SplitterDistance : 0)}", LogLevel.Debug);
+                Log($"    WindowMaximized: {(windowMaximized ? 1 : 0)}", LogLevel.Debug);
             }
             catch (Exception ex)
             {
-                Log("Warning: Could not save configuration file: " + ex.Message, LogLevel.Warning);
+                Log("Warning: Could not save configuration file: " + ex.Message, LogLevel.Error);
             }
+        }
+
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+
+            // Ignore minimized; remember the last non-minimized state
+            if (this.WindowState == FormWindowState.Minimized) return;
+
+            _lastNonMinimizedState = this.WindowState;
+            bool isMax = _lastNonMinimizedState == FormWindowState.Maximized;
+
+            if (isMax != windowMaximized)
+            {
+                windowMaximized = isMax;
+                Log("Window " + (isMax ? "maximized" : "restored") + ".", LogLevel.Debug);
+                if (!initializing) SaveConfig();
+            }
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            // Persist the last meaningful state (maximized vs windowed)
+            windowMaximized = (_lastNonMinimizedState == FormWindowState.Maximized);
+            try { SaveConfig(); } catch { }
+            base.OnFormClosing(e);
         }
 
         private void ApplyPortFromTextBox()
@@ -719,7 +764,7 @@ namespace Oscilloscope_Network_Capture
             int newPort;
             if (!int.TryParse(raw, out newPort) || newPort < 1 || newPort > 65535)
             {
-                Log("Invalid port (must be 1..65535): " + raw, LogLevel.Warning);
+                Log("Invalid port (must be 1-65535): " + raw, LogLevel.Error);
                 textBoxPort.Text = scopePort.ToString();
                 return;
             }
@@ -786,7 +831,7 @@ namespace Oscilloscope_Network_Capture
             }
             else
             {
-                Log("Invalid IP format: " + candidate, LogLevel.Warning);
+                Log("Invalid IP format: " + candidate, LogLevel.Error);
                 textBoxIp.Text = scopeIp;
             }
         }
@@ -805,7 +850,7 @@ namespace Oscilloscope_Network_Capture
         {
             if (buttonCaptureContinuelsy != null) buttonCaptureContinuelsy.Enabled = false;
             if (buttonCheckScope != null) buttonCheckScope.Enabled = false;
-            await CheckScopeConnectivityAsync();
+            bool ok = await CheckScopeConnectivityAsync();
             if (!hotkeyMode)
             {
                 if (buttonCaptureContinuelsy != null) buttonCaptureContinuelsy.Enabled = true;
@@ -813,22 +858,24 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
-        private async Task CheckScopeConnectivityAsync()
+        // Update: return success so callers (startup) can log "Oscilloscope is ready."
+        private async Task<bool> CheckScopeConnectivityAsync()
         {
             string host = scopeIp;
             int port = scopePort;
             const int connectTimeoutMs = 5000;
             const int ioTimeoutMs = 60000;
+            bool success = false;
 
             if (buttonCheckScope != null) buttonCheckScope.Enabled = false;
             try
             {
-                Log("Attempting TCP connectivity.", LogLevel.Notice);
+                Log("Attempting TCP connectivity.", LogLevel.Debug);
 
                 if (!TestTcpPort(host, port, 600))
                     Log($"Port {port} preliminary probe failed (will still attempt full connect).", LogLevel.Warning);
                 else
-                    Log($"Port {port} preliminary probe succeeded.", LogLevel.Info);
+                    Log($"Port {port} preliminary probe succeeded.", LogLevel.Debug);
 
                 Log("Opening SCPI session: " + host + ":" + port, LogLevel.Info);
 
@@ -843,20 +890,20 @@ namespace Oscilloscope_Network_Capture
 
                             string idn = scpi.QueryLine("*IDN?");
                             lastIdn = idn;
-                            Log("IDN: " + (idn ?? "").Trim(), LogLevel.Info);
+                            Log("IDN: " + (idn ?? "").Trim(), LogLevel.Debug);
                             detectedVendor = DetermineVendor(idn);
-                            if (detectedVendor != ScopeVendor.Unknown)
-                                Log("Detected vendor: " + detectedVendor, LogLevel.Notice);
 
                             if (!string.IsNullOrWhiteSpace(idn))
                             {
                                 var p = idn.Split(',');
                                 if (p.Length >= 4)
                                 {
-                                    Log("Vendor: " + p[0], LogLevel.Info);
-                                    Log("Model: " + p[1], LogLevel.Info);
-                                    Log("Serial: " + p[2], LogLevel.Info);
-                                    Log("Firmware: " + p[3], LogLevel.Info);
+                                    Log("Connected with oscilloscope:", LogLevel.Info);
+                                    Log("    Vendor: " + p[0], LogLevel.Info);
+                                    Log("    Model: " + p[1], LogLevel.Info);
+                                    //                                    Log("Serial: " + p[2], LogLevel.Info);
+                                    Log("    Firmware: " + p[3], LogLevel.Info);
+                                    Log("Oscilloscope is ready.", LogLevel.Notice);
                                 }
                             }
 
@@ -867,6 +914,9 @@ namespace Oscilloscope_Network_Capture
                                 if (line.StartsWith("0,", StringComparison.Ordinal)) break;
                                 Log("Instrument error: " + line.Trim(), LogLevel.Warning);
                             }
+
+                            // If we got here without throwing, consider it a success
+                            success = true;
                         }
                     }
                     catch (TimeoutException tex)
@@ -892,6 +942,8 @@ namespace Oscilloscope_Network_Capture
             {
                 if (buttonCheckScope != null) buttonCheckScope.Enabled = true;
             }
+
+            return success;
         }
 
         private ScopeVendor DetermineVendor(string idn)
@@ -910,10 +962,15 @@ namespace Oscilloscope_Network_Capture
         private void UpdateNumberStatusText()
         {
             if (richTextBoxAction == null) return;
-            if (numberStart <= numberEnd)
-                richTextBoxAction.Text = $"Ready to capture; number {numberStart} of {numberEnd}\r\nPress [ENTER] to capture, [ESC] to stop.";
-            else
-                richTextBoxAction.Text = "Capture completed";
+
+            string actionTxt = @"{\rtf1\ansi {\fs28";
+            actionTxt += @"Ready to capture; number [{\b " + numberStart + @"}}]\line ";
+            actionTxt += @"Press [ENTER] to capture, [ESC] to stop.";
+            //            helpTxt += @"Typical port is {\b 5555} (I am actually not sure on this - is this typical?).\line ";
+            //            richTextBoxHelp.Rtf = helpTxt;
+            //            richTextBoxAction.Text = $"Ready to capture; number \{\\b " + numberStart + "\}\r\nPress [ENTER] to capture, [ESC] to stop.";
+            richTextBoxAction.Rtf = actionTxt;
+
         }
 
         // ###########################################################################################
@@ -922,26 +979,14 @@ namespace Oscilloscope_Network_Capture
 
         private void buttonCaptureContinuelsy_Click(object sender, EventArgs e)
         {
-            // If checkbox is NOT checked, this button acts as "Capture once"
-            if (!checkBoxContinueslyCapture.Checked)
-            {
-                // Mirror original single-capture button behavior
-                if (!captureInProgress)
-                {
-                    _ = StartSingleCaptureAsync(null);
-                }
-                return;
-            }
-
-            // Original continuesly (hotkey) logic unchanged
+            // Always continuous capture (checkbox removed; no single-capture path)
             if (hotkeyMode)
             {
-                Log("Already in hotkey mode. Press [ESC] to exit.", LogLevel.Warning);
+                Log("Already in capture mode. Press [ESC] to exit.", LogLevel.Warning);
                 return;
             }
-            if (!TryInitializeNumberRange()) return;
+            if (!TryInitializeNumberRange()) return; // now only initializes numberStart
             originalNumberStart = numberStart;
-            originalNumberEnd = numberEnd;
             hotkeyMode = true;
             numberRangeActive = true;
 
@@ -949,7 +994,10 @@ namespace Oscilloscope_Network_Capture
             if (buttonCheckScope != null) buttonCheckScope.Enabled = false;
 
             UpdateNumberStatusText();
-            Log("Hotkey mode active. Press [ENTER] to capture, [ESC] to stop.", LogLevel.Notice);
+            Log("Capture mode active. Press [ENTER] to capture, [ESC] to stop.", LogLevel.Highlight);
+
+            // Focus the start-number textbox without selecting text (caret at end)
+            FocusNumberTextboxCaretToEnd();
         }
 
         private void DisableHotkeyMode()
@@ -959,9 +1007,11 @@ namespace Oscilloscope_Network_Capture
             numberRangeActive = false;
             if (buttonCaptureContinuelsy != null) buttonCaptureContinuelsy.Enabled = true;
             if (buttonCheckScope != null) buttonCheckScope.Enabled = true;
-            Log("Hotkey capture mode disabled.", LogLevel.Notice);
+            Log("Capture mode disabled.", LogLevel.Notice);
         }
 
+        // Update Form_KeyDown to also move the caret to the end after incrementing/updating the textbox
+        // Update Form_KeyDown to also move the caret to the end after incrementing/updating the textbox
         private async void Form_KeyDown(object sender, KeyEventArgs e)
         {
             // --- Timebase increase (plus key: main keyboard or numpad)
@@ -969,7 +1019,7 @@ namespace Oscilloscope_Network_Capture
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
-                await AdjustTimebaseAsync(true);
+                await AdjustTimebaseAsync(false);
                 return;
             }
 
@@ -978,12 +1028,12 @@ namespace Oscilloscope_Network_Capture
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
-                await AdjustTimebaseAsync(false);
+                await AdjustTimebaseAsync(true);
                 return;
             }
 
-            // --- Snapshot toggle (0 / NumPad0) : pause/freeze or re-take (RUN → STOP or STOP → SINGLE→STOP)
-            if (e.KeyCode == Keys.D0 || e.KeyCode == Keys.NumPad0)
+            // --- Snapshot toggle (*: Numpad Multiply or Shift+8)
+            if (e.KeyCode == Keys.Multiply || (e.KeyCode == Keys.D8 && e.Shift))
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
@@ -991,8 +1041,8 @@ namespace Oscilloscope_Network_Capture
                 return;
             }
 
-            // --- Resume acquisition (1 / NumPad1)
-            if (e.KeyCode == Keys.D1 || e.KeyCode == Keys.NumPad1)
+            // --- Resume acquisition (/: Numpad Divide or main keyboard /? key)
+            if (e.KeyCode == Keys.Divide || e.KeyCode == Keys.OemQuestion)
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
@@ -1000,44 +1050,27 @@ namespace Oscilloscope_Network_Capture
                 return;
             }
 
-            // Existing hotkey capture logic (unchanged)
+            // Existing hotkey capture logic (continues until ESC)
             if (!hotkeyMode) return;
 
             if (e.KeyCode == Keys.Enter)
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
+
                 if (numberRangeActive)
                 {
-                    if (!RefreshNumberRangeFromTextBoxes())
-                    {
-                        if (richTextBoxAction != null) richTextBoxAction.Text = "Invalid number range";
-                        return;
-                    }
-                    if (numberStart > numberEnd)
-                    {
-                        Log("Number range already complete.", LogLevel.Notice);
-                        DisableHotkeyMode();
-                        if (richTextBoxAction != null) richTextBoxAction.Text = "Capture completed";
-                        return;
-                    }
+                    // Refresh start number if user edited it; ignore non-numeric silently
+                    RefreshNumberRangeFromTextBoxes(false);
+
                     int currentNumber = numberStart;
                     await StartSingleCaptureAsync(currentNumber, null);
-                    if (currentNumber == numberEnd)
-                    {
-                        Log("Finished capturing all.", LogLevel.Notice);
-                        if (richTextBoxAction != null) richTextBoxAction.Text = "Capture completed";
-                        numberStart = originalNumberStart;
-                        numberEnd = originalNumberEnd;
-                        if (textBoxCaptureNumberStart != null) textBoxCaptureNumberStart.Text = numberStart.ToString();
-                        if (textBoxCaptureNumberEnd != null) textBoxCaptureNumberEnd.Text = numberEnd.ToString();
-                        Log("Number range reset to original [" + numberStart + ".." + numberEnd + "].", LogLevel.Info);
-                        DisableHotkeyMode();
-                        return;
-                    }
+
                     numberStart++;
                     if (textBoxCaptureNumberStart != null) textBoxCaptureNumberStart.Text = numberStart.ToString();
                     UpdateNumberStatusText();
+                    // Ensure caret ends up at the end after updating the text
+                    FocusNumberTextboxCaretToEnd();
                 }
                 else
                 {
@@ -1057,47 +1090,42 @@ namespace Oscilloscope_Network_Capture
         // Initialize and update "numberStart" and "numberEnd" in the continuesly capture
         // ###########################################################################################
 
+        // ###########################################################################################
+        // Initialize and update "numberStart" in the continuesly capture (no end number)
+        // ###########################################################################################
+
         private bool TryInitializeNumberRange()
         {
-            if (textBoxCaptureNumberStart == null || textBoxCaptureNumberEnd == null)
+            int startParsed;
+            var raw = textBoxCaptureNumberStart.Text.Trim();
+
+            if (!int.TryParse(raw, out startParsed) || startParsed <= 0)
             {
-                Log("Number range controls not found.", LogLevel.Error);
-                return false;
+                Log("Invalid start number. Defaulting to 1.", LogLevel.Warning);
+                startParsed = 1;
+                textBoxCaptureNumberStart.Text = "1";
             }
-            int startParsed, endParsed;
-            if (!int.TryParse(textBoxCaptureNumberStart.Text.Trim(), out startParsed) ||
-                !int.TryParse(textBoxCaptureNumberEnd.Text.Trim(), out endParsed) ||
-                startParsed <= 0 || endParsed <= 0 || endParsed < startParsed)
-            {
-                Log("Invalid number range. Provide positive integers with start <= end.", LogLevel.Warning);
-                return false;
-            }
+
             numberStart = startParsed;
-            numberEnd = endParsed;
+            // No numberEnd; continuous until ESC
             return true;
         }
 
         private bool RefreshNumberRangeFromTextBoxes(bool logOnError = true)
         {
-            if (textBoxCaptureNumberStart == null || textBoxCaptureNumberEnd == null)
+            int startParsed;
+            var rawStart = textBoxCaptureNumberStart.Text.Trim();
+
+            if (int.TryParse(rawStart, out startParsed) && startParsed > 0)
             {
-                if (logOnError) Log("Number range controls not found.", LogLevel.Error);
-                return false;
+                numberStart = startParsed;
             }
-            int startParsed, endParsed;
-            if (!int.TryParse(textBoxCaptureNumberStart.Text.Trim(), out startParsed) ||
-                !int.TryParse(textBoxCaptureNumberEnd.Text.Trim(), out endParsed))
+            else
             {
-                if (logOnError) Log("Invalid number format (non-numeric).", LogLevel.Warning);
-                return false;
+                if (logOnError) Log("Invalid number format (non-numeric). Keeping current number.", LogLevel.Warning);
+                // Keep existing numberStart; do not fail hotkey loop
             }
-            if (startParsed <= 0 || endParsed <= 0)
-            {
-                if (logOnError) Log("Numbers must be positive.", LogLevel.Warning);
-                return false;
-            }
-            numberStart = startParsed;
-            numberEnd = endParsed;
+
             return true;
         }
 
@@ -1361,8 +1389,8 @@ namespace Oscilloscope_Network_Capture
             {
                 lastIdn = idn;
                 detectedVendor = DetermineVendor(idn);
-                Log("IDN: " + idn.Trim(), LogLevel.Info);
-                Log("Vendor classification: " + detectedVendor, LogLevel.Notice);
+                Log("IDN: " + idn.Trim(), LogLevel.Debug);
+                Log("Vendor classification: " + detectedVendor, LogLevel.Debug);
             }
         }
 
@@ -1416,12 +1444,12 @@ namespace Oscilloscope_Network_Capture
             }
             catch (Exception ex)
             {
-                Log("SaveAndDisplay: Directory creation failed: " + ex.ToString(), LogLevel.Error);
+                Log("Directory creation failed (save and display): " + ex.ToString(), LogLevel.Error);
                 throw;
             }
 
             // Pre-log a short signature
-            Log($"SaveAndDisplay: start kind={kind}, len={rawImage?.Length}, head={HexPreview(rawImage, 16)}, path={outputFileName}", LogLevel.Info);
+            Log($"SaveAndDisplay: start kind={kind}, len={rawImage?.Length}, head={HexPreview(rawImage, 16)}, path={outputFileName}", LogLevel.Debug);
 
             try
             {
@@ -1435,7 +1463,7 @@ namespace Oscilloscope_Network_Capture
                     }
                     catch (Exception exDecode)
                     {
-                        Log("SaveAndDisplay: Decode failed before save: " + exDecode.ToString(), LogLevel.Error);
+                        Log("Decode failed before save (save and display): " + exDecode.ToString(), LogLevel.Error);
                         DumpRawOnFailure(rawImage, outputFileName, kind, "decode");
                         throw;
                     }
@@ -1455,20 +1483,20 @@ namespace Oscilloscope_Network_Capture
                             }
                             catch (Exception exSave)
                             {
-                                Log("SaveAndDisplay: Save failed: " + exSave.ToString(), LogLevel.Error);
+                                Log("Save failed (save and display): " + exSave.ToString(), LogLevel.Error);
                                 DumpRawOnFailure(rawImage, outputFileName, kind, "save");
                                 throw;
                             }
                         }
 
-                        Log((File.Exists(outputFileName) ? "Saved " : "Created ") + Path.GetFullPath(outputFileName), LogLevel.Notice);
+                        Log((File.Exists(outputFileName) ? "Saved " : "Created ") + Path.GetFullPath(outputFileName), LogLevel.Highlight);
 
                         // Clone for UI thread so original can dispose
                         Image uiCopy = null;
                         try { uiCopy = (Image)decoded.Clone(); }
                         catch (Exception exClone)
                         {
-                            Log("SaveAndDisplay: Clone failed (continuing without preview): " + exClone.ToString(), LogLevel.Warning);
+                            Log("Clone failed (continuing without preview): " + exClone.ToString(), LogLevel.Warning);
                         }
                         if (uiCopy != null)
                             SetPictureBoxImage(uiCopy);
@@ -1484,7 +1512,7 @@ namespace Oscilloscope_Network_Capture
             finally
             {
                 // End marker
-                Log("SaveAndDisplay: end path=" + outputFileName, LogLevel.Info);
+                Log("End path (save and display): " + outputFileName, LogLevel.Debug);
             }
         }
 
@@ -1535,13 +1563,13 @@ namespace Oscilloscope_Network_Capture
                         }
                         else
                         {
-                            Log("Siglent previous mode was " + lastSiglentTrigMode + "; leaving instrument stopped.", LogLevel.Info);
+                            Log("Acquisition previous mode was " + lastSiglentTrigMode + " (Siglent); leaving instrument stopped.", LogLevel.Info);
                         }
                     }
                     else
                     {
                         TryWrite(scpi, "RUN");
-                        Log("Siglent: Unknown previous mode; issued RUN.", LogLevel.Warning);
+                        Log("Unknown previous mode (Siglent); issued RUN.", LogLevel.Warning);
                     }
                     return;
                 }
@@ -1551,17 +1579,17 @@ namespace Oscilloscope_Network_Capture
                 {
                     if (!TryWrite(scpi, ":RUN")) TryWrite(scpi, ":ACQ:STATE 1");
                     try { scpi.WaitOpc(1500); } catch { }
-                    Log("Acquisition forced to RUN (generic).", LogLevel.Info);
+                    Log("Acquisition forced to RUN.", LogLevel.Info);
                     return;
                 }
 
                 if (!TryWrite(scpi, ":RUN")) TryWrite(scpi, ":ACQ:STATE 1");
                 scpi.WaitOpc(1500);
-                Log("Acquisition resumed.", LogLevel.Info);
+                Log("Acquisition resumed.", LogLevel.Notice);
             }
             catch (Exception ex)
             {
-                Log("Failed to resume scope acquisition: " + ex.Message, LogLevel.Warning);
+                Log("Failed to resume acquisition: " + ex.Message, LogLevel.Warning);
             }
         }
 
@@ -1597,7 +1625,7 @@ namespace Oscilloscope_Network_Capture
             {
                 var img = TryFetchSiglent(scpi);
                 if (img != null) return img;
-                Log("Siglent path failed; falling back to generic list.", LogLevel.Warning);
+                Log("Path failed (Siglent); falling back to generic list.", LogLevel.Warning);
             }
             // Rigol or fallback generic (existing logic)
             return TryFetchRigolStyle(scpi);
@@ -1623,7 +1651,7 @@ namespace Oscilloscope_Network_Capture
             for (int i = 0; i < attempts.Length; i++)
             {
                 string cmd = attempts[i];
-                Log("Trying screenshot command (Rigol path): " + cmd, LogLevel.Info);
+                Log("Trying screenshot command: " + cmd, LogLevel.Debug);
 
                 // Use a shorter timeout for the very first plain command; longer for subsequent ones.
                 int timeoutMs = (i == 0) ? 5000 : 8000;
@@ -1631,7 +1659,7 @@ namespace Oscilloscope_Network_Capture
                 byte[] data = scpi.TryQueryBinaryBlock(cmd, 50 * 1024 * 1024, timeoutMs);
                 if (data != null && data.Length > 64)
                 {
-                    Log("Command " + cmd + " succeeded (block, bytes=" + data.Length + ", head=" + HexPreview(data, 16) + ")", LogLevel.Info);
+                    Log("Command " + cmd + " succeeded (block, bytes=" + data.Length + ", head=" + HexPreview(data, 16) + ")", LogLevel.Debug);
                     return data;
                 }
 
@@ -1650,15 +1678,15 @@ namespace Oscilloscope_Network_Capture
             string[] siglent = { "SCDP", "SCDP?", ":SCDP?" };
             foreach (var cmd in siglent)
             {
-                Log("Trying Siglent screenshot command: " + cmd, LogLevel.Info);
+                Log("Trying screenshot command (Siglent): " + cmd, LogLevel.Info);
                 string mode;
                 byte[] data = scpi.TryQuerySiglentImage(cmd, 50 * 1024 * 1024, 12000, out mode);
                 if (data != null && data.Length > 64)
                 {
-                    Log($"Siglent command {cmd} succeeded (mode={mode}, bytes={data.Length}, head={HexPreview(data, 16)})", LogLevel.Info);
+                    Log($"Command {cmd} succeeded (Siglent) (mode={mode}, bytes={data.Length}, head={HexPreview(data, 16)})", LogLevel.Debug);
                     return data;
                 }
-                Log($"Siglent command {cmd} produced no usable data.", LogLevel.Warning);
+                Log($"Command {cmd} produced no usable data (Siglent).", LogLevel.Warning);
             }
             return null;
         }
@@ -1679,11 +1707,11 @@ namespace Oscilloscope_Network_Capture
                 {
                     mode = mode.Trim().ToUpperInvariant();
                     lastSiglentTrigMode = mode;
-                    Log("Siglent TRIG_MODE: " + mode, LogLevel.Info);
+                    Log("TRIG_MODE (Siglent): " + mode, LogLevel.Debug);
                 }
                 else
                 {
-                    Log("Siglent: TRIG_MODE? returned no data; assuming running.", LogLevel.Warning);
+                    Log("TRIG_MODE? returned no data (Siglent); assuming running.", LogLevel.Warning);
                     // Fallback treat as running
                     lastSiglentTrigMode = null;
                     mode = "AUTO";
@@ -1698,7 +1726,7 @@ namespace Oscilloscope_Network_Capture
                     {
                         try { scpi.WaitOpc(1500); } catch { }
                         System.Threading.Thread.Sleep(120);
-                        Log("Scope acquisition stopped for screenshot (Siglent).", LogLevel.Info);
+                        Log("Acquisition stopped for screenshot (Siglent).", LogLevel.Debug);
                     }
                     else
                     {
@@ -1707,7 +1735,7 @@ namespace Oscilloscope_Network_Capture
                 }
                 else
                 {
-                    Log("Scope acquisition already not running (Siglent mode = " + mode + ").", LogLevel.Info);
+                    Log("Acquisition already not running (Siglent mode = " + mode + ").", LogLevel.Debug);
                 }
                 return running;
             }
@@ -1723,7 +1751,7 @@ namespace Oscilloscope_Network_Capture
                 string s = stat.Trim().ToUpperInvariant();
                 if (s.Contains("STOP") || s.Contains("HALT") || s.Contains("IDLE") || s.Contains("WAIT"))
                     runningGeneric = false;
-                Log("Trigger state: " + s, LogLevel.Info);
+                Log("Trigger state: " + s, LogLevel.Debug);
             }
             else
             {
@@ -1735,34 +1763,14 @@ namespace Oscilloscope_Network_Capture
                 if (!TryWrite(scpi, ":STOP")) TryWrite(scpi, ":ACQ:STATE 0");
                 try { scpi.WaitOpc(1500); } catch { }
                 System.Threading.Thread.Sleep(120);
-                Log("Scope acquisition stopped for screenshot.", LogLevel.Info);
+                Log("Acquisition stopped for screenshot.", LogLevel.Debug);
             }
             else
             {
-                Log("Scope acquisition already stopped.", LogLevel.Info);
+                Log("Acquisition already stopped.", LogLevel.Debug);
             }
             return runningGeneric;
         }
-
-        /*
-        // ###########################################################################################
-        // Resume scope acquisition if we stopped it
-        // ###########################################################################################
-
-        private void TryRun(RawScpiClient scpi)
-        {
-            try
-            {
-                if (!TryWrite(scpi, ":RUN")) TryWrite(scpi, ":ACQ:STATE 1");
-                scpi.WaitOpc(1500);
-                Log("Acquisition resumed.", LogLevel.Info);
-            }
-            catch (Exception ex)
-            {
-                Log("Failed to resume scope acquisition: " + ex.Message, LogLevel.Warning);
-            }
-        }
-        */
 
         // ###########################################################################################
         // Send a SCPI command and ignore errors
@@ -1776,6 +1784,7 @@ namespace Oscilloscope_Network_Capture
         // ###########################################################################################
         // Pressing ENTER should capture in both places ("once" or "continuesly")
 
+        /*
         private void textBoxNumberRange_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Enter)
@@ -1785,6 +1794,26 @@ namespace Oscilloscope_Network_Capture
                 if (!hotkeyMode && buttonCaptureContinuelsy != null && buttonCaptureContinuelsy.Enabled)
                     buttonCaptureContinuelsy.PerformClick();
             }
+        }
+        */
+
+        private void textBoxCaptureNumberStart_KeyUp(object sender, KeyEventArgs e)
+        {
+            // Only react in capturing (hotkey) mode
+            if (!hotkeyMode || !numberRangeActive) return;
+
+            // Ignore keys that don't change text or are handled elsewhere
+            if (e.KeyCode == Keys.Enter || e.KeyCode == Keys.Escape ||
+                e.KeyCode == Keys.Left || e.KeyCode == Keys.Right ||
+                e.KeyCode == Keys.Up || e.KeyCode == Keys.Down ||
+                e.KeyCode == Keys.ShiftKey || e.KeyCode == Keys.ControlKey ||
+                e.KeyCode == Keys.Menu) return;
+
+            // Update numberStart from the textbox; on invalid input, keep current numberStart silently
+            RefreshNumberRangeFromTextBoxes(logOnError: false);
+
+            // Reflect the new number in the action/status text
+            UpdateNumberStatusText();
         }
 
         // ###########################################################################################
@@ -1937,7 +1966,7 @@ namespace Oscilloscope_Network_Capture
             bitsPerPixel = ReadUInt16LE(data, 28);
             uint compression = ReadUInt32LE(data, 30); // BI_RGB = 0, BI_BITFIELDS = 3 (sometimes for 16/32bpp)
 
-            Log($"Header: fileSizeField={headerFileSize}, pixelOffset={pixelDataOffset}, dibSize={dibHeaderSize}, w={width}, h={height}, bpp={bitsPerPixel}, comp={compression}", LogLevel.Info);
+            Log($"Header: fileSizeField={headerFileSize}, pixelOffset={pixelDataOffset}, dibSize={dibHeaderSize}, w={width}, h={height}, bpp={bitsPerPixel}, comp={compression}", LogLevel.Debug);
 
             // Basic structural checks
             if (planes != 1)
@@ -1999,7 +2028,7 @@ namespace Oscilloscope_Network_Capture
                 if (headerFileSize == 0 ||
                     headerFileSize + pixelDataOffset == data.Length) // (Very odd edge case the original code hinted at)
                 {
-                    Log("Notice: Non-standard [FileSize] field; patching.", LogLevel.Notice);
+                    Log("Non-standard [FileSize] field; patching.", LogLevel.Debug);
                     if (patchHeader)
                         PatchFileSize(data, (uint)data.Length);
                 }
@@ -2031,7 +2060,7 @@ namespace Oscilloscope_Network_Capture
             }
 
             if (!anyNonZero)
-                Log("Warning: Capture appears fully black (all sampled pixels zero); continuing.", LogLevel.Warning);
+                Log("Capture appears fully black (all sampled pixels zero); continuing.", LogLevel.Debug);
 
             return true;
         }
@@ -2072,13 +2101,20 @@ namespace Oscilloscope_Network_Capture
         private void AppendColoredLine(string message, LogLevel level)
         {
             if (richTextBoxLog == null) return;
+
+            // Filter Debug messages based on the checkbox (state is not persisted)
+            if (level == LogLevel.Debug && (checkBoxDebug == null || !checkBoxDebug.Checked))
+                return;
+
             Color color;
             switch (level)
             {
+                case LogLevel.Highlight: color = Color.White; break;
                 case LogLevel.Warning: color = Color.Khaki; break;
                 case LogLevel.Error: color = Color.LightPink; break;
                 case LogLevel.Notice: color = Color.SkyBlue; break;
-                default: color = Color.DarkSeaGreen; break;
+                case LogLevel.Debug: color = Color.DarkSeaGreen; break;
+                default: color = Color.LightGreen; break;
             }
             string line = $"{DateTime.Now:HH:mm:ss.fff} {message}{Environment.NewLine}";
             int start = richTextBoxLog.TextLength;
@@ -2203,8 +2239,8 @@ namespace Oscilloscope_Network_Capture
                                 {
                                     lastIdn = idn;
                                     detectedVendor = DetermineVendor(idn);
-                                    Log("IDN (timebase adjust): " + idn.Trim(), LogLevel.Info);
-                                    Log("Vendor classification: " + detectedVendor, LogLevel.Notice);
+                                    Log("IDN (timebase adjust): " + idn.Trim(), LogLevel.Debug);
+                                    Log("Vendor classification: " + detectedVendor, LogLevel.Debug);
                                 }
                             }
 
@@ -2241,14 +2277,14 @@ namespace Oscilloscope_Network_Capture
 
                             if (Math.Abs(target - current) < current * 0.0005)
                             {
-                                Log("Timebase already at boundary step: " + FormatSeconds(current) + "/div", LogLevel.Notice);
+                                Log("Timebase already at boundary step: " + FormatSeconds(current) + "/div", LogLevel.Debug);
                                 return;
                             }
 
                             if (SetTimeDiv(scpi, target))
                             {
-                                Log("Timebase " + (increase ? "increased" : "decreased") + " from " +
-                                    FormatSeconds(current) + " to " + FormatSeconds(target) + " per division.", LogLevel.Notice);
+                                Log("Timebase " + (increase ? "increased (zoom-out)" : "decreased (zoom-in)") + " from [" +
+                                    FormatSeconds(current) + "] to [" + FormatSeconds(target) + "] per division.", LogLevel.Info);
                             }
                             else
                             {
@@ -2377,7 +2413,7 @@ namespace Oscilloscope_Network_Capture
                             {
                                 lastIdn = idn;
                                 detectedVendor = DetermineVendor(idn);
-                                Log("IDN (snapshot): " + idn.Trim(), LogLevel.Info);
+                                Log("IDN (snapshot): " + idn.Trim(), LogLevel.Debug);
                             }
                         }
 
@@ -2386,9 +2422,9 @@ namespace Oscilloscope_Network_Capture
                         if (running)
                         {
                             if (StopAcq(scpi))
-                                Log("Snapshot: acquisition stopped (display frozen).", LogLevel.Notice);
+                                Log("Acquisition stopped.", LogLevel.Notice);
                             else
-                                Log("Snapshot: failed to stop acquisition.", LogLevel.Warning);
+                                Log("Failed to stop acquisition.", LogLevel.Warning);
                         }
                         else
                         {
@@ -2406,9 +2442,9 @@ namespace Oscilloscope_Network_Capture
 
                             bool nowRunning = QueryIsRunning(scpi);
                             if (!nowRunning)
-                                Log("Snapshot: refreshed single waveform.", LogLevel.Notice);
+                                Log("Refreshed single snapshot.", LogLevel.Notice);
                             else
-                                Log("Snapshot: waveform refresh uncertain (still running).", LogLevel.Warning);
+                                Log("Snapshot refresh uncertain (still running).", LogLevel.Warning);
                         }
 
                         var err = scpi.TryQuery(":SYST:ERR?", timeoutMs: 600);
@@ -2453,14 +2489,15 @@ namespace Oscilloscope_Network_Capture
                             {
                                 lastIdn = idn;
                                 detectedVendor = DetermineVendor(idn);
-                                Log("IDN (resume): " + idn.Trim(), LogLevel.Info);
+                                Log("IDN (resume): " + idn.Trim(), LogLevel.Debug);
                             }
                         }
 
                         bool before = QueryIsRunning(scpi);
                         bool sent = ForceRun(scpi);
-                        System.Threading.Thread.Sleep(120);
-                        bool after = QueryIsRunning(scpi);
+
+                        // Wait up to ~2s, polling quickly; return as soon as it reports running
+                        bool after = WaitUntilRunning(scpi, timeoutMs: 2000, statusTimeoutMs: 200, pollDelayMs: 50);
 
                         if (sent && after)
                             Log("Acquisition resumed.", LogLevel.Notice);
@@ -2481,24 +2518,37 @@ namespace Oscilloscope_Network_Capture
             });
         }
 
+        // Poll until the instrument reports running, or timeout
+        private bool WaitUntilRunning(RawScpiClient scpi, int timeoutMs, int statusTimeoutMs = 200, int pollDelayMs = 50)
+        {
+            var sw = Stopwatch.StartNew();
+            while (sw.ElapsedMilliseconds < timeoutMs)
+            {
+                if (QueryIsRunning(scpi, statusTimeoutMs)) return true;
+                System.Threading.Thread.Sleep(pollDelayMs);
+            }
+            // One final check at the end of the timeout window
+            return QueryIsRunning(scpi, statusTimeoutMs);
+        }
+
         // ---------------- Internal helpers for snapshot / resume ----------------
 
-        private bool QueryIsRunning(RawScpiClient scpi)
+        private bool QueryIsRunning(RawScpiClient scpi, int statusTimeoutMs = 800)
         {
             try
             {
                 if (detectedVendor == ScopeVendor.Siglent)
                 {
-                    string mode = scpi.TryQuery("TRIG_MODE?", timeoutMs: 800);
+                    string mode = scpi.TryQuery("TRIG_MODE?", timeoutMs: statusTimeoutMs);
                     if (string.IsNullOrWhiteSpace(mode)) return true; // assume running
                     mode = mode.Trim().ToUpperInvariant();
                     return mode == "AUTO" || mode == "NORM";
                 }
                 else
                 {
-                    string stat = scpi.TryQuery(":TRIG:STAT?", timeoutMs: 800) ??
-                                  scpi.TryQuery(":TRIG:STATE?", timeoutMs: 800) ??
-                                  scpi.TryQuery(":TRIG:STATUS?", timeoutMs: 800);
+                    string stat = scpi.TryQuery(":TRIG:STAT?", timeoutMs: statusTimeoutMs) ??
+                                  scpi.TryQuery(":TRIG:STATE?", timeoutMs: statusTimeoutMs) ??
+                                  scpi.TryQuery(":TRIG:STATUS?", timeoutMs: statusTimeoutMs);
                     if (string.IsNullOrWhiteSpace(stat)) return true;
                     stat = stat.Trim().ToUpperInvariant();
                     if (stat.Contains("STOP") || stat.Contains("HALT") || stat.Contains("IDLE") || stat.Contains("WAIT"))
@@ -2559,6 +2609,23 @@ namespace Oscilloscope_Network_Capture
                 try { scpi.WaitOpc(3000); } catch { /* ignore */ }
             }
             return ok;
+        }
+
+
+        private void FocusNumberTextboxCaretToEnd()
+        {
+            if (textBoxCaptureNumberStart == null) return;
+            BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    if (textBoxCaptureNumberStart.CanFocus)
+                        textBoxCaptureNumberStart.Focus();
+                    textBoxCaptureNumberStart.SelectionStart = textBoxCaptureNumberStart.TextLength;
+                    textBoxCaptureNumberStart.SelectionLength = 0;
+                }
+                catch { /* ignore focus timing issues */ }
+            }));
         }
 
         private static uint ReadUInt32LE(byte[] d, int o) => (uint)(d[o] | (d[o + 1] << 8) | (d[o + 2] << 16) | (d[o + 3] << 24));
