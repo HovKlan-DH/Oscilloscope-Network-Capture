@@ -1109,7 +1109,7 @@ namespace Oscilloscope_Network_Capture
             string comp = EscapeRtf(component ?? "");
             string rtf =
                 "{\\rtf1\\ansi" +
-                "\\fs28 Ready to capture; [\\b " + comp + "] number [\\b " + numberStart + "]\\line " +
+                "\\fs28 Ready to capture; [\\b " + comp + "\\b0] number [\\b " + numberStart + "\\b0]\\line " +
                 "Press [ENTER] to capture, [ESC] to stop." +
                 "}";
 
@@ -1373,9 +1373,6 @@ namespace Oscilloscope_Network_Capture
             sb.Append(@"{\i " + EscapeRtf(quoted) + "}");
             sb.Append(@"\line\line ");
 
-            sb.Append(EscapeRtf("The application is 99% \"vibe coded\" in Visual Studio 2022, as I initially just wanted a quick PoC for myselves, where I could capture files in a specific format from my scope."));
-            sb.Append(@"\line "); 
-            
             sb.Append(EscapeRtf("It has been designed to work specifically with my Rigol DS2202A oscilloscope, but as it uses the SCPI socket protocol, then it should also work for other oscilloscopes also - but this is where I need some feedback, as I only have access to my own scope :-) The goal is not to make this a full-blown \"Swiss army knife\" that suits everyones need, but if can help someone other than myself, then I am happy to make this available."));
             sb.Append(@"\line\line ");
 
