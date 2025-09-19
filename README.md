@@ -26,8 +26,8 @@ The tool has been made as a helper-tool for my other project _Commodore Repair T
 
 # Screenshots
 
-<img width="1087" height="955" alt="image" src="https://github.com/user-attachments/assets/62d1c5ba-3461-4169-b5bf-dfd401e2cb14" />
+<img width="1085" height="872" alt="image" src="https://github.com/user-attachments/assets/c34b9994-2660-4c90-ae86-3c6b8c4a2578" />
 
-<img width="1087" height="955" alt="image" src="https://github.com/user-attachments/assets/0e85df11-dd1b-4e92-a07f-120b3f4130f4" />
+<img width="1085" height="872" alt="image" src="https://github.com/user-attachments/assets/6d0b5606-458b-4749-9f93-af949736f566" />
 
-<img width="1087" height="955" alt="image" src="https://github.com/user-attachments/assets/e5acecef-3dd7-4131-8aa7-708dc036f253" />
+<img width="1085" height="872" alt="image" src="https://github.com/user-attachments/assets/d9923dc7-66c5-4464-b161-3f345378f4b2" />
