@@ -13,7 +13,7 @@ My use-case is that I need to do quite a few oscilloscope baseline measurements 
   - `-` to increase timespan (zoom-out)
   - `*` to STOP acquisition on scope
   - `*` again to take a new snapshot on scope
-  - `/` to RESUME acquisition in scope
+  - `/` to RESUME acquisition on scope
   - `ARROW UP` to raise trigger level 0.25V
   - `ARROW DOWN` to lower trigger level 0.25V
   - `ENTER` to save image from scope to a file named from the filename format
