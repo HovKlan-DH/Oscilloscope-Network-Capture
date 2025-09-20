@@ -1002,11 +1002,27 @@ namespace Oscilloscope_Network_Capture
         // ################################################################################################
         private async void Form_KeyDown(object sender, KeyEventArgs e)
         {
+            // Only react to keyboard commands while in capture mode.
+            if (!hotkeyMode)
+            {
+                // Allow starting capture mode from keyboard.
+                if (e.KeyCode == Keys.Enter)
+                {
+                    e.Handled = true;
+                    e.SuppressKeyPress = true;
+                    buttonCaptureContinuelsy_Click(this, EventArgs.Empty);
+                }
+                return;
+            }
+
+            // -------- Capture mode hotkeys --------
+
+            // Timebase zoom
             if (e.KeyCode == Keys.Add || e.KeyCode == Keys.Oemplus)
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
-                await AdjustTimebaseAsync(false);
+                await AdjustTimebaseAsync(false); // decrease timespan (zoom-in)
                 return;
             }
 
@@ -1014,10 +1030,11 @@ namespace Oscilloscope_Network_Capture
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
-                await AdjustTimebaseAsync(true);
+                await AdjustTimebaseAsync(true); // increase timespan (zoom-out)
                 return;
             }
 
+            // Snapshot toggle
             if (e.KeyCode == Keys.Multiply || (e.KeyCode == Keys.D8 && e.Shift))
             {
                 e.Handled = true;
@@ -1026,6 +1043,7 @@ namespace Oscilloscope_Network_Capture
                 return;
             }
 
+            // Resume acquisition
             if (e.KeyCode == Keys.Divide || e.KeyCode == Keys.OemQuestion)
             {
                 e.Handled = true;
@@ -1034,8 +1052,24 @@ namespace Oscilloscope_Network_Capture
                 return;
             }
 
-            if (!hotkeyMode) return;
+            // Trigger level up/down
+            if (e.KeyCode == Keys.Up)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                await AdjustTriggerLevelAsync(true);   // raise trigger level
+                return;
+            }
 
+            if (e.KeyCode == Keys.Down)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                await AdjustTriggerLevelAsync(false);  // lower trigger level
+                return;
+            }
+
+            // Capture and exit
             if (e.KeyCode == Keys.Enter)
             {
                 e.Handled = true;
@@ -1057,13 +1091,16 @@ namespace Oscilloscope_Network_Capture
                 {
                     await StartSingleCaptureAsync(null);
                 }
+                return;
             }
-            else if (e.KeyCode == Keys.Escape)
+
+            if (e.KeyCode == Keys.Escape)
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
                 DisableHotkeyMode();
                 if (richTextBoxAction != null) richTextBoxAction.Text = "Ready for capture";
+                return;
             }
         }
 
@@ -1151,6 +1188,14 @@ namespace Oscilloscope_Network_Capture
         #endregion
 
         #region Scope controls: timebase, snapshot, resume
+
+        // ################################################################################################
+        // Adjusts the trigger level up/down using the Scope service.
+        // ################################################################################################
+        private Task AdjustTriggerLevelAsync(bool increase)
+        {
+            return _scope.AdjustTriggerLevelAsync(scopeIp, scopePort, increase);
+        }
 
         // ################################################################################################
         // Adjusts the instrument's timebase (seconds/div) up/down using the Scope service.
@@ -1283,51 +1328,82 @@ namespace Oscilloscope_Network_Capture
 
         // ################################################################################################
         // Populates the "Help" rich text box with general usage instructions and keyboard shortcuts.
+        // Uses light-gray highlighted runs to simulate keyboard "keycaps" (ENTER, +, -, etc.).
         // ################################################################################################
         private void LoadHelpText()
         {
-            string helpTxt = @"{\rtf1\ansi {\fs28{\b Rigol}}\line ";
-            helpTxt += @"Typical port is {\b 5555} (I am actually not sure on this - is this typical?).\line ";
-            helpTxt += @"Confirmed working:\line ";
-            helpTxt += @"  * Rigol DS2202A\line ";
-            helpTxt += @"\line ";
-            helpTxt += @"{\fs28{\b Siglent}}\line ";
-            helpTxt += @"Typical port is {\b 5025} (I am actually not sure on this - is this typical?).\line ";
-            helpTxt += @"Confirmed working:\line ";
-            helpTxt += @"    * Siglent SDS 1104X - E\line ";
-            helpTxt += @"    * Siglent SDS 1204X - E\line ";
-            helpTxt += @"\line";
-            helpTxt += @"{\fs28{\b Variables to use in filename format}}\line ";
-            helpTxt += @"    * \{Region\}\line ";
-            helpTxt += @"    * \{Component\}\line ";
-            helpTxt += @"    * \{Number\} is whatever number you may be meassuring (e.g. IC pin number 7)\line ";
-            helpTxt += @"    * \{Date\} is YYYYMMDD - e.g. 20251231\line ";
-            helpTxt += @"    * \{Time\} is HHMMSS - e.g. 235959\line ";
-            helpTxt += @"\line";
-            helpTxt += @"{\fs28{\b Keyboard commands}}\line ";
-            helpTxt += @"    * {\b ENTER } at application launch will start capture mode\line ";
-            helpTxt += @"    * {\b ENTER } in capture mode will capture and save image from scope\line ";
-            helpTxt += @"    * {\b ESCAPE } in capture mode will exit capture mode\line ";
-            helpTxt += @"    * {\b + } (plus) to decrease timespan (zoom-in)\line ";
-            helpTxt += @"    * {\b - } (minus) to increase timespan (zoom-out)\line ";
-            helpTxt += @"    * {\b * } (multiply) to STOP acquisition on scope\line ";
-            helpTxt += @"    * {\b * } (multiply) to take a new snapshot on scope\line ";
-            helpTxt += @"    * {\b / } (forslash) to RESUME acquisition in scope\line ";
-            helpTxt += @"\line";
-            helpTxt += @"{\fs28{\b General}}\line ";
-            helpTxt += @"In capture mode you can change the variables on-the-fly and it will be used for the next saved file.\line ";
-            helpTxt += @"\line";
-            helpTxt += @"{\fs28{\b Standard and protocol used:}}\line ";
-            helpTxt += @"    * IEEE 488.2 standard\line ";
-            helpTxt += @"    * SCPI socket protocol\line ";
-            helpTxt += @"\line";
-            helpTxt += @"{\fs28{\b Troubleshoot no connectivity to you oscilloscope}}\line ";
-            helpTxt += @"If you do not get any connection to your oscilloscope, then please do validate that your computer can actually connect to the oscilloscope over network. You can do this by this simple commandline prompt, but it does require that you do have the ""telnet"" command installed (can be installed from ""Programs and Feaures > Turn Windows features on or off"" from Windows Control Panel):\line\line ";
-            helpTxt += @"    {\b telnet 192.168.0.100 5555}\line\line ";
-            helpTxt += @"If this results in a black screen, then you do have connectivity. You of course needs to adapt this for your scope, so it will have another IP address and probably also another port instead of ""5555"". Maybe also your scope has a web interface, so you can try also accessing it on its IP addresses for both HTTP and HTTPS.\line ";
-            helpTxt += @"Also, it might help power cycling your scope.\line ";
-            helpTxt += @"}}";
-            richTextBoxHelp.Rtf = helpTxt;
+            // RTF header with font and color tables
+            var sb = new StringBuilder();
+            sb.Append(@"{\rtf1\ansi\deff0");
+            sb.Append(@"{\fonttbl{\f0 Segoe UI;}{\f1 Consolas;}}");
+            // colortbl: [0]=auto; [1]=text (black); [2]=keycap bg (light gray)
+            sb.Append(@"{\colortbl ;\red0\green0\blue0;\red230\green234\blue238;}");
+            sb.Append(@"\fs22 "); // 11pt base size
+
+            sb.Append(@"{\fs28{\b Rigol}}\line ");
+            sb.Append(@"Typical port is {\b 5555} (I am actually not sure on this - is this typical?).\line ");
+            sb.Append(@"\line ");
+
+            sb.Append(@"{\fs28{\b Siglent}}\line ");
+            sb.Append(@"Typical port is {\b 5025} (I am actually not sure on this - is this typical?).\line ");
+            sb.Append(@"\line");
+
+            sb.Append(@"{\fs28{\b Variables to use in filename format}}\line ");
+            sb.Append(@"    * "+ KeycapRtf("{Region}") + @" is either PAL or NTSC\line ");
+            sb.Append(@"    * "+ KeycapRtf("{Component}") + @" is the component/label you are doing an measurement on\line ");
+            sb.Append(@"    * "+ KeycapRtf("{Number}") + @" is whatever number you may be meassuring (e.g. IC pin number 7)\line ");
+            sb.Append(@"    * "+ KeycapRtf("{Date}") + @" is YYYYMMDD - e.g. 20251231\line ");
+            sb.Append(@"    * "+ KeycapRtf("{Time}") + @" is HHMMSS - e.g. 235959\line ");
+            sb.Append(@"\line");
+
+            sb.Append(@"{\fs28{\b General}}\line ");
+            sb.Append(@"In capture mode you can change the variables on-the-fly, and it will be used for the next saved file.\line ");
+            sb.Append(@"\line");
+
+            sb.Append(@"{\fs28{\b Keyboard commands (in capture mode)}}\line ");
+            sb.Append("    * " + KeycapRtf("ENTER") + " at application launch will start capture mode\\line ");
+            sb.Append("    * " + KeycapRtf("ENTER") + " in capture mode will save image from scope to a file with a specific filename format\\line ");
+            sb.Append("    * " + KeycapRtf("ESCAPE") + " in capture mode will exit capture mode\\line ");
+            sb.Append("    * " + KeycapRtf("+") + " to decrease timespan (zoom-in)\\line ");
+            sb.Append("    * " + KeycapRtf("-") + " to increase timespan (zoom-out)\\line ");
+            sb.Append("    * " + KeycapRtf("*") + " to STOP acquisition on scope\\line ");
+            sb.Append("    * " + KeycapRtf("*") + " to take a new snapshot on scope\\line ");
+            sb.Append("    * " + KeycapRtf("/") + " to RESUME acquisition on scope\\line ");
+            sb.Append("    * " + KeycapRtf("ARROW UP") + " to raise trigger level 0.25V\\line ");
+            sb.Append("    * " + KeycapRtf("ARROW DOWN") + " to lower trigger level 0.25V\\line ");
+            sb.Append(@"\line");
+
+            sb.Append(@"{\fs28{\b Troubleshoot no connectivity to you oscilloscope}}\line ");
+            sb.Append(@"If you do not get any connection to your oscilloscope, then please do validate that your computer can actually connect to the oscilloscope over network. You can do this by this simple commandline prompt, but it does require that you do have the "+ KeycapRtf("telnet") + @" client installed (can be installed from ""Programs and Feaures > Turn Windows features on or off"" from Windows Control Panel):\line\line ");
+            sb.Append(@"    "+ KeycapRtf("telnet 192.168.0.100 5555") + @"\line\line ");
+            sb.Append(@"If this results in a black screen and no errors, then you do have connectivity. You of course needs to adapt this for your scope, so it will have another IP address and probably also another port instead of ""5555"". Maybe also your scope has a web interface, so you can try also accessing it on its IP addresses for both HTTP and HTTPS.\line ");
+            sb.Append(@"Also, it might help power cycling your scope.\line ");
+            sb.Append(@"\line");
+
+            sb.Append(@"{\fs28{\b Standard and protocol used:}}\line ");
+            sb.Append(@"    * IEEE 488.2 standard\line ");
+            sb.Append(@"    * SCPI socket protocol\line ");
+            sb.Append(@"\line");
+
+            sb.Append(@"{\fs28{\b Confirmed working on following oscilloscopes}}\line ");
+            sb.Append(@"    * Rigol DS2202A\line ");
+            sb.Append(@"    * Siglent SDS 1104X - E\line ");
+            sb.Append(@"    * Siglent SDS 1204X - E\line ");
+            sb.Append(@"\line");
+
+            sb.Append("}");
+
+            richTextBoxHelp.Rtf = sb.ToString();
+        }
+
+        // Returns an RTF run that looks like a keycap: light gray background + small padding.
+        // Uses the color table defined in LoadHelpText(): text=cf1 (black), key bg=highlight2.
+        // Padding is simulated using non-breaking spaces (~) on both sides.
+        private string KeycapRtf(string text)
+        {
+            // base font for keys a tad smaller than body
+            var inner = $"\\f0\\fs20\\cf1\\highlight2\\~{EscapeRtf(text)}\\~\\highlight0";
+            return "{" + inner + "}";
         }
 
         #endregion
@@ -1361,7 +1437,6 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
-        // Populates the "About" rich text box with the same content currently stored in the .resx.
         // Populates the "About" rich text box and makes the quoted sentence italic.
         private void LoadAboutText()
         {
@@ -1372,7 +1447,7 @@ namespace Oscilloscope_Network_Capture
 
             var sb = new StringBuilder();
             sb.Append(@"{\rtf1\ansi ");
-            sb.Append(EscapeRtf("This is a very simple and rudimentary application, which has been designed for one purpose only:"));
+            sb.Append(EscapeRtf("This is a simple application, which has been designed for one purpose only:"));
             sb.Append(@"\line\line ");
 
             // Italicized quoted line

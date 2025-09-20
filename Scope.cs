@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
 using System.Net.Sockets;
 using System.Text;
@@ -98,6 +99,244 @@ namespace Oscilloscope_Network_Capture
             });
 
             return success;
+        }
+
+        public Task AdjustTriggerLevelAsync(string host, int port, bool increase)
+        {
+            return Task.Run(() =>
+            {
+                try
+                {
+                    using (var scpi = ScpiClient.Connect(host, port, 5000, 5000))
+                    {
+                        PrepareSession(scpi);
+                        var vendor = DetectedVendor;
+
+                        // Resolve trigger source channel
+                        string src = FirstNonEmpty(
+                            () => QueryString(scpi, ":TRIGger:EDGE:SOURce?"),
+                            () => QueryString(scpi, "TRIG:EDGE:SOUR?"),
+                            () => QueryString(scpi, ":TRIG:SOUR?"));
+                        if (string.IsNullOrWhiteSpace(src)) src = vendor == ScopeVendor.Siglent ? "C1" : "CHAN1";
+                        src = src.Trim().ToUpperInvariant();
+
+                        int chIdx = ParseChannelIndex(src);
+                        string rigolChan = "CHAN" + chIdx;  // Rigol channel token
+                        string siglentChan = "C" + chIdx;   // Siglent channel token
+
+                        // Current trigger level (V)
+                        double currentLevel = FirstDouble(
+                            // Rigol channel-scoped first
+                            () => QueryDouble(scpi, $":TRIG:LEV? {rigolChan}"),
+                            () => QueryDouble(scpi, $":TRIGger:LEVel? {rigolChan}"),
+                            // Generic
+                            () => QueryDouble(scpi, ":TRIG:LEV?"),
+                            // Rigol older variant
+                            () => QueryDouble(scpi, $":TRIGger:LEVel {rigolChan}?"),
+                            // Siglent guesses
+                            () => QueryDouble(scpi, "TRIG_LEVEL?"),
+                            () => QueryDouble(scpi, $"{siglentChan}:TRIG_LEVEL?")
+                        ) ?? 0.0;
+
+                        // Fixed step: always 0.25 V, align to quarter-volt grid regardless of volts/div
+                        const double stepVolts = 0.25;
+                        double grid = stepVolts;
+
+                        // Snap logic:
+                        // - If off-grid: snap toward requested direction (ceil for increase, floor for decrease).
+                        // - If on-grid: move exactly one grid up/down.
+                        double snappedNearest = RoundToIncrement(currentLevel, grid);
+                        bool isAligned = NearlyEqual(currentLevel, snappedNearest, Math.Max(1e-9, grid * 1e-3));
+
+                        double target = isAligned
+                            ? currentLevel + (increase ? grid : -grid)
+                            : (increase ? CeilToIncrement(currentLevel, grid) : FloorToIncrement(currentLevel, grid));
+
+                        string targetStr = target.ToString("0.########", System.Globalization.CultureInfo.InvariantCulture);
+
+                        bool sent =
+                            // Rigol channel-scoped preferred
+                            TryWrite(scpi, $":TRIG:LEV {rigolChan}, {targetStr}") ||
+                            TryWrite(scpi, $":TRIGger:LEVel {rigolChan}, {targetStr}") ||
+                            // Generic fallbacks
+                            TryWrite(scpi, $":TRIG:LEV {targetStr}") ||
+                            TryWrite(scpi, $"TRIG:EDGE:LEV {targetStr}") ||
+                            // Siglent variants
+                            TryWrite(scpi, $"TRIG_LEVEL {targetStr}") ||
+                            TryWrite(scpi, $"{siglentChan}:TRIG_LEVEL {targetStr}");
+
+                        if (!sent)
+                        {
+                            _logger.Warn("Trigger level command not accepted by scope.");
+                            return;
+                        }
+
+                        try { scpi.WaitOpc(800); } catch { /* best-effort */ }
+                        System.Threading.Thread.Sleep(50);
+
+                        // Readback to verify
+                        double after = FirstDouble(
+                            () => QueryDouble(scpi, $":TRIG:LEV? {rigolChan}"),
+                            () => QueryDouble(scpi, $":TRIGger:LEVel? {rigolChan}"),
+                            () => QueryDouble(scpi, ":TRIG:LEV?"),
+                            () => QueryDouble(scpi, "TRIG_LEVEL?"),
+                            () => QueryDouble(scpi, $"{siglentChan}:TRIG_LEVEL?")
+                        ) ?? double.NaN;
+
+                        string prevStr = currentLevel.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+                        if (double.IsNaN(after))
+                        {
+                            _logger.Notice($"Trigger level {(increase ? "attempted up" : "attempted down")} from {prevStr} V to {targetStr} V (readback unavailable).");
+                        }
+                        else
+                        {
+                            string afterStr = after.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+                            if (Math.Abs(after - currentLevel) < (grid * 0.2))
+                                _logger.Warn($"Trigger level unchanged ({afterStr} V). Check trigger source/channel on the scope.");
+                            else
+                                _logger.Notice($"Trigger level {(increase ? "increased" : "decreased")} from [{prevStr}V] to [{afterStr}V].");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error("AdjustTriggerLevel failed: " + ex.Message);
+                }
+            });
+
+            // ------- local helpers -------
+
+            string QueryString(ScpiClient cli, string cmd)
+            {
+                if (!TryWrite(cli, cmd)) return null;
+                var s = cli.ReadLine(256);
+                return s != null ? s.Trim() : null;
+            }
+
+            double? QueryDouble(ScpiClient cli, string cmd)
+            {
+                var s = QueryString(cli, cmd);
+                if (string.IsNullOrWhiteSpace(s)) return null;
+                var d = ParseLastDouble(s);
+                if (d.HasValue) return d;
+                s = CleanupNumeric(s);
+                double v;
+                return double.TryParse(s, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out v) ? (double?)v : null;
+            }
+
+            // Extract the last numeric token (handles replies like "CHAN1,0.01V")
+            double? ParseLastDouble(string s)
+            {
+                int i = 0; double? last = null;
+                while (i < s.Length)
+                {
+                    // start of a numeric?
+                    if (char.IsDigit(s[i]) || s[i] == '.' || s[i] == '+' || s[i] == '-')
+                    {
+                        int j = i + 1;
+                        bool seenDot = s[i] == '.';
+                        while (j < s.Length)
+                        {
+                            char c = s[j];
+                            if (char.IsDigit(c)) { j++; continue; }
+                            if (c == '.' && !seenDot) { seenDot = true; j++; continue; }
+                            if ((c == 'e' || c == 'E') && j + 1 < s.Length &&
+    (char.IsDigit(s[j + 1]) || s[j + 1] == '+' || s[j + 1] == '-'))
+                            {
+                                j += 2;
+                                while (j < s.Length && char.IsDigit(s[j])) j++;
+                                continue;
+                            }
+                            break;
+                        }
+                        var token = s.Substring(i, j - i);
+                        double v;
+                        if (double.TryParse(token, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out v))
+                            last = v;
+                        i = j;
+                    }
+                    else i++;
+                }
+                return last;
+            }
+
+            string CleanupNumeric(string s)
+            {
+                var sb = new System.Text.StringBuilder(s.Length);
+                foreach (var c in s)
+                {
+                    if ((c >= '0' && c <= '9') || c == '.' || c == '-' || c == '+' || c == 'e' || c == 'E')
+                        sb.Append(c);
+                }
+                return sb.ToString();
+            }
+
+            T FirstNonEmpty<T>(params System.Func<T>[] getters) where T : class
+            {
+                foreach (var g in getters)
+                {
+                    try
+                    {
+                        var v = g();
+                        if (v is string str)
+                        {
+                            if (!string.IsNullOrWhiteSpace(str)) return v;
+                        }
+                        else if (v != null) return v;
+                    }
+                    catch { }
+                }
+                return null;
+            }
+
+            double? FirstDouble(params System.Func<double?>[] getters)
+            {
+                foreach (var g in getters)
+                {
+                    try
+                    {
+                        var v = g();
+                        if (v.HasValue) return v;
+                    }
+                    catch { }
+                }
+                return null;
+            }
+
+            int ParseChannelIndex(string src)
+            {
+                // Accepts "CHAN1", "CH1", "C1" -> 1
+                if (string.IsNullOrEmpty(src)) return 1;
+                src = src.Trim().ToUpperInvariant();
+                for (int i = 1; i <= 8; i++)
+                {
+                    if (src.Contains(i.ToString())) return i;
+                }
+                return 1;
+            }
+
+            double RoundToIncrement(double value, double inc)
+            {
+                if (inc <= 0) return value;
+                return Math.Round(value / inc) * inc;
+            }
+
+            double FloorToIncrement(double value, double inc)
+            {
+                if (inc <= 0) return value;
+                return Math.Floor(value / inc) * inc;
+            }
+
+            double CeilToIncrement(double value, double inc)
+            {
+                if (inc <= 0) return value;
+                return Math.Ceiling(value / inc) * inc;
+            }
+
+            bool NearlyEqual(double a, double b, double eps)
+            {
+                return Math.Abs(a - b) <= eps;
+            }
         }
 
         public async Task<CaptureResult> CaptureAsync(string host, int port, bool forceResume, string finalPath, int connectTimeoutMs = 5000, int ioTimeoutMs = 60000)

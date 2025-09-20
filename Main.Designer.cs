@@ -66,7 +66,6 @@
             this.label6 = new System.Windows.Forms.Label();
             this.tabPageHelp = new System.Windows.Forms.TabPage();
             this.richTextBoxHelp = new System.Windows.Forms.RichTextBox();
-            this.label1 = new System.Windows.Forms.Label();
             this.tabPageAbout = new System.Windows.Forms.TabPage();
             this.richTextBoxAbout = new System.Windows.Forms.RichTextBox();
             this.labelProductVersion = new System.Windows.Forms.Label();
@@ -515,7 +514,6 @@
             // tabPageHelp
             // 
             this.tabPageHelp.Controls.Add(this.richTextBoxHelp);
-            this.tabPageHelp.Controls.Add(this.label1);
             this.tabPageHelp.Location = new System.Drawing.Point(4, 30);
             this.tabPageHelp.Name = "tabPageHelp";
             this.tabPageHelp.Padding = new System.Windows.Forms.Padding(3);
@@ -530,21 +528,11 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.richTextBoxHelp.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.richTextBoxHelp.Location = new System.Drawing.Point(12, 66);
+            this.richTextBoxHelp.Location = new System.Drawing.Point(12, 22);
             this.richTextBoxHelp.Name = "richTextBoxHelp";
-            this.richTextBoxHelp.Size = new System.Drawing.Size(834, 551);
+            this.richTextBoxHelp.Size = new System.Drawing.Size(834, 595);
             this.richTextBoxHelp.TabIndex = 2;
             this.richTextBoxHelp.Text = "";
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Font = new System.Drawing.Font("Calibri", 16.2F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.Location = new System.Drawing.Point(6, 13);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(69, 35);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "Help";
             // 
             // tabPageAbout
             // 
@@ -633,7 +621,6 @@
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.tabPageHelp.ResumeLayout(false);
-            this.tabPageHelp.PerformLayout();
             this.tabPageAbout.ResumeLayout(false);
             this.tabPageAbout.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxIcon)).EndInit();
@@ -665,7 +652,6 @@
         private System.Windows.Forms.TextBox textBoxFilenameFormat;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TabPage tabPageHelp;
-        private System.Windows.Forms.Label label1;
         private System.Windows.Forms.RichTextBox richTextBoxHelp;
         private System.Windows.Forms.RichTextBox richTextBoxAbout;
         private System.Windows.Forms.Label label3;
