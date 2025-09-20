@@ -38,10 +38,6 @@ My use-case is that I need to do quite a few oscilloscope baseline measurements 
 * Siglent SDS 1104X - E
 * Siglent SDS 1204X - E
 
-# Why?
-
-The tool has been made as a helper-tool for my other project _Commodore Repair Toolbox_ (CRT), https://github.com/HovKlan-DH/Commodore-Repair-Toolbox
-
 # Screenshots
 
 <img width="1085" height="872" alt="image" src="https://github.com/user-attachments/assets/c34b9994-2660-4c90-ae86-3c6b8c4a2578" />
