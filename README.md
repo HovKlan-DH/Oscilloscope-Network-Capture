@@ -40,8 +40,8 @@ My use-case is that I need to do quite a few oscilloscope baseline measurements 
 
 # Screenshots
 
-<img width="1085" height="872" alt="image" src="https://github.com/user-attachments/assets/c34b9994-2660-4c90-ae86-3c6b8c4a2578" />
+<img width="900" height="723" alt="image" src="https://github.com/user-attachments/assets/20df2f78-f5d8-4817-b9be-51d31f5e420f" />
 
-<img width="1085" height="872" alt="image" src="https://github.com/user-attachments/assets/6d0b5606-458b-4749-9f93-af949736f566" />
+<img width="900" height="723" alt="image" src="https://github.com/user-attachments/assets/3ad578ca-19a1-4b49-a7cf-61d9fa85cd46" />
 
-<img width="1085" height="872" alt="image" src="https://github.com/user-attachments/assets/d9923dc7-66c5-4464-b161-3f345378f4b2" />
+<img width="900" height="723" alt="image" src="https://github.com/user-attachments/assets/91a7afa2-9403-45b2-bb6e-b8fe07c6a376" />
