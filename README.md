@@ -20,6 +20,10 @@ My use-case is that I need to do quite a few oscilloscope baseline measurements 
   - `ESCAPE`to exit capture mode
 - When in capture mode, then try and change some of the capturing variables - e.g. change number from `1` to `5`, and see now that the saved file will use this number for the next file you save
 
+The keyboard actions have been done to support having an external numpad nearby your scope, so you easily can control the scope when directly measuring:
+
+<img width="402" height="368" alt="image" src="https://github.com/user-attachments/assets/5ecf6026-169b-4f23-a393-d8d13ac27d5b" />
+
 # Typical ports used (I assume, but not fully sure)
 
 * Rigol
