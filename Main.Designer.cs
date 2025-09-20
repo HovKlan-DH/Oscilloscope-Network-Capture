@@ -180,7 +180,7 @@
             this.richTextBoxAction.Size = new System.Drawing.Size(344, 48);
             this.richTextBoxAction.TabIndex = 100;
             this.richTextBoxAction.TabStop = false;
-            this.richTextBoxAction.Text = "Ready to capture; number 1 of 40";
+            this.richTextBoxAction.Text = "Wait, connecting to scope...";
             // 
             // labelComponent
             // 

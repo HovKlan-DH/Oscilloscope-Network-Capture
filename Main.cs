@@ -150,7 +150,7 @@ namespace Oscilloscope_Network_Capture
             labelNewVersionAvailable.BringToFront();
 
             // Initial action text
-            richTextBoxAction.Text = "Ready for capture";
+//            richTextBoxAction.Text = "Ready for capture";
             initializing = false;
 
             // Post-shown checks
@@ -167,6 +167,8 @@ namespace Oscilloscope_Network_Capture
 
             // Connectivity check identical to the button action
             var ok = await CheckScopeConnectivityAsync();
+            if (richTextBoxAction != null)
+                richTextBoxAction.Text = ok ? "Ready for capture" : "Cannot connect to scope";
 
             try
             {
@@ -689,9 +691,14 @@ namespace Oscilloscope_Network_Capture
         // ################################################################################################
         private async void buttonCheckScope_Click(object sender, EventArgs e)
         {
+            richTextBoxAction.Text = "Wait, connecting to scope...";
             if (buttonCaptureContinuelsy != null) buttonCaptureContinuelsy.Enabled = false;
             if (buttonCheckScope != null) buttonCheckScope.Enabled = false;
+
             bool ok = await CheckScopeConnectivityAsync();
+            if (richTextBoxAction != null)
+                richTextBoxAction.Text = ok ? "Ready for capture" : "Cannot connect to scope";
+
             if (!hotkeyMode)
             {
                 if (buttonCaptureContinuelsy != null) buttonCaptureContinuelsy.Enabled = true;
