@@ -22,6 +22,27 @@ namespace Oscilloscope_Network_Capture
             _logger = logger ?? new Logger();
         }
 
+        // Returns true if the scope acquisition is currently running; false if stopped or on query failure.
+        public Task<bool> IsAcquisitionRunningAsync(string host, int port, int connectTimeoutMs = 1500, int ioTimeoutMs = 3000)
+        {
+            return Task.Run(() =>
+            {
+                try
+                {
+                    using (var scpi = ScpiClient.Connect(host, port, connectTimeoutMs, ioTimeoutMs))
+                    {
+                        PrepareSession(scpi);
+                        return QueryIsRunning(scpi, 800);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Debug("IsAcquisitionRunningAsync failed: " + ex.Message);
+                    return false;
+                }
+            });
+        }
+
         public ScopeVendor DetectedVendor { get; private set; } = ScopeVendor.Unknown;
         public string LastIdn { get; private set; }
         private string _lastSiglentTrigMode;

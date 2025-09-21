@@ -27,8 +27,11 @@ namespace Oscilloscope_Network_Capture
         public string OutputFolder { get; set; } = "output";
         public bool BeepEnabled { get; set; } = true;
         public bool ForceAcquisition { get; set; } = false;
+        public bool ForceClear { get; set; } = false; // NEW
         public int? SplitterDistance { get; set; }
         public bool WindowMaximized { get; set; } = false;
+
+        public string Misc { get; set; }
 
         public void Load()
         {
@@ -77,11 +80,18 @@ namespace Oscilloscope_Network_Capture
                 if (map.TryGetValue("ForceAcquisition", out var resumeStr))
                     ForceAcquisition = resumeStr == "1" || resumeStr.Equals("true", StringComparison.OrdinalIgnoreCase) || resumeStr.Equals("yes", StringComparison.OrdinalIgnoreCase);
 
+                if (map.TryGetValue("ForceClear", out var clearStr)) // NEW
+                    ForceClear = clearStr == "1" || clearStr.Equals("true", StringComparison.OrdinalIgnoreCase) || clearStr.Equals("yes", StringComparison.OrdinalIgnoreCase);
+
                 if (map.TryGetValue("SplitterDistance", out var splitStr) && int.TryParse(splitStr, NumberStyles.Integer, CultureInfo.InvariantCulture, out var sd))
                     SplitterDistance = sd;
 
                 if (map.TryGetValue("WindowMaximized", out var winMax))
                     WindowMaximized = winMax == "1" || winMax.Equals("true", StringComparison.OrdinalIgnoreCase) || winMax.Equals("yes", StringComparison.OrdinalIgnoreCase);
+
+                // NEW: Misc
+                if (map.TryGetValue("Misc", out var misc))
+                    Misc = misc?.Trim() ?? "";
 
                 _logger.Debug($"Loaded configuration:");
                 _logger.Debug($"    IP: {ScopeIp}:{ScopePort}");
@@ -91,8 +101,10 @@ namespace Oscilloscope_Network_Capture
                 _logger.Debug($"    OutputFolder: {OutputFolder}");
                 _logger.Debug($"    Beep: {(BeepEnabled ? 1 : 0)}");
                 _logger.Debug($"    ForceAcquisition: {(ForceAcquisition ? 1 : 0)}");
+                _logger.Debug($"    ForceClear: {(ForceClear ? 1 : 0)}"); // NEW
                 _logger.Debug($"    SplitterDistance: {(SplitterDistance ?? 0)}");
                 _logger.Debug($"    WindowMaximized: {(WindowMaximized ? 1 : 0)}");
+                _logger.Debug($"    Misc: {Misc ?? ""}"); // NEW
             }
             catch (Exception ex)
             {
@@ -113,8 +125,10 @@ namespace Oscilloscope_Network_Capture
                 sb.AppendLine("OutputFolder=" + OutputFolder);
                 sb.AppendLine("Beep=" + (BeepEnabled ? "1" : "0"));
                 sb.AppendLine("ForceAcquisition=" + (ForceAcquisition ? "1" : "0"));
+                sb.AppendLine("ForceClear=" + (ForceClear ? "1" : "0")); // NEW
                 sb.AppendLine("SplitterDistance=" + (SplitterDistance?.ToString() ?? "0"));
                 sb.AppendLine("WindowMaximized=" + (WindowMaximized ? "1" : "0"));
+                sb.AppendLine("Misc=" + (Misc ?? "")); // NEW
 
                 File.WriteAllText(_configPath, sb.ToString());
 
@@ -126,8 +140,10 @@ namespace Oscilloscope_Network_Capture
                 _logger.Debug($"    OutputFolder: {OutputFolder}");
                 _logger.Debug($"    Beep: {(BeepEnabled ? 1 : 0)}");
                 _logger.Debug($"    ForceAcquisition: {(ForceAcquisition ? 1 : 0)}");
+                _logger.Debug($"    ForceClear: {(ForceClear ? 1 : 0)}"); // NEW
                 _logger.Debug($"    SplitterDistance: {(SplitterDistance ?? 0)}");
                 _logger.Debug($"    WindowMaximized: {(WindowMaximized ? 1 : 0)}");
+                _logger.Debug($"    Misc: {Misc ?? ""}"); // NEW
             }
             catch (Exception ex)
             {
@@ -161,7 +177,8 @@ namespace Oscilloscope_Network_Capture
                 _logger.Error("Could not create output folder: " + ex.Message);
             }
 
-            if (!string.Equals(before, OutputFolder, StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrWhiteSpace(before) &&
+                !string.Equals(before, OutputFolder, StringComparison.OrdinalIgnoreCase))
                 Save();
         }
 

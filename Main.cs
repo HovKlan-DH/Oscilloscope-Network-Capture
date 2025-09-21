@@ -47,8 +47,9 @@ namespace Oscilloscope_Network_Capture
 
         // Number range
         private int numberStart = 1;
-        private int originalNumberStart;
+//        private int originalNumberStart;
         private bool numberRangeActive = false;
+        private string misc = "";
 
         private bool _suppressSplitterSave = true;
         private bool windowMaximized = false;
@@ -97,6 +98,7 @@ namespace Oscilloscope_Network_Capture
             }
 
             checkBoxBeep.CheckedChanged += checkBoxBeep_CheckedChanged;
+            checkBoxForceClear.CheckedChanged += checkBoxForceClear_CheckedChanged;
 
             LoadConfig();
             LoadHelpText();
@@ -116,6 +118,11 @@ namespace Oscilloscope_Network_Capture
             textBoxComponent.TextChanged += textBoxComponent_TextChanged;
             textBoxFilenameFormat.Text = filenameFormat;
 
+            textBoxMisc.Text = misc;
+            textBoxMisc.Leave += textBoxMisc_Leave;
+            textBoxMisc.KeyDown += textBoxMisc_KeyDown;
+            textBoxMisc.TextChanged += textBoxMisc_TextChanged;
+
             textBoxPort.Text = scopePort.ToString();
             textBoxPort.Leave += textBoxPort_Leave;
             textBoxPort.KeyDown += textBoxPort_KeyDown;
@@ -124,6 +131,7 @@ namespace Oscilloscope_Network_Capture
             buttonCaptureContinuelsy.Click += buttonCaptureContinuelsy_Click;
             buttonCheckScope.Click += buttonCheckScope_Click;
             richTextBoxAbout.LinkClicked += richTextBoxAbout_LinkClicked;
+            richTextBoxAction.Text = "Wait, connecting to scope ...";
 
             // Keyboard event routing (form-level hotkeys)
             this.KeyPreview = true;
@@ -149,8 +157,6 @@ namespace Oscilloscope_Network_Capture
             labelNewVersionAvailable.Location = new Point(richTextBoxLog.Right - labelNewVersionAvailable.Width, richTextBoxLog.Top);
             labelNewVersionAvailable.BringToFront();
 
-            // Initial action text
-//            richTextBoxAction.Text = "Ready for capture";
             initializing = false;
 
             // Post-shown checks
@@ -231,6 +237,10 @@ namespace Oscilloscope_Network_Capture
             component = _config.Component ?? "U1";
             if (textBoxComponent != null) textBoxComponent.Text = component;
 
+            // Misc
+            misc = _config.Misc ?? "";
+            if (textBoxMisc != null) textBoxMisc.Text = misc;
+
             filenameFormat = _config.FilenameFormat ?? filenameFormat;
             if (textBoxFilenameFormat != null) textBoxFilenameFormat.Text = filenameFormat;
 
@@ -239,6 +249,9 @@ namespace Oscilloscope_Network_Capture
 
             forceAcquisition = _config.ForceAcquisition;
             if (checkBoxForceAcquisition != null) checkBoxForceAcquisition.Checked = forceAcquisition;
+
+            // ForceClear
+            if (checkBoxForceClear != null) checkBoxForceClear.Checked = _config.ForceClear;
 
             // Region
             var region = _config.Region ?? "";
@@ -277,6 +290,7 @@ namespace Oscilloscope_Network_Capture
             _config.ScopeIp = scopeIp;
             _config.ScopePort = scopePort;
             _config.Component = component;
+            _config.Misc = misc; // NEW
             _config.FilenameFormat = filenameFormat;
             _config.BeepEnabled = beepEnabled;
             _config.ForceAcquisition = forceAcquisition;
@@ -284,6 +298,7 @@ namespace Oscilloscope_Network_Capture
             _config.OutputFolder = outputFolder;
             _config.SplitterDistance = (splitContainer1 != null ? (int?)splitContainer1.SplitterDistance : null);
             _config.WindowMaximized = windowMaximized;
+            _config.ForceClear = (checkBoxForceClear != null && checkBoxForceClear.Checked);
 
             _config.Save();
         }
@@ -679,6 +694,15 @@ namespace Oscilloscope_Network_Capture
             if (checkBoxBeep == null) return;
             beepEnabled = checkBoxBeep.Checked;
             if (initializing) return;
+            Log("Beep: " + (beepEnabled ? "ON" : "OFF"), LogLevel.Info);
+            SaveConfig();
+        }
+
+        private void checkBoxForceClear_CheckedChanged(object sender, EventArgs e)
+        {
+            if (checkBoxForceClear == null) return;
+            if (initializing) return;
+            Log("Force CLEAR before capture: " + (checkBoxForceClear.Checked ? "ON" : "OFF"), LogLevel.Info);
             SaveConfig();
         }
 
@@ -691,7 +715,7 @@ namespace Oscilloscope_Network_Capture
         // ################################################################################################
         private async void buttonCheckScope_Click(object sender, EventArgs e)
         {
-            richTextBoxAction.Text = "Wait, connecting to scope...";
+            richTextBoxAction.Text = "Wait, connecting to scope ...";
             if (buttonCaptureContinuelsy != null) buttonCaptureContinuelsy.Enabled = false;
             if (buttonCheckScope != null) buttonCheckScope.Enabled = false;
 
@@ -727,20 +751,11 @@ namespace Oscilloscope_Network_Capture
 
         #region Capture workflow
 
-        // ################################################################################################
-        // Captures a single screenshot immediately with the current settings.
-        // ################################################################################################
-        private async void buttonCaptureOnce_Click(object sender, EventArgs e)
-        {
-            await StartSingleCaptureAsync(null);
-        }
 
         // ################################################################################################
         // Performs a single capture operation (optionally using a capture number and region override), saves to disk, and updates the UI.
         // ################################################################################################
-        // <param name="captureNumber">Optional capture sequence number for filename token replacement.</param>
-        // <param name="regionOverride">Optional region token override; if null, uses selected region.</param>
-        private async Task StartSingleCaptureAsync(int? captureNumber, string regionOverride = null)
+        private async Task StartContinueslyCaptureAsync(int? captureNumber, string regionOverride = null)
         {
             if (captureInProgress)
             {
@@ -752,14 +767,12 @@ namespace Oscilloscope_Network_Capture
             if (buttonCheckScope != null) buttonCheckScope.Enabled = false;
             try
             {
-                ApplyComponentFromTextBox(); // ensure text box edits are applied
-
-                string region = regionOverride ?? (comboBoxRegion != null ? comboBoxRegion.SelectedItem as string : null);
-                if (string.IsNullOrWhiteSpace(region)) region = "default";
-                region = SanitizeForFile(region.Trim());
+                ApplyComponentFromTextBox();
+                ApplyMiscFromTextBox();
 
                 string outputFileName = BuildCaptureFileName(captureNumber);
-                await CaptureScreenToFileAsync(region, outputFileName);
+                await CaptureScreenToFileAsync(outputFileName);
+                //                await CaptureScreenToFileAsync(region, outputFileName);
                 if (richTextBoxAction != null)
                     richTextBoxAction.Text = failMode ? "Error occured" : "Ready for capture";
             }
@@ -800,25 +813,31 @@ namespace Oscilloscope_Network_Capture
                 ? comboBoxRegion.SelectedItem.ToString().Trim()
                 : "default";
 
+            string miscVal = (textBoxMisc != null && !string.IsNullOrWhiteSpace(textBoxMisc.Text))
+                ? textBoxMisc.Text.Trim()
+                : "";
+
             componentVal = SanitizeForFile(componentVal);
             if (!string.IsNullOrWhiteSpace(numberVal)) numberVal = SanitizeForFile(numberVal);
             regionVal = SanitizeForFile(string.IsNullOrWhiteSpace(regionVal) ? "default" : regionVal);
+            if (!string.IsNullOrWhiteSpace(miscVal)) miscVal = SanitizeForFile(miscVal);
 
             string dateVal = DateTime.Now.ToString("yyyyMMdd");
             string timeVal = DateTime.Now.ToString("HHmmss");
 
             var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                { "component", componentVal },
-                { "number", numberVal },
-                { "region", regionVal },
-                { "date", dateVal },
-                { "time", timeVal }
-            };
+    {
+        { "component", componentVal },
+        { "number", numberVal },
+        { "region", regionVal },
+        { "date", dateVal },
+        { "time", timeVal },
+        { "misc", miscVal }, // NEW
+    };
 
             string expanded = Regex.Replace(
                 format,
-                @"\{(component|number|region|date|time)\}",
+                @"\{(component|number|region|date|time|misc)\}",
                 m =>
                 {
                     string key = m.Groups[1].Value;
@@ -855,12 +874,12 @@ namespace Oscilloscope_Network_Capture
         // ################################################################################################
         // <param name="regionTag">Sanitized region tag (not used in file path building here but kept for future tagging).</param>
         // <param name="outputFileName">Absolute file path where the image will be saved.</param>
-        private Task CaptureScreenToFileAsync(string regionTag, string outputFileName)
+        private Task CaptureScreenToFileAsync(string outputFileName)
         {
             // Ensure absolute/valid path
             outputFolder = NormalizeOutputFolder(outputFolder);
 
-            if (richTextBoxAction != null) richTextBoxAction.Text = "Capturing image";
+            if (richTextBoxAction != null) richTextBoxAction.Text = "Wait, capturing image ...";
             ClearPictureBoxImage();
             Beep("before");
 
@@ -970,7 +989,7 @@ namespace Oscilloscope_Network_Capture
                 return;
             }
             if (!TryInitializeNumberRange()) return;
-            originalNumberStart = numberStart;
+//            originalNumberStart = numberStart;
             hotkeyMode = true;
             numberRangeActive = true;
 
@@ -999,6 +1018,10 @@ namespace Oscilloscope_Network_Capture
         // ################################################################################################
         // Global key handler:
         // + / - adjust timebase, * toggles snapshot, / resumes, ENTER captures, ESC exits hotkey mode.
+        // ################################################################################################
+        // ################################################################################################
+        // Global key handler:
+        // + / - adjust timebase, * toggles snapshot, / resumes, , clears status, ENTER captures, ESC exits hotkey mode.
         // ################################################################################################
         private async void Form_KeyDown(object sender, KeyEventArgs e)
         {
@@ -1052,6 +1075,15 @@ namespace Oscilloscope_Network_Capture
                 return;
             }
 
+            // CLEAR status on comma
+            if (e.KeyCode == Keys.Decimal)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                await ClearScopeAsync();
+                return;
+            }
+
             // Trigger level up/down
             if (e.KeyCode == Keys.Up)
             {
@@ -1075,12 +1107,26 @@ namespace Oscilloscope_Network_Capture
                 e.Handled = true;
                 e.SuppressKeyPress = true;
 
+                if (checkBoxForceClear.Checked)
+                {
+                    var isRunning = await _scope.IsAcquisitionRunningAsync(scopeIp, scopePort);
+                    if (isRunning)
+                    {
+                        await ClearScopeAsync();
+                        await Task.Delay(1500).ConfigureAwait(true);
+                    }
+                    else
+                    {
+                        Log("Skipping CLEAR (scope not running).", LogLevel.Debug);
+                    }
+                }
+
                 if (numberRangeActive)
                 {
                     RefreshNumberRangeFromTextBoxes(false);
 
                     int currentNumber = numberStart;
-                    await StartSingleCaptureAsync(currentNumber, null);
+                    await StartContinueslyCaptureAsync(currentNumber, null);
 
                     numberStart++;
                     if (textBoxCaptureNumberStart != null) textBoxCaptureNumberStart.Text = numberStart.ToString();
@@ -1089,7 +1135,7 @@ namespace Oscilloscope_Network_Capture
                 }
                 else
                 {
-                    await StartSingleCaptureAsync(null);
+                    await StartContinueslyCaptureAsync(null);
                 }
                 return;
             }
@@ -1101,6 +1147,39 @@ namespace Oscilloscope_Network_Capture
                 DisableHotkeyMode();
                 if (richTextBoxAction != null) richTextBoxAction.Text = "Ready for capture";
                 return;
+            }
+        }
+
+        private async Task ClearScopeAsync()
+        {
+            try
+            {
+                Log("Sending CLEAR to scope ...", LogLevel.Debug);
+
+                using (var client = new System.Net.Sockets.TcpClient())
+                {
+                    var connectTask = client.ConnectAsync(scopeIp, scopePort);
+                    var completed = await Task.WhenAny(connectTask, Task.Delay(1500)).ConfigureAwait(true);
+                    if (completed != connectTask)
+                        throw new TimeoutException("Connect timeout.");
+
+                    using (var stream = client.GetStream())
+                    {
+                        stream.WriteTimeout = 1500;
+                        stream.ReadTimeout = 1500;
+
+                        var data = Encoding.ASCII.GetBytes("CLEAR\n");
+                        await stream.WriteAsync(data, 0, data.Length).ConfigureAwait(true);
+                        await stream.FlushAsync().ConfigureAwait(true);
+                    }
+                }
+
+                Log("Scope CLEAR sent.", LogLevel.Info);
+            }
+            catch (Exception ex)
+            {
+                Log("CLEAR failed: " + ex.Message, LogLevel.Error);
+                Beep("error");
             }
         }
 
@@ -1143,17 +1222,56 @@ namespace Oscilloscope_Network_Capture
             return true;
         }
 
+        private void textBoxMisc_Leave(object sender, EventArgs e) => ApplyMiscFromTextBox();
+
+        private void textBoxMisc_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                ApplyMiscFromTextBox();
+                e.SuppressKeyPress = true;
+            }
+        }
+
+        private void textBoxMisc_TextChanged(object sender, EventArgs e)
+        {
+            if (initializing) return;
+
+            // Update in-memory value, but don't persist on every keystroke
+            misc = textBoxMisc.Text.Trim();
+
+            // Mirror the live value in the action panel during capture mode
+            if (hotkeyMode && numberRangeActive)
+                UpdateNumberStatusText();
+        }
+
+        private void ApplyMiscFromTextBox()
+        {
+            if (textBoxMisc == null) return;
+            string raw = (textBoxMisc.Text ?? "").Trim();
+            if (raw != misc)
+            {
+                misc = raw;
+                if (!initializing) SaveConfig();
+            }
+
+            // Keep the action panel in sync when in capture mode
+            if (hotkeyMode && numberRangeActive)
+                UpdateNumberStatusText();
+        }
+
         // ################################################################################################
         // Updates the "action" RTF field to show current status and next capture number.
         // ################################################################################################
         private void UpdateNumberStatusText()
         {
-            if(richTextBoxAction == null) return;
+            if (richTextBoxAction == null) return;
 
             string comp = EscapeRtf(component ?? "");
+            string miscRtf = string.IsNullOrWhiteSpace(misc) ? "" : "[\\b " + EscapeRtf(misc) + "\\b0]";
             string rtf =
                 "{\\rtf1\\ansi" +
-                "\\fs28 Ready to capture; [\\b " + comp + "\\b0] number [\\b " + numberStart + "\\b0]\\line " +
+                "\\fs28 Ready to capture; [\\b " + comp + "\\b0] number [\\b " + numberStart + "\\b0]" + miscRtf + "\\line " +
                 "Press [ENTER] to capture, [ESC] to stop." +
                 "}";
 
@@ -1268,6 +1386,7 @@ namespace Oscilloscope_Network_Capture
         {
             if (string.IsNullOrEmpty(value))
                 return "default";
+
             char[] invalid = Path.GetInvalidFileNameChars();
             var sb = new StringBuilder(value.Length);
             foreach (char c in value)
@@ -1276,10 +1395,14 @@ namespace Oscilloscope_Network_Capture
                 else if (char.IsWhiteSpace(c)) sb.Append('_');
                 else sb.Append(c);
             }
+
             string cleaned = sb.ToString();
-            while (cleaned.Contains("__")) cleaned = cleaned.Replace("__", "_");
-            cleaned = cleaned.Trim('_');
-            return string.IsNullOrEmpty(cleaned) ? "default" : cleaned;
+
+            // Collapse runs of underscores but DO NOT trim leading/trailing underscores (preserve user intent like "_A")
+            while (cleaned.Contains("__"))
+                cleaned = cleaned.Replace("__", "_");
+
+            return cleaned.Length == 0 ? "default" : cleaned;
         }
 
         // ################################################################################################
@@ -1349,11 +1472,12 @@ namespace Oscilloscope_Network_Capture
             sb.Append(@"\line");
 
             sb.Append(@"{\fs28{\b Variables to use in filename format}}\line ");
-            sb.Append(@"    * "+ KeycapRtf("{Region}") + @" is either PAL or NTSC\line ");
-            sb.Append(@"    * "+ KeycapRtf("{Component}") + @" is the component/label you are doing an measurement on\line ");
-            sb.Append(@"    * "+ KeycapRtf("{Number}") + @" is whatever number you may be meassuring (e.g. IC pin number 7)\line ");
-            sb.Append(@"    * "+ KeycapRtf("{Date}") + @" is YYYYMMDD - e.g. 20251231\line ");
-            sb.Append(@"    * "+ KeycapRtf("{Time}") + @" is HHMMSS - e.g. 235959\line ");
+            sb.Append(@"    * " + KeycapRtf("{Region}") + @" is either PAL or NTSC\line ");
+            sb.Append(@"    * " + KeycapRtf("{Component}") + @" is the component/label you are doing an measurement on\line ");
+            sb.Append(@"    * " + KeycapRtf("{Number}") + @" is whatever number you may be meassuring (e.g. IC pin number 7)\line ");
+            sb.Append(@"    * " + KeycapRtf("{Date}") + @" is YYYYMMDD - e.g. 20251231\line ");
+            sb.Append(@"    * " + KeycapRtf("{Time}") + @" is HHMMSS - e.g. 235959\line ");
+            sb.Append(@"    * " + KeycapRtf("{Misc}") + @" is whatever text or number you may want to add (e.g. ""_A"" or ""_B"" without the """")\line ");
             sb.Append(@"\line");
 
             sb.Append(@"{\fs28{\b General}}\line ");
@@ -1369,15 +1493,27 @@ namespace Oscilloscope_Network_Capture
             sb.Append("    * " + KeycapRtf("*") + " to STOP acquisition on scope\\line ");
             sb.Append("    * " + KeycapRtf("*") + " to take a new snapshot on scope\\line ");
             sb.Append("    * " + KeycapRtf("/") + " to RESUME acquisition on scope\\line ");
+            sb.Append("    * " + KeycapRtf(",") + " to CLEAR scope status (SCPI " + KeycapRtf("*CLS") + ")\\line ");
             sb.Append("    * " + KeycapRtf("ARROW UP") + " to raise trigger level 0.25V\\line ");
             sb.Append("    * " + KeycapRtf("ARROW DOWN") + " to lower trigger level 0.25V\\line ");
             sb.Append(@"\line");
 
+            sb.Append(@"{\fs28{\b Checkboxes}}\line ");
+            sb.Append("    * Enable beep\\line ");
+            sb.Append("        - Beep on error and efter capture\\line ");
+            sb.Append("    * Enable debug\\line ");
+            sb.Append("        - Shows debug information in console\\line ");
+            sb.Append("    * Force CLEAR before capture\\line ");
+            sb.Append("        - Before capturing image, then CLEAR scope statistics and wait 1500mS to settle on new statistics\\line ");
+            sb.Append("    * Force acquisition after capture\\line ");
+            sb.Append("        - No matter what trigger mode was set manually before capture, then force acquisition after capture\\line ");
+            sb.Append(@"\line");
+
             sb.Append(@"{\fs28{\b Troubleshoot no connectivity to you oscilloscope}}\line ");
-            sb.Append(@"If you do not get any connection to your oscilloscope, then please do validate that your computer can actually connect to the oscilloscope over network. You can do this by this simple commandline prompt, but it does require that you do have the "+ KeycapRtf("telnet") + @" client installed (can be installed from ""Programs and Feaures > Turn Windows features on or off"" from Windows Control Panel):\line\line ");
-            sb.Append(@"    "+ KeycapRtf("telnet 192.168.0.100 5555") + @"\line\line ");
+            sb.Append(@"If you do not get any connection to your oscilloscope, then please do validate that your computer can actually connect to the oscilloscope over network. You can do this by this simple commandline prompt, but it does require that you do have the " + KeycapRtf("telnet") + @" client installed (can be installed from ""Programs and Feaures > Turn Windows features on or off"" from Windows Control Panel):\line\line ");
+            sb.Append(@"    " + KeycapRtf("telnet 192.168.0.100 5555") + @"\line\line ");
             sb.Append(@"If this results in a black screen and no errors, then you do have connectivity. You of course needs to adapt this for your scope, so it will have another IP address and probably also another port instead of ""5555"". Maybe also your scope has a web interface, so you can try also accessing it on its IP addresses for both HTTP and HTTPS.\line ");
-            sb.Append(@"Also, it might help power cycling your scope.\line ");
+            sb.Append(@"Also, sometimes it helps power cycling the scope.\line ");
             sb.Append(@"\line");
 
             sb.Append(@"{\fs28{\b Standard and protocol used:}}\line ");

@@ -71,6 +71,9 @@
             this.labelProductVersion = new System.Windows.Forms.Label();
             this.labelProductName = new System.Windows.Forms.Label();
             this.pictureBoxIcon = new System.Windows.Forms.PictureBox();
+            this.checkBoxForceClear = new System.Windows.Forms.CheckBox();
+            this.textBoxMisc = new System.Windows.Forms.TextBox();
+            this.label1 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxImage)).BeginInit();
             this.tabControl1.SuspendLayout();
             this.tabPageMeasurements.SuspendLayout();
@@ -104,7 +107,7 @@
             // 
             this.buttonCaptureContinuelsy.BackColor = System.Drawing.Color.Gold;
             this.buttonCaptureContinuelsy.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonCaptureContinuelsy.Location = new System.Drawing.Point(6, 138);
+            this.buttonCaptureContinuelsy.Location = new System.Drawing.Point(6, 165);
             this.buttonCaptureContinuelsy.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.buttonCaptureContinuelsy.Name = "buttonCaptureContinuelsy";
             this.buttonCaptureContinuelsy.Size = new System.Drawing.Size(344, 27);
@@ -119,7 +122,7 @@
             this.richTextBoxLog.Location = new System.Drawing.Point(0, 0);
             this.richTextBoxLog.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.richTextBoxLog.Name = "richTextBoxLog";
-            this.richTextBoxLog.Size = new System.Drawing.Size(488, 325);
+            this.richTextBoxLog.Size = new System.Drawing.Size(488, 360);
             this.richTextBoxLog.TabIndex = 100;
             this.richTextBoxLog.TabStop = false;
             this.richTextBoxLog.Text = "";
@@ -131,7 +134,7 @@
             this.pictureBoxImage.Location = new System.Drawing.Point(0, 0);
             this.pictureBoxImage.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.pictureBoxImage.Name = "pictureBoxImage";
-            this.pictureBoxImage.Size = new System.Drawing.Size(488, 294);
+            this.pictureBoxImage.Size = new System.Drawing.Size(488, 327);
             this.pictureBoxImage.TabIndex = 5;
             this.pictureBoxImage.TabStop = false;
             // 
@@ -176,10 +179,10 @@
             this.richTextBoxAction.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.richTextBoxAction.Name = "richTextBoxAction";
             this.richTextBoxAction.ReadOnly = true;
-            this.richTextBoxAction.Size = new System.Drawing.Size(344, 48);
+            this.richTextBoxAction.Size = new System.Drawing.Size(344, 60);
             this.richTextBoxAction.TabIndex = 100;
             this.richTextBoxAction.TabStop = false;
-            this.richTextBoxAction.Text = "Wait, connecting to scope...";
+            this.richTextBoxAction.Text = "Text";
             // 
             // labelComponent
             // 
@@ -225,7 +228,7 @@
             this.tabControl1.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(860, 657);
+            this.tabControl1.Size = new System.Drawing.Size(860, 725);
             this.tabControl1.TabIndex = 17;
             // 
             // tabPageMeasurements
@@ -239,7 +242,7 @@
             this.tabPageMeasurements.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.tabPageMeasurements.Name = "tabPageMeasurements";
             this.tabPageMeasurements.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.tabPageMeasurements.Size = new System.Drawing.Size(852, 623);
+            this.tabPageMeasurements.Size = new System.Drawing.Size(852, 691);
             this.tabPageMeasurements.TabIndex = 0;
             this.tabPageMeasurements.Text = "Measurements";
             this.tabPageMeasurements.UseVisualStyleBackColor = true;
@@ -263,8 +266,8 @@
             // 
             this.splitContainer1.Panel2.Controls.Add(this.pictureBoxImage);
             this.splitContainer1.Panel2MinSize = 50;
-            this.splitContainer1.Size = new System.Drawing.Size(488, 623);
-            this.splitContainer1.SplitterDistance = 325;
+            this.splitContainer1.Size = new System.Drawing.Size(488, 691);
+            this.splitContainer1.SplitterDistance = 360;
             this.splitContainer1.TabIndex = 26;
             // 
             // labelNewVersionAvailable
@@ -284,6 +287,7 @@
             // 
             this.panel4.BackColor = System.Drawing.Color.WhiteSmoke;
             this.panel4.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel4.Controls.Add(this.checkBoxForceClear);
             this.panel4.Controls.Add(this.checkBoxDebug);
             this.panel4.Controls.Add(this.label7);
             this.panel4.Controls.Add(this.checkBoxForceAcquisition);
@@ -295,7 +299,7 @@
             this.panel4.Controls.Add(this.buttonCheckScope);
             this.panel4.Location = new System.Drawing.Point(3, 0);
             this.panel4.Name = "panel4";
-            this.panel4.Size = new System.Drawing.Size(358, 172);
+            this.panel4.Size = new System.Drawing.Size(358, 199);
             this.panel4.TabIndex = 25;
             // 
             // checkBoxDebug
@@ -321,7 +325,7 @@
             // checkBoxForceAcquisition
             // 
             this.checkBoxForceAcquisition.AutoSize = true;
-            this.checkBoxForceAcquisition.Location = new System.Drawing.Point(7, 108);
+            this.checkBoxForceAcquisition.Location = new System.Drawing.Point(7, 132);
             this.checkBoxForceAcquisition.Name = "checkBoxForceAcquisition";
             this.checkBoxForceAcquisition.Size = new System.Drawing.Size(242, 25);
             this.checkBoxForceAcquisition.TabIndex = 3;
@@ -383,7 +387,7 @@
             this.buttonCheckScope.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonCheckScope.BackColor = System.Drawing.Color.Cornsilk;
             this.buttonCheckScope.Font = new System.Drawing.Font("Calibri", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.buttonCheckScope.Location = new System.Drawing.Point(6, 136);
+            this.buttonCheckScope.Location = new System.Drawing.Point(6, 158);
             this.buttonCheckScope.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.buttonCheckScope.Name = "buttonCheckScope";
             this.buttonCheckScope.Size = new System.Drawing.Size(344, 27);
@@ -399,9 +403,9 @@
             this.panel5.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.panel5.Controls.Add(this.richTextBoxAction);
             this.panel5.Controls.Add(this.labelAction);
-            this.panel5.Location = new System.Drawing.Point(3, 544);
+            this.panel5.Location = new System.Drawing.Point(3, 600);
             this.panel5.Name = "panel5";
-            this.panel5.Size = new System.Drawing.Size(358, 79);
+            this.panel5.Size = new System.Drawing.Size(358, 91);
             this.panel5.TabIndex = 24;
             // 
             // panel3
@@ -414,7 +418,7 @@
             this.panel3.Controls.Add(this.textBoxCaptureFolder);
             this.panel3.Controls.Add(this.textBoxFilenameFormat);
             this.panel3.Controls.Add(this.label2);
-            this.panel3.Location = new System.Drawing.Point(3, 178);
+            this.panel3.Location = new System.Drawing.Point(3, 205);
             this.panel3.Name = "panel3";
             this.panel3.Size = new System.Drawing.Size(358, 178);
             this.panel3.TabIndex = 21;
@@ -488,6 +492,8 @@
             // 
             this.panel1.BackColor = System.Drawing.Color.WhiteSmoke;
             this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel1.Controls.Add(this.textBoxMisc);
+            this.panel1.Controls.Add(this.label1);
             this.panel1.Controls.Add(this.label6);
             this.panel1.Controls.Add(this.buttonCaptureContinuelsy);
             this.panel1.Controls.Add(this.textBoxCaptureNumberStart);
@@ -496,9 +502,9 @@
             this.panel1.Controls.Add(this.labelRegion);
             this.panel1.Controls.Add(this.textBoxComponent);
             this.panel1.Controls.Add(this.labelComponent);
-            this.panel1.Location = new System.Drawing.Point(3, 362);
+            this.panel1.Location = new System.Drawing.Point(3, 389);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(358, 176);
+            this.panel1.Size = new System.Drawing.Size(358, 205);
             this.panel1.TabIndex = 19;
             // 
             // label6
@@ -593,15 +599,45 @@
             this.pictureBoxIcon.TabIndex = 0;
             this.pictureBoxIcon.TabStop = false;
             // 
+            // checkBoxForceClear
+            // 
+            this.checkBoxForceClear.AutoSize = true;
+            this.checkBoxForceClear.Location = new System.Drawing.Point(7, 108);
+            this.checkBoxForceClear.Name = "checkBoxForceClear";
+            this.checkBoxForceClear.Size = new System.Drawing.Size(223, 25);
+            this.checkBoxForceClear.TabIndex = 102;
+            this.checkBoxForceClear.Text = "Force CLEAR before capture";
+            this.checkBoxForceClear.UseVisualStyleBackColor = true;
+            // 
+            // textBoxMisc
+            // 
+            this.textBoxMisc.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBoxMisc.Location = new System.Drawing.Point(6, 136);
+            this.textBoxMisc.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.textBoxMisc.Name = "textBoxMisc";
+            this.textBoxMisc.Size = new System.Drawing.Size(69, 28);
+            this.textBoxMisc.TabIndex = 101;
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label1.Location = new System.Drawing.Point(81, 139);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(74, 21);
+            this.label1.TabIndex = 102;
+            this.label1.Text = "Misc info";
+            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 21F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(866, 666);
+            this.ClientSize = new System.Drawing.Size(866, 734);
             this.Controls.Add(this.tabControl1);
             this.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.MinimumSize = new System.Drawing.Size(884, 781);
             this.Name = "Main";
             this.Text = "Oscilloscope Network Capture";
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxImage)).EndInit();
@@ -671,6 +707,9 @@
         private System.Windows.Forms.Button buttonCheckScope;
         private System.Windows.Forms.SplitContainer splitContainer1;
         private System.Windows.Forms.CheckBox checkBoxDebug;
+        private System.Windows.Forms.CheckBox checkBoxForceClear;
+        private System.Windows.Forms.TextBox textBoxMisc;
+        private System.Windows.Forms.Label label1;
     }
 }
 
