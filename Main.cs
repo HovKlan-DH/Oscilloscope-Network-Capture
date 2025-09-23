@@ -877,11 +877,7 @@ namespace Oscilloscope_Network_Capture
         private Task CaptureScreenToFileAsync(string outputFileName)
         {
             // Ensure absolute/valid path
-            outputFolder = NormalizeOutputFolder(outputFolder);
-
-            if (richTextBoxAction != null) richTextBoxAction.Text = "Wait, capturing image ...";
-            ClearPictureBoxImage();
-            Beep("before");
+            outputFolder = NormalizeOutputFolder(outputFolder);            
 
             return Task.Run(async () =>
             {
@@ -1017,11 +1013,6 @@ namespace Oscilloscope_Network_Capture
 
         // ################################################################################################
         // Global key handler:
-        // + / - adjust timebase, * toggles snapshot, / resumes, ENTER captures, ESC exits hotkey mode.
-        // ################################################################################################
-        // ################################################################################################
-        // Global key handler:
-        // + / - adjust timebase, * toggles snapshot, / resumes, , clears status, ENTER captures, ESC exits hotkey mode.
         // ################################################################################################
         private async void Form_KeyDown(object sender, KeyEventArgs e)
         {
@@ -1075,15 +1066,6 @@ namespace Oscilloscope_Network_Capture
                 return;
             }
 
-            // CLEAR status on comma
-            if (e.KeyCode == Keys.Decimal)
-            {
-                e.Handled = true;
-                e.SuppressKeyPress = true;
-                await ClearScopeAsync();
-                return;
-            }
-
             // Trigger level up/down
             if (e.KeyCode == Keys.Up)
             {
@@ -1101,19 +1083,81 @@ namespace Oscilloscope_Network_Capture
                 return;
             }
 
+            // CLEAR only (no capture): Numpad Decimal
+            if (e.KeyCode == Keys.Decimal)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+
+                // Same behavior as the CLEAR step during capture:
+                var isRunning = await _scope.IsAcquisitionRunningAsync(scopeIp, scopePort);
+                if (isRunning)
+                {
+                    Log("Scope \"CLEAR\" sent.", LogLevel.Info);
+                    await ClearScopeAsync();
+                    await Task.Delay(1750).ConfigureAwait(true);
+                }
+                else
+                {
+                    Log("Skipping CLEAR (scope not running).", LogLevel.Debug);
+                }
+                return;
+            }
+
+            // Undo last capture: Delete key
+            if (e.KeyCode == Keys.Delete)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+
+                if (!numberRangeActive)
+                    return;
+
+                RefreshNumberRangeFromTextBoxes(false);
+
+                if (numberStart <= 1)
+                {
+                    Log("Cannot go back to less than number 1.", LogLevel.Error);
+                    Beep("error");
+                    return;
+                }
+
+                int target = numberStart - 1;
+                string deleted;
+                bool removed = TryDeleteLastCaptureForNumber(target, out deleted);
+
+                // Always step the counter back (bounded by 1)
+                numberStart = target;
+                if (textBoxCaptureNumberStart != null) textBoxCaptureNumberStart.Text = numberStart.ToString();
+
+                if (removed && !string.IsNullOrEmpty(deleted))
+                    Log("Undo: Deleted " + deleted, LogLevel.Highlight);
+                else
+                    Log("Undo: No matching file found for number [" + target + "].", LogLevel.Notice);
+
+                UpdateNumberStatusText();
+                FocusNumberTextboxCaretToEnd();
+                return;
+            }
+
             // Capture and exit
             if (e.KeyCode == Keys.Enter)
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
 
+                if (richTextBoxAction != null) richTextBoxAction.Text = "Wait, capturing image ...";
+                ClearPictureBoxImage();
+                Beep("before");
+
                 if (checkBoxForceClear.Checked)
                 {
                     var isRunning = await _scope.IsAcquisitionRunningAsync(scopeIp, scopePort);
                     if (isRunning)
                     {
+                        Log("Scope \"CLEAR\" sent; waiting 1750mS.", LogLevel.Info);
                         await ClearScopeAsync();
-                        await Task.Delay(1500).ConfigureAwait(true);
+                        await Task.Delay(1750).ConfigureAwait(true);
                     }
                     else
                     {
@@ -1154,27 +1198,25 @@ namespace Oscilloscope_Network_Capture
         {
             try
             {
-                Log("Sending CLEAR to scope ...", LogLevel.Debug);
+//                Log("Sending CLEAR to scope ...", LogLevel.Debug);
 
                 using (var client = new System.Net.Sockets.TcpClient())
                 {
                     var connectTask = client.ConnectAsync(scopeIp, scopePort);
-                    var completed = await Task.WhenAny(connectTask, Task.Delay(1500)).ConfigureAwait(true);
+                    var completed = await Task.WhenAny(connectTask, Task.Delay(1750)).ConfigureAwait(true);
                     if (completed != connectTask)
                         throw new TimeoutException("Connect timeout.");
 
                     using (var stream = client.GetStream())
                     {
-                        stream.WriteTimeout = 1500;
-                        stream.ReadTimeout = 1500;
+                        stream.WriteTimeout = 1750;
+                        stream.ReadTimeout = 1750;
 
                         var data = Encoding.ASCII.GetBytes("CLEAR\n");
                         await stream.WriteAsync(data, 0, data.Length).ConfigureAwait(true);
                         await stream.FlushAsync().ConfigureAwait(true);
                     }
                 }
-
-                Log("Scope CLEAR sent.", LogLevel.Info);
             }
             catch (Exception ex)
             {
@@ -1463,6 +1505,15 @@ namespace Oscilloscope_Network_Capture
             sb.Append(@"{\colortbl ;\red0\green0\blue0;\red230\green234\blue238;}");
             sb.Append(@"\fs22 "); // 11pt base size
 
+            sb.Append(@"{\fs28{\b Standard and protocol used:}}\line ");
+            sb.Append(@"    * IEEE 488.2 standard\line ");
+            sb.Append(@"    * SCPI socket protocol (not the telnet protocol)\line ");
+            sb.Append(@"\line");
+
+            sb.Append(@"{\fs28{\b Agilent} and {\b Keysight}}\line ");
+            sb.Append(@"Typical port is {\b 5025} (I am actually not sure on this - is this typical?).\line ");
+            sb.Append(@"\line ");
+
             sb.Append(@"{\fs28{\b Rigol}}\line ");
             sb.Append(@"Typical port is {\b 5555} (I am actually not sure on this - is this typical?).\line ");
             sb.Append(@"\line ");
@@ -1493,7 +1544,6 @@ namespace Oscilloscope_Network_Capture
             sb.Append("    * " + KeycapRtf("*") + " to STOP acquisition on scope\\line ");
             sb.Append("    * " + KeycapRtf("*") + " to take a new snapshot on scope\\line ");
             sb.Append("    * " + KeycapRtf("/") + " to RESUME acquisition on scope\\line ");
-            sb.Append("    * " + KeycapRtf(",") + " to CLEAR scope status (SCPI " + KeycapRtf("*CLS") + ")\\line ");
             sb.Append("    * " + KeycapRtf("ARROW UP") + " to raise trigger level 0.25V\\line ");
             sb.Append("    * " + KeycapRtf("ARROW DOWN") + " to lower trigger level 0.25V\\line ");
             sb.Append(@"\line");
@@ -1504,7 +1554,7 @@ namespace Oscilloscope_Network_Capture
             sb.Append("    * Enable debug\\line ");
             sb.Append("        - Shows debug information in console\\line ");
             sb.Append("    * Force CLEAR before capture\\line ");
-            sb.Append("        - Before capturing image, then CLEAR scope statistics and wait 1500mS to settle on new statistics\\line ");
+            sb.Append("        - Before capturing image, then CLEAR scope statistics and wait 1750mS to settle on new statistics\\line ");
             sb.Append("    * Force acquisition after capture\\line ");
             sb.Append("        - No matter what trigger mode was set manually before capture, then force acquisition after capture\\line ");
             sb.Append(@"\line");
@@ -1514,11 +1564,6 @@ namespace Oscilloscope_Network_Capture
             sb.Append(@"    " + KeycapRtf("telnet 192.168.0.100 5555") + @"\line\line ");
             sb.Append(@"If this results in a black screen and no errors, then you do have connectivity. You of course needs to adapt this for your scope, so it will have another IP address and probably also another port instead of ""5555"". Maybe also your scope has a web interface, so you can try also accessing it on its IP addresses for both HTTP and HTTPS.\line ");
             sb.Append(@"Also, sometimes it helps power cycling the scope.\line ");
-            sb.Append(@"\line");
-
-            sb.Append(@"{\fs28{\b Standard and protocol used:}}\line ");
-            sb.Append(@"    * IEEE 488.2 standard\line ");
-            sb.Append(@"    * SCPI socket protocol\line ");
             sb.Append(@"\line");
 
             sb.Append(@"{\fs28{\b Confirmed working on following oscilloscopes}}\line ");
@@ -1649,5 +1694,144 @@ namespace Oscilloscope_Network_Capture
         }
 
         #endregion
+
+        // ################################################################################################
+        // Attempts to delete the most recently created capture file for the specified number.
+        // ################################################################################################
+
+        private bool TryDeleteLastCaptureForNumber(int targetNumber, out string deletedPath)
+        {
+            deletedPath = null;
+
+            try
+            {
+                // Resolve current format (same precedence as BuildCaptureFileName)
+                string format = (textBoxFilenameFormat != null && !string.IsNullOrWhiteSpace(textBoxFilenameFormat.Text))
+                    ? textBoxFilenameFormat.Text
+                    : filenameFormat;
+
+                // Require {Number} so we can target a specific file
+                if (!Regex.IsMatch(format, @"\{number\}", RegexOptions.IgnoreCase))
+                {
+                    Log("Undo skipped: current filename format has no {Number} token.", LogLevel.Warning);
+                    return false;
+                }
+
+                // Resolve current token values (sanitized same as BuildCaptureFileName)
+                string componentVal = (textBoxComponent != null && !string.IsNullOrWhiteSpace(textBoxComponent.Text))
+                    ? textBoxComponent.Text.Trim()
+                    : "capture";
+
+                string regionVal = (comboBoxRegion != null && comboBoxRegion.SelectedItem != null)
+                    ? comboBoxRegion.SelectedItem.ToString().Trim()
+                    : "default";
+
+                string miscVal = (textBoxMisc != null && !string.IsNullOrWhiteSpace(textBoxMisc.Text))
+                    ? textBoxMisc.Text.Trim()
+                    : "";
+
+                componentVal = SanitizeForFile(componentVal);
+                regionVal = SanitizeForFile(string.IsNullOrWhiteSpace(regionVal) ? "default" : regionVal);
+                miscVal = string.IsNullOrWhiteSpace(miscVal) ? "" : SanitizeForFile(miscVal);
+
+                string numberVal = targetNumber.ToString();
+
+                // Build a regex that matches the final filename (without extension).
+                // - Known tokens are replaced with their sanitized values (or digit patterns for Date/Time).
+                // - Literal segments are "sanitized" for invalid filename chars (same as BuildCaptureFileName final pass) and then regex-escaped.
+                var tokenRx = new Regex(@"\{(component|number|region|date|time|misc)\}", RegexOptions.IgnoreCase);
+                var sb = new StringBuilder();
+                int last = 0;
+
+                foreach (Match m in tokenRx.Matches(format))
+                {
+                    if (m.Index > last)
+                    {
+                        // Append literal segment with defensive filename sanitization
+                        string literal = format.Substring(last, m.Index - last);
+                        sb.Append(Regex.Escape(SanitizeLiteralForFullFilename(literal)));
+                    }
+
+                    string token = m.Groups[1].Value.ToLowerInvariant();
+                    switch (token)
+                    {
+                        case "component": sb.Append(Regex.Escape(componentVal)); break;
+                        case "number": sb.Append(Regex.Escape(numberVal)); break;
+                        case "region": sb.Append(Regex.Escape(regionVal)); break;
+                        case "misc": sb.Append(Regex.Escape(miscVal)); break;
+                        case "date": sb.Append(@"\d{8}"); break; // yyyyMMdd
+                        case "time": sb.Append(@"\d{6}"); break; // HHmmss
+                    }
+
+                    last = m.Index + m.Length;
+                }
+
+                if (last < format.Length)
+                {
+                    string tail = format.Substring(last);
+                    sb.Append(Regex.Escape(SanitizeLiteralForFullFilename(tail)));
+                }
+
+                string namePattern = "^" + sb.ToString() + "$";
+                var nameRegex = new Regex(namePattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+                // Search in output folder for matching .png files and delete the newest one
+                string dir = NormalizeOutputFolder(outputFolder);
+                if (!Directory.Exists(dir))
+                    return false;
+
+                string toDelete = null;
+                DateTime latest = DateTime.MinValue;
+
+                foreach (var file in Directory.EnumerateFiles(dir, "*.png", SearchOption.TopDirectoryOnly))
+                {
+                    string nameNoExt = Path.GetFileNameWithoutExtension(file);
+                    if (!nameRegex.IsMatch(nameNoExt))
+                        continue;
+
+                    DateTime t;
+                    try { t = File.GetLastWriteTimeUtc(file); }
+                    catch { t = DateTime.MinValue; }
+
+                    if (t > latest)
+                    {
+                        latest = t;
+                        toDelete = file;
+                    }
+                }
+
+                if (string.IsNullOrEmpty(toDelete))
+                    return false;
+
+                File.Delete(toDelete);
+                deletedPath = toDelete;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log("Undo delete failed: " + ex.Message, LogLevel.Error);
+                return false;
+            }
+        }
+
+        // ################################################################################################
+        // Defensive sanitization for literal segments in the filename format (mirrors the final pass in BuildCaptureFileName)
+        // ################################################################################################
+
+        private string SanitizeLiteralForFullFilename(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            char[] invalid = Path.GetInvalidFileNameChars();
+            var sb = new StringBuilder(s.Length);
+            foreach (char c in s)
+            {
+                if (Array.IndexOf(invalid, c) >= 0 || c < 32)
+                    sb.Append('_');
+                else
+                    sb.Append(c);
+            }
+            return sb.ToString();
+        }
+
     }
 }

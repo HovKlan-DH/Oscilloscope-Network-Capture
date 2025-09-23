@@ -65,7 +65,7 @@ namespace Oscilloscope_Network_Capture
             else
                 _logger.Debug($"Port {port} preliminary probe succeeded.");
 
-            _logger.Info("Opening SCPI session: " + host + ":" + port);
+            _logger.Info("Opening SCPI socket session: " + host + ":" + port);
 
             await Task.Run(() =>
             {
@@ -94,13 +94,8 @@ namespace Oscilloscope_Network_Capture
                             }
                         }
 
-                        for (int i = 0; i < 6; i++)
-                        {
-                            var line = scpi.TryQuery(":SYST:ERR?", timeoutMs: 1200);
-                            if (string.IsNullOrWhiteSpace(line)) break;
-                            if (line.StartsWith("0,", StringComparison.Ordinal)) break;
-                            _logger.Warn("Instrument error: " + line.Trim());
-                        }
+                        // Drain error queue (only log non-zero errors)
+                        DrainInstrumentErrors(scpi);
 
                         success = true;
                     }
@@ -518,9 +513,8 @@ namespace Oscilloscope_Network_Capture
                                 _logger.Warn("Snapshot refresh uncertain (still running).");
                         }
 
-                        var err = scpi.TryQuery(":SYST:ERR?", timeoutMs: 600);
-                        if (!string.IsNullOrWhiteSpace(err) && !err.StartsWith("0,", StringComparison.Ordinal))
-                            _logger.Warn("Instrument error (snapshot): " + err);
+                        // Drain and only report non-zero errors
+                        DrainInstrumentErrors(scpi);
                     }
                 }
                 catch (Exception ex)
@@ -574,9 +568,8 @@ namespace Oscilloscope_Network_Capture
                         else if (!after) _logger.Warn("Resume attempt failed (still stopped).");
                         else _logger.Warn("Resume command uncertain.");
 
-                        var err = scpi.TryQuery(":SYST:ERR?", timeoutMs: 600);
-                        if (!string.IsNullOrWhiteSpace(err) && !err.StartsWith("0,", StringComparison.Ordinal))
-                            _logger.Warn("Instrument error (resume): " + err);
+                        // Drain and only report non-zero errors
+                        DrainInstrumentErrors(scpi);
                     }
                 }
                 catch (Exception ex)
@@ -592,7 +585,7 @@ namespace Oscilloscope_Network_Capture
 
         private void PrepareSession(ScpiClient scpi)
         {
-            _logger.Info("Connecting session");
+            _logger.Debug("Connecting SCPI socket session.");
             scpi.DrainInput();
             scpi.ClearStatus();
             string idn = scpi.TryQuery("*IDN?", timeoutMs: 2500);
@@ -857,12 +850,41 @@ namespace Oscilloscope_Network_Capture
 
         private void DrainInstrumentErrors(ScpiClient scpi)
         {
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < 8; i++)
             {
-                var line = scpi.TryQuery(":SYST:ERR?", timeoutMs: 800);
+                var line = scpi.TryQuery(":SYST:ERR?", timeoutMs: 1200);
                 if (string.IsNullOrWhiteSpace(line)) break;
-                if (line.StartsWith("0,", StringComparison.Ordinal)) break;
-                _logger.Warn("Instrument error: " + line.Trim());
+
+                string raw = line.Trim();
+
+                // Parse SCPI error of the form: [+|-]n[,(|"| )message]
+                string s = raw;
+                if (s.StartsWith("+", StringComparison.Ordinal)) s = s.Substring(1).Trim();
+
+                int sep = s.IndexOf(',');
+                if (sep < 0) sep = s.IndexOf(';');
+                if (sep < 0) sep = s.IndexOf(' ');
+
+                string codePart = sep >= 0 ? s.Substring(0, sep).Trim() : s;
+                string msgPart = sep >= 0 ? s.Substring(sep + 1).Trim() : "";
+
+                if (msgPart.Length > 1 && msgPart.StartsWith("\"") && msgPart.EndsWith("\""))
+                    msgPart = msgPart.Substring(1, msgPart.Length - 2);
+
+                int code;
+                if (!int.TryParse(codePart, NumberStyles.Integer, CultureInfo.InvariantCulture, out code))
+                {
+                    // Fallback: treat explicit "No error" as zero
+                    if (s.IndexOf("no error", StringComparison.OrdinalIgnoreCase) >= 0)
+                        break;
+
+                    _logger.Warn("Instrument error (unparsed): " + raw);
+                    continue;
+                }
+
+                if (code == 0) break;
+
+                _logger.Warn($"Instrument error [{code}]: {msgPart}");
             }
         }
 
