@@ -1212,9 +1212,21 @@ namespace Oscilloscope_Network_Capture
                         stream.WriteTimeout = 1750;
                         stream.ReadTimeout = 1750;
 
-                        var data = Encoding.ASCII.GetBytes("CLEAR\n");
-                        await stream.WriteAsync(data, 0, data.Length).ConfigureAwait(true);
-                        await stream.FlushAsync().ConfigureAwait(true);
+                        var cmds = new[]
+                        {
+                            "*CLS",              // Standard clear status
+                            "MEASure:CLEar"      // Keysight / Agilent measurement stats clear (ignored if not supported)
+                            // (Leave out if causing noise on other vendors; harmless if error ignored)
+                        };
+                        foreach (var c in cmds)
+                        {
+                            var line = c + "\n";
+                            var bytes = Encoding.ASCII.GetBytes(line);
+                            await stream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(true);
+                            await stream.FlushAsync().ConfigureAwait(true);
+                            // brief inter-command delay (some firmware prefers a tiny gap)
+                            await Task.Delay(20).ConfigureAwait(true);
+                        }
                     }
                 }
             }
@@ -1411,7 +1423,7 @@ namespace Oscilloscope_Network_Capture
                 case LogLevel.Debug: color = Color.DarkSeaGreen; break;
                 default: color = Color.LightGreen; break;
             }
-            string line = $"{DateTime.Now:HH:mm:ss.fff} {message}{Environment.NewLine}";
+            string line = $"{DateTime.Now:HH:mm:ss.fff} [{level}] {message}{Environment.NewLine}";
             int start = richTextBoxLog.TextLength;
             richTextBoxLog.AppendText(line);
             richTextBoxLog.Select(start, line.Length);

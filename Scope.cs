@@ -13,7 +13,14 @@ namespace Oscilloscope_Network_Capture
 {
     public sealed class Scope
     {
-        public enum ScopeVendor { Unknown, Rigol, Siglent }
+        public enum ScopeVendor
+        {
+            Unknown = 0,
+            Rigol = 1,
+            Siglent = 2,
+            Keysight = 3,
+            RohdeSchwarz = 4
+        }
 
         private readonly Logger _logger;
 
@@ -600,10 +607,20 @@ namespace Oscilloscope_Network_Capture
 
         private ScopeVendor DetermineVendor(string idn)
         {
-            if (string.IsNullOrWhiteSpace(idn)) return ScopeVendor.Unknown;
+            if (string.IsNullOrEmpty(idn))
+                return ScopeVendor.Unknown;
+
             var up = idn.ToUpperInvariant();
-            if (up.Contains("SIGLENT")) return ScopeVendor.Siglent;
-            if (up.Contains("RIGOL")) return ScopeVendor.Rigol;
+
+            if (up.Contains("RIGOL"))
+                return ScopeVendor.Rigol;
+            if (up.Contains("SIGLENT"))
+                return ScopeVendor.Siglent;
+            if (up.Contains("KEYSIGHT") || up.Contains("AGILENT"))
+                return ScopeVendor.Keysight;
+            if (up.Contains("ROHDE&SCHWARZ") || (up.Contains("ROHDE") && up.Contains("SCHWARZ")))
+                return ScopeVendor.RohdeSchwarz; // NEW
+
             return ScopeVendor.Unknown;
         }
 
@@ -665,7 +682,12 @@ namespace Oscilloscope_Network_Capture
 
             if (runningGeneric)
             {
-                if (!TryWrite(scpi, ":STOP")) TryWrite(scpi, ":ACQ:STATE 0");
+                // Preferred stop for Rigol/Keysight is :STOP only; avoid :ACQ:STATE 0 which can raise -113 on Rigol.
+                if (!TryWrite(scpi, ":STOP"))
+                {
+                    if (DetectedVendor != ScopeVendor.Rigol && DetectedVendor != ScopeVendor.Keysight)
+                        TryWrite(scpi, ":ACQ:STATE 0");
+                }
                 try { scpi.WaitOpc(1500); } catch { }
                 System.Threading.Thread.Sleep(120);
                 _logger.Debug("Acquisition stopped for screenshot.");
@@ -677,62 +699,183 @@ namespace Oscilloscope_Network_Capture
             return runningGeneric;
         }
 
+        private sealed class ScreenshotAttemptResult
+        {
+            public string Command;
+            public bool Success;
+            public byte[] Data;
+            public string TransportDiagnostic;
+            public string InstrumentError; // non-zero / meaningful only
+        }
+
+        private ScreenshotAttemptResult AttemptBinaryWithDiagnostics(ScpiClient scpi, string cmd, int maxBytes, int timeoutMs)
+        {
+            var res = new ScreenshotAttemptResult { Command = cmd };
+            string diag;
+            byte[] data = scpi.TryQueryBinaryBlockDiag(cmd, maxBytes, timeoutMs, out diag);
+            if (data != null && data.Length > 64)
+            {
+                res.Success = true;
+                res.Data = data;
+                return res;
+            }
+
+            res.TransportDiagnostic = diag; // may be null if just empty / short
+                                            // Probe a single instrument error (non-zero only)
+            string instErr = scpi.TryQuery(":SYST:ERR?", timeoutMs: 400);
+            if (!string.IsNullOrWhiteSpace(instErr))
+            {
+                var trimmed = instErr.Trim();
+                if (!trimmed.StartsWith("0") &&
+                    trimmed.IndexOf("no error", StringComparison.OrdinalIgnoreCase) < 0)
+                {
+                    res.InstrumentError = trimmed;
+                }
+            }
+            return res;
+        }
+
         private byte[] FetchScreenshot(ScpiClient scpi, ScopeVendor vendor)
         {
-            if (vendor == ScopeVendor.Siglent)
+            switch (vendor)
             {
-                var img = TryFetchSiglent(scpi);
-                if (img != null) return img;
-                _logger.Warn("Path failed (Siglent); falling back to generic list.");
+                case ScopeVendor.Rigol:
+                    return TryFetchRigolStyle(scpi);
+                case ScopeVendor.Siglent:
+                    return TryFetchSiglent(scpi);
+                case ScopeVendor.Keysight:
+                    return TryFetchKeysight(scpi);
+                case ScopeVendor.RohdeSchwarz:
+                    return TryFetchRohdeSchwarz(scpi);
+                default:
+                    return scpi.TryQueryBinaryBlock(":DISP:DATA?", 8 * 1024 * 1024, 8000);
             }
-            return TryFetchRigolStyle(scpi);
+        }
+
+        private byte[] TryFetchKeysight(ScpiClient scpi)
+        {
+            // Keysight preferred order (PNG color -> BMP -> generic)
+            string[] attempts =
+            {
+        ":DISPlay:DATA? PNG,SCReen,Color",
+        ":DISPlay:DATA? BMP,SCReen,Color",
+        ":DISP:DATA?"
+    };
+
+            for (int i = 0; i < attempts.Length; i++)
+            {
+                string cmd = attempts[i];
+                _logger.Debug("Trying screenshot command (Keysight): " + cmd);
+                var attempt = AttemptBinaryWithDiagnostics(scpi, cmd, 8 * 1024 * 1024, 8000);
+                if (attempt.Success)
+                {
+                    _logger.Debug($"Command {cmd} succeeded (bytes={attempt.Data.Length}, head={HexPreview(attempt.Data, 16)})");
+                    return attempt.Data;
+                }
+                _logger.Debug($"Keysight screenshot cmd {cmd} failed. transport={(attempt.TransportDiagnostic ?? "n/a")}" +
+                              (attempt.InstrumentError != null ? $", instrErr=({attempt.InstrumentError})" : ""));
+            }
+            return null;
+        }
+
+        private byte[] TryFetchRohdeSchwarz(ScpiClient scpi)
+        {
+            // Ordered by highest success likelihood on MXO / RTx series.
+            string[] attempts =
+            {
+        ":DISP:DATA? PNG,SCReen",
+        ":DISPlay:DATA? PNG,SCReen",
+        ":DISP:DATA? PNG",
+        ":DISPlay:DATA? PNG",
+        ":HCOPy:DATA? PNG",
+        "HCOPy:FORMat PNG;:HCOPy:DATA?",
+        "HCOPy:FORM PNG;HCOPy:DATA?",
+        // Hardcopy-to-file fallback (instrument creates file then we read it)
+        ":HCOPy:FORMat PNG;:HCOPy:IMMediate;:MMEM:DATA? 'HCOPY.PNG'"
+    };
+
+            for (int i = 0; i < attempts.Length; i++)
+            {
+                string cmd = attempts[i];
+                _logger.Debug("Trying screenshot command (R&S): " + cmd);
+
+                // Give a bit more time (large UI themes or high-res)
+                int timeoutMs = (i < 2) ? 9000 : 12000;
+
+                var attempt = AttemptBinaryWithDiagnostics(scpi, cmd, 50 * 1024 * 1024, timeoutMs);
+                if (attempt.Success)
+                {
+                    _logger.Debug($"R&S command {cmd} succeeded (bytes={attempt.Data.Length}, head={HexPreview(attempt.Data, 16)})");
+                    return attempt.Data;
+                }
+
+                _logger.Debug($"R&S screenshot cmd {cmd} failed. transport={(attempt.TransportDiagnostic ?? "n/a")}" +
+                              (attempt.InstrumentError != null ? $", instrErr=({attempt.InstrumentError})" : ""));
+                try { scpi.DrainInput(4096); } catch { }
+            }
+            return null;
         }
 
         private byte[] TryFetchRigolStyle(ScpiClient scpi)
         {
             string[] attempts =
             {
-                ":DISP:DATA?",
-                ":DISP:DATA? PNG",
-                ":DISP:DATA? ON,0,PNG",
-                ":HARDcopy:DATA? PNG",
-                ":HCOPy:DATA? PNG",
-                ":DISP:DATA? ON,0,BMP",
-                ":SCDP?"
-            };
+        ":DISP:DATA?",
+        ":DISP:DATA? PNG",
+        ":DISP:DATA? ON,0,PNG",
+        ":HARDcopy:DATA? PNG",
+        ":HCOPy:DATA? PNG",
+        ":DISP:DATA? ON,0,BMP",
+        ":SCDP?"
+    };
 
             for (int i = 0; i < attempts.Length; i++)
             {
                 string cmd = attempts[i];
-                _logger.Debug("Trying screenshot command: " + cmd);
+                _logger.Debug("Trying screenshot command (Rigol): " + cmd);
 
                 int timeoutMs = (i == 0) ? 5000 : 8000;
-
-                byte[] data = scpi.TryQueryBinaryBlock(cmd, 50 * 1024 * 1024, timeoutMs);
-                if (data != null && data.Length > 64)
+                var attempt = AttemptBinaryWithDiagnostics(scpi, cmd, 50 * 1024 * 1024, timeoutMs);
+                if (attempt.Success)
                 {
-                    _logger.Debug("Command " + cmd + " succeeded (block, bytes=" + data.Length + ", head=" + HexPreview(data, 16) + ")");
-                    return data;
+                    _logger.Debug($"Command {cmd} succeeded (bytes={attempt.Data.Length}, head={HexPreview(attempt.Data, 16)})");
+                    return attempt.Data;
                 }
+
+                _logger.Debug($"Rigol screenshot cmd {cmd} produced no block. " +
+                              $"transport={(attempt.TransportDiagnostic ?? "n/a")}" +
+                              (attempt.InstrumentError != null ? $", instrErr=({attempt.InstrumentError})" : ""));
+
                 try { scpi.DrainInput(4096); } catch { }
             }
             return null;
         }
+               
 
         private byte[] TryFetchSiglent(ScpiClient scpi)
         {
-            string[] siglent = { "SCDP", "SCDP?", ":SCDP?" };
-            foreach (var cmd in siglent)
+            string[] attempts = { "SCDP", "SCDP?", ":SCDP?" };
+            foreach (var cmd in attempts)
             {
-                _logger.Info("Trying screenshot command (Siglent): " + cmd);
+                _logger.Debug("Trying screenshot command (Siglent): " + cmd);
                 string mode;
                 byte[] data = scpi.TryQuerySiglentImage(cmd, 50 * 1024 * 1024, 12000, out mode);
                 if (data != null && data.Length > 64)
                 {
-                    _logger.Debug($"Command {cmd} succeeded (Siglent) (mode={mode}, bytes={data.Length}, head={HexPreview(data, 16)})");
+                    _logger.Debug($"Command {cmd} succeeded (Siglent mode={mode}, bytes={data.Length}, head={HexPreview(data, 16)})");
                     return data;
                 }
-                _logger.Warn($"Command {cmd} produced no usable data (Siglent).");
+
+                // Diagnostics similar to other vendors
+                string instErr = scpi.TryQuery(":SYST:ERR?", timeoutMs: 500);
+                string errFrag = "";
+                if (!string.IsNullOrWhiteSpace(instErr))
+                {
+                    var t = instErr.Trim();
+                    if (!t.StartsWith("0") && t.IndexOf("no error", StringComparison.OrdinalIgnoreCase) < 0)
+                        errFrag = ", instrErr=(" + t + ")";
+                }
+                _logger.Debug($"Siglent screenshot cmd {cmd} produced no usable data (mode={mode ?? "n/a"}{errFrag}).");
             }
             return null;
         }
@@ -798,53 +941,99 @@ namespace Oscilloscope_Network_Capture
         {
             try
             {
+                bool runningBefore = QueryIsRunning(scpi, 600);
+                if (runningBefore && !forceResume)
+                {
+                    _logger.Debug("Acquisition already running; no resume needed.");
+                    return;
+                }
+
                 if (DetectedVendor == ScopeVendor.Siglent)
                 {
-                    if (forceResume)
+                    string desiredMode = null;
+                    if (!string.IsNullOrEmpty(_lastSiglentTrigMode) &&
+                        (_lastSiglentTrigMode == "AUTO" || _lastSiglentTrigMode == "NORM"))
+                        desiredMode = _lastSiglentTrigMode;
+                    else if (forceResume)
+                        desiredMode = "AUTO";
+
+                    if (!string.IsNullOrEmpty(desiredMode))
                     {
-                        TryWrite(scpi, "RUN");
-                        try { scpi.WaitOpc(1500); } catch { }
-                        _logger.Info("Acquisition forced to RUN (Siglent).");
-                        return;
+                        TryWrite(scpi, "TRIG_MODE " + desiredMode);
+                        System.Threading.Thread.Sleep(30);
                     }
 
-                    if (!string.IsNullOrEmpty(_lastSiglentTrigMode))
+                    TryWrite(scpi, "RUN");
+                    try { scpi.WaitOpc(1200); } catch { }
+
+                    if (!WaitUntilRunning(scpi, timeoutMs: 1800, statusTimeoutMs: 250, pollDelayMs: 80))
+                        _logger.Warn("Siglent resume attempt uncertain (still reports stopped).");
+                    else
+                        _logger.Notice(runningBefore ? "Acquisition resumed (Siglent)." : "Acquisition started (Siglent).");
+                    return;
+                }
+
+                // Rigol / Keysight / Unknown
+                if (!runningBefore || forceResume)
+                {
+                    // Always try the standard command first
+                    TryWrite(scpi, ":RUN");
+
+                    // Short settle/poll loop before deciding it's still stopped
+                    if (!WaitUntilRunning(scpi, timeoutMs: 800, statusTimeoutMs: 250, pollDelayMs: 100))
                     {
-                        if (_lastSiglentTrigMode == "AUTO" || _lastSiglentTrigMode == "NORM")
+                        // For Keysight or Unknown we MAY try :ACQ:STATE 1. Avoid on Rigol (caused -113).
+                        if (DetectedVendor != ScopeVendor.Rigol)
                         {
-                            TryWrite(scpi, "TRIG_MODE " + _lastSiglentTrigMode);
-                            TryWrite(scpi, "RUN");
-                            scpi.WaitOpc(1500);
-                            _logger.Info("Acquisition restored to " + _lastSiglentTrigMode + " (Siglent).");
+                            bool fallbackSent = false;
+                            if (DetectedVendor == ScopeVendor.Keysight || DetectedVendor == ScopeVendor.Unknown)
+                            {
+                                fallbackSent = TryWrite(scpi, ":ACQ:STATE 1");
+                                if (fallbackSent)
+                                {
+                                    try { scpi.WaitOpc(1200); } catch { }
+                                    System.Threading.Thread.Sleep(80);
+                                }
+                            }
+
+                            // Re-check after fallback (if any)
+                            if (!QueryIsRunning(scpi, 400) && fallbackSent)
+                            {
+                                // Second attempt with :RUN (idempotent)
+                                TryWrite(scpi, ":RUN");
+                                System.Threading.Thread.Sleep(120);
+                            }
                         }
                         else
                         {
-                            _logger.Info("Previous mode " + _lastSiglentTrigMode + " (Siglent); leaving instrument stopped.");
+                            // Optional second :RUN try for Rigol only
+                            if (!QueryIsRunning(scpi, 300))
+                            {
+                                TryWrite(scpi, ":RUN");
+                                System.Threading.Thread.Sleep(150);
+                            }
                         }
+                    }
+
+                    bool after = QueryIsRunning(scpi, 600);
+                    if (after)
+                    {
+                        if (runningBefore)
+                            _logger.Notice("Acquisition resumed.");
+                        else if (forceResume)
+                            _logger.Info("Acquisition started (forced).");
+                        else
+                            _logger.Info("Acquisition started.");
                     }
                     else
                     {
-                        TryWrite(scpi, "RUN");
-                        _logger.Warn("Unknown previous mode (Siglent); issued RUN.");
+                        _logger.Warn("Resume/start attempt uncertain (still not running).");
                     }
-                    return;
                 }
-
-                if (forceResume)
-                {
-                    if (!TryWrite(scpi, ":RUN")) TryWrite(scpi, ":ACQ:STATE 1");
-                    try { scpi.WaitOpc(1500); } catch { }
-                    _logger.Info("Acquisition forced to RUN.");
-                    return;
-                }
-
-                if (!TryWrite(scpi, ":RUN")) TryWrite(scpi, ":ACQ:STATE 1");
-                scpi.WaitOpc(1500);
-                _logger.Notice("Acquisition resumed.");
             }
             catch (Exception ex)
             {
-                _logger.Warn("Failed to resume acquisition: " + ex.Message);
+                _logger.Warn("ForceAcquisition exception: " + ex.Message);
             }
         }
 
@@ -888,61 +1077,55 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
-        private bool ValidateBmp(byte[] data, out int width, out int height, out int bitsPerPixel, out string reason, bool patchHeader)
+        private bool ValidateBmp(byte[] data, out int width, out int height,
+    out int bitsPerPixel, out string reason, bool patchHeader)
         {
-            width = 0; height = 0; bitsPerPixel = 0; reason = "";
+            width = height = bitsPerPixel = 0;
+            reason = null;
 
-            if (data == null || data.Length < 54) { reason = "Too small for BMP header."; return false; }
-            if (data[0] != 0x42 || data[1] != 0x4D) { reason = "Missing BM signature."; return false; }
-
-            uint headerFileSize = ReadUInt32LE(data, 2);
-            uint pixelDataOffset = ReadUInt32LE(data, 10);
-            uint dibHeaderSize = ReadUInt32LE(data, 14);
-
-            if (dibHeaderSize < 40) { reason = "Unsupported DIB header (<40)."; return false; }
-
-            width = ReadInt32LE(data, 18);
-            height = ReadInt32LE(data, 22);
-            ushort planes = ReadUInt16LE(data, 26);
-            bitsPerPixel = ReadUInt16LE(data, 28);
-            uint compression = ReadUInt32LE(data, 30);
-
-            if (planes != 1) { reason = "Planes != 1."; return false; }
-            if (bitsPerPixel != 24 && bitsPerPixel != 16 && bitsPerPixel != 32) { reason = "Unsupported bpp " + bitsPerPixel; return false; }
-            if (compression != 0 && !(compression == 3 && (bitsPerPixel == 16 || bitsPerPixel == 32))) { reason = "Unsupported compression mode " + compression; return false; }
-            if (width <= 0 || Math.Abs(height) <= 0 || width > 10000 || Math.Abs(height) > 10000) { reason = "Unreasonable dimensions " + width + "x" + height; return false; }
-            if (pixelDataOffset < 54 || pixelDataOffset > data.Length - 8) { reason = $"Suspicious pixel data offset {pixelDataOffset}"; return false; }
-
-            int rowBytesRaw = (width * bitsPerPixel + 7) / 8;
-            int stride = (rowBytesRaw + 3) & ~3;
-            long expectedPixelsBytes = (long)stride * Math.Abs(height);
-            long neededTotal = pixelDataOffset + expectedPixelsBytes;
-
-            if (neededTotal > data.Length) { reason = $"Pixel data truncated. Need {neededTotal}, have {data.Length}"; return false; }
-
-            // Accept and patch Rigol's "pixel-only" file size (FileSize + Offset == Actual)
-            if (headerFileSize != data.Length)
+            if (data == null || data.Length < 54)
             {
-                long diff = (long)headerFileSize - data.Length;
+                reason = "Too small";
+                return false;
+            }
+            if (data[0] != (byte)'B' || data[1] != (byte)'M')
+            {
+                reason = "Not BMP signature";
+                return false;
+            }
 
-                if (headerFileSize == 0 || headerFileSize + pixelDataOffset == data.Length)
+            bitsPerPixel = BitConverter.ToUInt16(data, 28);
+            width = BitConverter.ToInt32(data, 18);
+            height = BitConverter.ToInt32(data, 22);
+
+            if (width <= 0 || height == 0)
+            {
+                reason = "Invalid dimensions";
+                return false;
+            }
+
+            // Allow 8, 24, 32 bpp
+            if (bitsPerPixel != 8 && bitsPerPixel != 24 && bitsPerPixel != 32)
+            {
+                reason = "Unsupported bpp " + bitsPerPixel;
+                return false;
+            }
+
+            // For 8bpp ensure a palette is present (256 * 4 bytes typically after header)
+            if (bitsPerPixel == 8)
+            {
+                int paletteBytes = 256 * 4;
+                if (data.Length < 54 + paletteBytes)
                 {
-                    // Patch file size so GDI+ is happy
-                    if (patchHeader)
-                    {
-                        _logger.Debug($"Non-standard BMP [FileSize] detected (header={headerFileSize}, actual={data.Length}, offset={pixelDataOffset}); patching header.");
-                        PatchFileSize(data, (uint)data.Length);
-                    }
-                }
-                else if (Math.Abs(diff) <= 32)
-                {
-                    _logger.Warn($"Minor [FileSize] mismatch tolerated. Header={headerFileSize}, Actual={data.Length}, Diff={diff}");
-                }
-                else
-                {
-                    reason = $"File size mismatch. Header={headerFileSize}, Actual={data.Length}, Diff={diff}";
+                    reason = "8bpp palette missing/incomplete";
                     return false;
                 }
+            }
+
+            // (Optional) patch file size if needed exactly as you already do
+            if (patchHeader)
+            {
+                PatchFileSize(data, (uint)data.Length);
             }
 
             return true;
@@ -1141,6 +1324,29 @@ namespace Oscilloscope_Network_Capture
             private readonly TcpClient _client;
             private readonly NetworkStream _stream;
             private readonly byte[] _one = new byte[1];
+
+            public byte[] TryQueryBinaryBlockDiag(string command, int maxBytes, int timeoutMs, out string diagnostic)
+            {
+                diagnostic = null;
+                int old = _client.ReceiveTimeout;
+                try
+                {
+                    _client.ReceiveTimeout = timeoutMs;
+                    WriteLine(command);
+                    var data = ReadIeee4882Block(maxBytes);
+                    ConsumeCrLf();
+                    return data;
+                }
+                catch (Exception ex)
+                {
+                    diagnostic = ex.GetType().Name + ": " + ex.Message;
+                    return null;
+                }
+                finally
+                {
+                    _client.ReceiveTimeout = old;
+                }
+            }
 
             private ScpiClient(TcpClient client)
             {

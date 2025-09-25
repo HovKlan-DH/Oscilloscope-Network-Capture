@@ -45,6 +45,7 @@
             this.splitContainer1 = new System.Windows.Forms.SplitContainer();
             this.labelNewVersionAvailable = new System.Windows.Forms.Label();
             this.panel4 = new System.Windows.Forms.Panel();
+            this.checkBoxForceClear = new System.Windows.Forms.CheckBox();
             this.checkBoxDebug = new System.Windows.Forms.CheckBox();
             this.label7 = new System.Windows.Forms.Label();
             this.checkBoxForceAcquisition = new System.Windows.Forms.CheckBox();
@@ -63,6 +64,8 @@
             this.textBoxFilenameFormat = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.textBoxMisc = new System.Windows.Forms.TextBox();
+            this.label1 = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
             this.tabPageHelp = new System.Windows.Forms.TabPage();
             this.richTextBoxHelp = new System.Windows.Forms.RichTextBox();
@@ -71,9 +74,6 @@
             this.labelProductVersion = new System.Windows.Forms.Label();
             this.labelProductName = new System.Windows.Forms.Label();
             this.pictureBoxIcon = new System.Windows.Forms.PictureBox();
-            this.checkBoxForceClear = new System.Windows.Forms.CheckBox();
-            this.textBoxMisc = new System.Windows.Forms.TextBox();
-            this.label1 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxImage)).BeginInit();
             this.tabControl1.SuspendLayout();
             this.tabPageMeasurements.SuspendLayout();
@@ -112,7 +112,7 @@
             this.buttonCaptureContinuelsy.Name = "buttonCaptureContinuelsy";
             this.buttonCaptureContinuelsy.Size = new System.Drawing.Size(344, 27);
             this.buttonCaptureContinuelsy.TabIndex = 14;
-            this.buttonCaptureContinuelsy.Text = "Capture continuesly";
+            this.buttonCaptureContinuelsy.Text = "Capture continuously";
             this.buttonCaptureContinuelsy.UseVisualStyleBackColor = false;
             // 
             // richTextBoxLog
@@ -301,6 +301,16 @@
             this.panel4.Name = "panel4";
             this.panel4.Size = new System.Drawing.Size(358, 199);
             this.panel4.TabIndex = 25;
+            // 
+            // checkBoxForceClear
+            // 
+            this.checkBoxForceClear.AutoSize = true;
+            this.checkBoxForceClear.Location = new System.Drawing.Point(7, 108);
+            this.checkBoxForceClear.Name = "checkBoxForceClear";
+            this.checkBoxForceClear.Size = new System.Drawing.Size(223, 25);
+            this.checkBoxForceClear.TabIndex = 102;
+            this.checkBoxForceClear.Text = "Force CLEAR before capture";
+            this.checkBoxForceClear.UseVisualStyleBackColor = true;
             // 
             // checkBoxDebug
             // 
@@ -507,6 +517,25 @@
             this.panel1.Size = new System.Drawing.Size(358, 205);
             this.panel1.TabIndex = 19;
             // 
+            // textBoxMisc
+            // 
+            this.textBoxMisc.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.textBoxMisc.Location = new System.Drawing.Point(6, 136);
+            this.textBoxMisc.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.textBoxMisc.Name = "textBoxMisc";
+            this.textBoxMisc.Size = new System.Drawing.Size(69, 28);
+            this.textBoxMisc.TabIndex = 101;
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label1.Location = new System.Drawing.Point(81, 139);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(74, 21);
+            this.label1.TabIndex = 102;
+            this.label1.Text = "Misc info";
+            // 
             // label6
             // 
             this.label6.AutoSize = true;
@@ -523,7 +552,7 @@
             this.tabPageHelp.Location = new System.Drawing.Point(4, 30);
             this.tabPageHelp.Name = "tabPageHelp";
             this.tabPageHelp.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPageHelp.Size = new System.Drawing.Size(852, 623);
+            this.tabPageHelp.Size = new System.Drawing.Size(852, 691);
             this.tabPageHelp.TabIndex = 2;
             this.tabPageHelp.Text = "Help";
             this.tabPageHelp.UseVisualStyleBackColor = true;
@@ -550,7 +579,7 @@
             this.tabPageAbout.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
             this.tabPageAbout.Name = "tabPageAbout";
             this.tabPageAbout.Padding = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.tabPageAbout.Size = new System.Drawing.Size(852, 623);
+            this.tabPageAbout.Size = new System.Drawing.Size(852, 691);
             this.tabPageAbout.TabIndex = 1;
             this.tabPageAbout.Text = "About";
             this.tabPageAbout.UseVisualStyleBackColor = true;
@@ -598,35 +627,6 @@
             this.pictureBoxIcon.Size = new System.Drawing.Size(144, 168);
             this.pictureBoxIcon.TabIndex = 0;
             this.pictureBoxIcon.TabStop = false;
-            // 
-            // checkBoxForceClear
-            // 
-            this.checkBoxForceClear.AutoSize = true;
-            this.checkBoxForceClear.Location = new System.Drawing.Point(7, 108);
-            this.checkBoxForceClear.Name = "checkBoxForceClear";
-            this.checkBoxForceClear.Size = new System.Drawing.Size(223, 25);
-            this.checkBoxForceClear.TabIndex = 102;
-            this.checkBoxForceClear.Text = "Force CLEAR before capture";
-            this.checkBoxForceClear.UseVisualStyleBackColor = true;
-            // 
-            // textBoxMisc
-            // 
-            this.textBoxMisc.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBoxMisc.Location = new System.Drawing.Point(6, 136);
-            this.textBoxMisc.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
-            this.textBoxMisc.Name = "textBoxMisc";
-            this.textBoxMisc.Size = new System.Drawing.Size(69, 28);
-            this.textBoxMisc.TabIndex = 101;
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Font = new System.Drawing.Font("Calibri", 10.2F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.Location = new System.Drawing.Point(81, 139);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(74, 21);
-            this.label1.TabIndex = 102;
-            this.label1.Text = "Misc info";
             // 
             // Main
             // 
