@@ -21,7 +21,7 @@ using System.Xml.Serialization;
 
 namespace Oscilloscope_Network_Capture
 {
-    public partial class Form1 : Form
+    public partial class Main : Form
     {
         // Overlay shown on picScreen after delete
         private Label _deleteOverlayLabel;
@@ -63,7 +63,7 @@ namespace Oscilloscope_Network_Capture
         private TextBox _tbCaptureFolder;
         private TextBox _tbFilenameFormat;
 
-        public Form1()
+        public Main()
         {
             InitializeComponent();
             Logger.Instance.MessageLogged += Logger_MessageLogged;

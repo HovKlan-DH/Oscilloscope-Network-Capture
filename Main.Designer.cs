@@ -1,6 +1,6 @@
 ﻿namespace Oscilloscope_Network_Capture
 {
-    partial class Form1
+    partial class Main
     {
         private System.ComponentModel.IContainer components = null;
 
@@ -17,7 +17,7 @@
 
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
             this.cboVendor = new System.Windows.Forms.ComboBox();
             this.cboModel = new System.Windows.Forms.ComboBox();
             this.btnConnect = new System.Windows.Forms.Button();
