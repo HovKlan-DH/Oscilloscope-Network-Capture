@@ -1,0 +1,241 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Oscilloscope_Network_Capture.Core.Scopes
+{
+    // Enum of known built-in test suites that wire up existing test buttons
+    public enum ScopeTestSuite
+    {
+        QueryIdentify,
+        ClearStatistics,
+        QueryActiveTrigger,
+        Stop,
+        Run,
+        Single,
+        QueryTriggerMode,
+        QueryTriggerLevel,
+        SetTriggerLevel,
+        QueryTimeDiv,
+        SetTimeDiv,
+        DumpImage,
+        PopLastSystemError,
+        OperationComplete
+    }
+
+    public static class ScopeTestSuiteRegistry
+    {
+        // Human-friendly names for logging
+        private static readonly Dictionary<ScopeTestSuite, string> Names = new Dictionary<ScopeTestSuite, string>
+        {
+            { ScopeTestSuite.QueryIdentify, "Query identify instrument" },
+            { ScopeTestSuite.ClearStatistics, "Set \"Clear Statistics\"" },
+            { ScopeTestSuite.QueryActiveTrigger, "Query active trigger" },
+            { ScopeTestSuite.Stop, "Set \"Stop\" mode" },
+            { ScopeTestSuite.Run, "Set \"Run\" mode" },
+            { ScopeTestSuite.Single, "Set \"Single\" mode" },
+            { ScopeTestSuite.QueryTriggerMode, "Query trigger mode" },
+            { ScopeTestSuite.QueryTriggerLevel, "Query trigger level" },
+            { ScopeTestSuite.SetTriggerLevel, "Set trigger level" },
+            { ScopeTestSuite.QueryTimeDiv, "Query TIME/DIV" },
+            { ScopeTestSuite.SetTimeDiv, "Set TIME/DIV" },
+            { ScopeTestSuite.DumpImage, "Query dump image" },
+            { ScopeTestSuite.PopLastSystemError, "Query last system error" },
+            { ScopeTestSuite.OperationComplete, "Query \"Operation Complete\"" },
+        };
+
+        public static string GetDisplayName(ScopeTestSuite suite)
+            => Names.TryGetValue(suite, out var n) ? n : suite.ToString();
+
+        // Built-in defaults mapping suite id -> ordered ScopeCommand steps
+        private static readonly Dictionary<ScopeTestSuite, ScopeCommand[]> Defaults = new Dictionary<ScopeTestSuite, ScopeCommand[]>
+        {
+            { ScopeTestSuite.QueryIdentify, new[]{
+                ScopeCommand.Identify
+            } },
+            { ScopeTestSuite.ClearStatistics, new[]{
+                ScopeCommand.ClearStatistics,
+                ScopeCommand.OperationComplete,
+                ScopeCommand.PopLastSystemError
+            } },
+            { ScopeTestSuite.QueryActiveTrigger, new[]{
+                ScopeCommand.QueryActiveTrigger
+            } },
+            { ScopeTestSuite.Stop, new[]{
+                ScopeCommand.Stop,
+                ScopeCommand.OperationComplete,
+                ScopeCommand.PopLastSystemError
+            } },
+            { ScopeTestSuite.Run, new[]{
+                ScopeCommand.Run,
+                ScopeCommand.OperationComplete,
+                ScopeCommand.PopLastSystemError
+            } },
+            { ScopeTestSuite.Single, new[]{
+                ScopeCommand.Single,
+                ScopeCommand.OperationComplete,
+                ScopeCommand.PopLastSystemError
+            } },
+            { ScopeTestSuite.QueryTriggerMode, new[]{
+                ScopeCommand.QueryTriggerMode
+            } },
+            { ScopeTestSuite.QueryTriggerLevel, new[]{
+                ScopeCommand.QueryTriggerLevel
+            } },
+            { ScopeTestSuite.SetTriggerLevel, new[]{
+                ScopeCommand.SetTriggerLevel,
+                ScopeCommand.OperationComplete,
+                ScopeCommand.PopLastSystemError
+            } },
+            { ScopeTestSuite.QueryTimeDiv, new[]{
+                ScopeCommand.QueryTimeDiv
+            } },
+            { ScopeTestSuite.SetTimeDiv, new[]{
+                ScopeCommand.SetTimeDiv,
+                ScopeCommand.OperationComplete,
+                ScopeCommand.PopLastSystemError
+            } },
+            { ScopeTestSuite.DumpImage, new[]{
+//                ScopeCommand.Stop,
+//                ScopeCommand.OperationComplete,
+//                ScopeCommand.PopLastSystemError,
+                ScopeCommand.DumpImage
+            } },
+            { ScopeTestSuite.PopLastSystemError, new[]{
+                ScopeCommand.PopLastSystemError
+            } },
+            { ScopeTestSuite.OperationComplete, new[]{
+                ScopeCommand.OperationComplete
+            } },
+        };
+
+        // Resolve a suite to an ordered command list, allowing overrides from AppConfiguration
+        public static IReadOnlyList<ScopeCommand> Resolve(Oscilloscope_Network_Capture.Core.Configuration.AppConfiguration config, ScopeTestSuite suite)
+        {
+            if (config != null && config.ScpiTestSuites != null)
+            {
+                var ov = config.ScpiTestSuites.FirstOrDefault(s => string.Equals(s.Id, suite.ToString(), StringComparison.OrdinalIgnoreCase));
+                if (ov != null && ov.Steps != null && ov.Steps.Count > 0)
+                {
+                    var parsed = new List<ScopeCommand>();
+                    foreach (var name in ov.Steps)
+                    {
+                        if (Enum.TryParse<ScopeCommand>(name, ignoreCase: true, out var cmd)) parsed.Add(cmd);
+                    }
+                    if (parsed.Count > 0) return parsed;
+                }
+            }
+            return Defaults[suite];
+        }
+
+        // ---------------- Concurrency helpers: run one suite at a time ----------------
+
+        // Global gate to serialize suite execution
+        private static readonly SemaphoreSlim SuiteGate = new SemaphoreSlim(1, 1);
+
+        // Query-only flag (non-authoritative, but useful for UI state)
+        public static bool IsSuiteRunning => SuiteGate.CurrentCount == 0;
+
+        // Queueing behavior: callers await here and will run exclusively when the gate is free.
+        public static async Task RunExclusiveAsync(Func<Task> action, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            await SuiteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await action().ConfigureAwait(false);
+            }
+            finally
+            {
+                SuiteGate.Release();
+            }
+        }
+
+        // Queueing behavior with a result
+        public static async Task<T> RunExclusiveAsync<T>(Func<Task<T>> action, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            await SuiteGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                return await action().ConfigureAwait(false);
+            }
+            finally
+            {
+                SuiteGate.Release();
+            }
+        }
+
+        // Reject-if-busy behavior: returns false if another suite is running.
+        public static bool TryBeginSuite(out IDisposable lease)
+        {
+            if (SuiteGate.Wait(0))
+            {
+                lease = new Releaser(SuiteGate);
+                return true;
+            }
+            lease = null;
+            return false;
+        }
+
+        private sealed class Releaser : IDisposable
+        {
+            private readonly SemaphoreSlim _sem;
+            private int _disposed;
+            public Releaser(SemaphoreSlim sem) { _sem = sem; }
+            public void Dispose()
+            {
+                if (Interlocked.Exchange(ref _disposed, 1) == 0)
+                    _sem.Release();
+            }
+        }
+
+        // ---------------- Single entry point to run suites exclusively ----------------
+
+        // Embed all suite calls here: resolve and execute steps behind the global gate.
+        // 'runner' is your delegate that actually performs a ScopeCommand against the scope.
+        public static async Task RunSuiteExclusiveAsync(
+            Oscilloscope_Network_Capture.Core.Configuration.AppConfiguration config,
+            ScopeTestSuite suite,
+            Func<ScopeCommand, CancellationToken, Task> runner,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            if (runner == null) throw new ArgumentNullException(nameof(runner));
+
+            await RunExclusiveAsync(async () =>
+            {
+                var steps = Resolve(config, suite);
+                for (int i = 0; i < steps.Count; i++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    await runner(steps[i], cancellationToken).ConfigureAwait(false);
+                }
+            }, cancellationToken).ConfigureAwait(false);
+        }
+
+        // Variant that does not queue; returns false if a suite is already running.
+        public static async Task<bool> TryRunSuiteExclusiveAsync(
+            Oscilloscope_Network_Capture.Core.Configuration.AppConfiguration config,
+            ScopeTestSuite suite,
+            Func<ScopeCommand, CancellationToken, Task> runner,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
+            if (runner == null) throw new ArgumentNullException(nameof(runner));
+
+            IDisposable lease;
+            if (!TryBeginSuite(out lease))
+                return false;
+
+            using (lease)
+            {
+                var steps = Resolve(config, suite);
+                for (int i = 0; i < steps.Count; i++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    await runner(steps[i], cancellationToken).ConfigureAwait(false);
+                }
+                return true;
+            }
+        }
+    }
+}
