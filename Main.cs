@@ -12,6 +12,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -26,6 +27,9 @@ namespace Oscilloscope_Network_Capture
         // Overlay shown on picScreen after delete
         private Label _deleteOverlayLabel;
         private System.Windows.Forms.Timer _deleteOverlayTimer;
+
+        private string versionThis = "";
+        private string versionOnline = "";
 
         private int _timeDivAdjustBusy;
 
@@ -140,8 +144,11 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
-        private void Form1_Load(object sender, EventArgs e)
+        private void Main_Load(object sender, EventArgs e)
         {
+            GetAssemblyVersion();
+            CheckForNewVersionAsync();
+
             // Capture whether a config file existed at startup (before any saves)
             _hadConfigOnStartup = ConfigurationService.Exists;
 
@@ -454,12 +461,6 @@ namespace Oscilloscope_Network_Capture
             // Persist/restore Adjust-to-grid combobox
             WireAdjustToGridComboPersistence();
 
-            // Kick off online version check (non-blocking)
-            BeginInvoke(new Action(async () =>
-            {
-                try { await CheckForNewVersionAsync(); } catch { }
-            }));
-
             // Auto-connect on startup if a config file already existed (not first run)
             if (_hadConfigOnStartup)
             {
@@ -728,7 +729,10 @@ namespace Oscilloscope_Network_Capture
             try
             {
                 btnConnect.Enabled = false;
-                await ConnectAndRefreshAsync();
+                await WithOtherTestButtonsDisabledAsync(btnConnect, async () =>
+                {
+                    await ConnectAndRefreshAsync();
+                });
             }
             finally
             {
@@ -781,114 +785,345 @@ namespace Oscilloscope_Network_Capture
             ConfigurationService.Save(_config);
         }
 
-        // Test button handlers (wired in Designer) — updated to save overrides first
         private async void btnTestIdentify_Click(object sender, EventArgs e)
         {
             SaveOverrideOnTestClick(ScopeCommand.Identify, txtCmdIdentify.Text);
             await WithButtonDisabledAsync((Button)sender, lblStatusIdentify, async () =>
             {
-                await RunSuiteAsync(ScopeTestSuite.QueryIdentify, txtCmdIdentify.Text, lblStatusIdentify);
+                await WithOtherTestButtonsDisabledAsync((Button)sender, async () =>
+                {
+                    await RunSuiteAsync(ScopeTestSuite.QueryIdentify, txtCmdIdentify.Text, lblStatusIdentify);
+                });
             });
         }
+
         private async void btnTestClearStats_Click(object sender, EventArgs e)
         {
             SaveOverrideOnTestClick(ScopeCommand.ClearStatistics, txtCmdClearStats.Text);
             await WithButtonDisabledAsync((Button)sender, lblStatusClearStats, async () =>
             {
-                await RunSuiteAsync(ScopeTestSuite.ClearStatistics, txtCmdClearStats.Text, lblStatusClearStats);
+                await WithOtherTestButtonsDisabledAsync((Button)sender, async () =>
+                {
+                    await RunSuiteAsync(ScopeTestSuite.ClearStatistics, txtCmdClearStats.Text, lblStatusClearStats);
+                });
             });
         }
+
         private async void btnTestActiveTrig_Click(object sender, EventArgs e)
         {
             SaveOverrideOnTestClick(ScopeCommand.QueryActiveTrigger, txtCmdActiveTrig.Text);
             await WithButtonDisabledAsync((Button)sender, lblStatusActiveTrig, async () =>
             {
-                await RunSuiteAsync(ScopeTestSuite.QueryActiveTrigger, txtCmdActiveTrig.Text, lblStatusActiveTrig);
+                await WithOtherTestButtonsDisabledAsync((Button)sender, async () =>
+                {
+                    await RunSuiteAsync(ScopeTestSuite.QueryActiveTrigger, txtCmdActiveTrig.Text, lblStatusActiveTrig);
+                });
             });
         }
+
         private async void btnTestStop_Click(object sender, EventArgs e)
         {
             SaveOverrideOnTestClick(ScopeCommand.Stop, txtCmdStop.Text);
             await WithButtonDisabledAsync((Button)sender, lblStatusStop, async () =>
             {
-                await RunSuiteAsync(ScopeTestSuite.Stop, txtCmdStop.Text, lblStatusStop);
+                await WithOtherTestButtonsDisabledAsync((Button)sender, async () =>
+                {
+                    await RunSuiteAsync(ScopeTestSuite.Stop, txtCmdStop.Text, lblStatusStop);
+                });
             });
         }
+
         private async void btnTestRun_Click(object sender, EventArgs e)
         {
             SaveOverrideOnTestClick(ScopeCommand.Run, txtCmdRun.Text);
             await WithButtonDisabledAsync((Button)sender, lblStatusRun, async () =>
             {
-                await RunSuiteAsync(ScopeTestSuite.Run, txtCmdRun.Text, lblStatusRun);
+                await WithOtherTestButtonsDisabledAsync((Button)sender, async () =>
+                {
+                    await RunSuiteAsync(ScopeTestSuite.Run, txtCmdRun.Text, lblStatusRun);
+                });
             });
         }
+
         private async void btnTestSingle_Click(object sender, EventArgs e)
         {
             SaveOverrideOnTestClick(ScopeCommand.Single, txtCmdSingle.Text);
             await WithButtonDisabledAsync((Button)sender, lblStatusSingle, async () =>
             {
-                await RunSuiteAsync(ScopeTestSuite.Single, txtCmdSingle.Text, lblStatusSingle);
+                await WithOtherTestButtonsDisabledAsync((Button)sender, async () =>
+                {
+                    await RunSuiteAsync(ScopeTestSuite.Single, txtCmdSingle.Text, lblStatusSingle);
+                });
             });
         }
+
         private async void btnTestTrigMode_Click(object sender, EventArgs e)
         {
             SaveOverrideOnTestClick(ScopeCommand.QueryTriggerMode, txtCmdTrigMode.Text);
             await WithButtonDisabledAsync((Button)sender, lblStatusTrigMode, async () =>
             {
-                await RunSuiteAsync(ScopeTestSuite.QueryTriggerMode, txtCmdTrigMode.Text, lblStatusTrigMode);
+                await WithOtherTestButtonsDisabledAsync((Button)sender, async () =>
+                {
+                    await RunSuiteAsync(ScopeTestSuite.QueryTriggerMode, txtCmdTrigMode.Text, lblStatusTrigMode);
+                });
             });
         }
+
         private async void btnTestTrigLevelQ_Click(object sender, EventArgs e)
         {
             SaveOverrideOnTestClick(ScopeCommand.QueryTriggerLevel, txtCmdTrigLevelQ.Text);
-
             await WithButtonDisabledAsync((Button)sender, lblStatusTrigLevelQ, async () =>
             {
-                try
+                double current = 0;
+                bool success = false;
+
+                await WithOtherTestButtonsDisabledAsync((Button)sender, async () =>
                 {
-                    await EnsureConnectedAsync();
-                    var ct = _cts?.Token ?? CancellationToken.None;
-
-                    // Use the suite that honors profile/overrides and returns a parsed double
-                    double current = await QueryTriggerLevelViaSuiteAsync().ConfigureAwait(true);
-
-                    // DO NOT mutate the Set textbox; keep its {0} so it remains parameterized
-                    // If you want a preview, consider showing it in a label/tooltip instead.
-                    // var setCmd = txtCmdTrigLevelSet?.Text ?? string.Empty;
-                    // var valStr = current.ToString("0.######", CultureInfo.InvariantCulture);
-                    // if (!string.IsNullOrWhiteSpace(setCmd) && setCmd.IndexOf("{0}", StringComparison.Ordinal) >= 0)
-                    // {
-                    //     txtCmdTrigLevelSet.Text = setCmd.Replace("{0}", valStr);
-                    // }
-
-                    // Cache in the Set button and enable it
-                    if (btnTestTrigLevelSet != null)
+                    try
                     {
-                        btnTestTrigLevelSet.Tag = current; // cached value
+                        await EnsureConnectedAsync();
+                        current = await QueryTriggerLevelViaSuiteAsync().ConfigureAwait(true);
+
+                        lblStatusTrigLevelQ.Text = "OK";
+                        lblStatusTrigLevelQ.ForeColor = Color.Green;
+                        success = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Instance.Error("QueryTriggerLevel test failed: " + InnermostMessage(ex));
+                        lblStatusTrigLevelQ.Text = "Fail (" + InnermostMessage(ex) + ")";
+                        lblStatusTrigLevelQ.ForeColor = Color.Red;
+                    }
+                });
+
+                // Apply final Set-button state after other buttons have been restored
+                if (btnTestTrigLevelSet != null)
+                {
+                    if (success)
+                    {
+                        btnTestTrigLevelSet.Tag = current;
                         btnTestTrigLevelSet.Enabled = true;
                         if (lblStatusTrigLevelSet.Text == "Not tested - first run \"Query trigger level\"")
                         {
                             lblStatusTrigLevelSet.Text = "Not tested";
                         }
                     }
-
-                    // Keep label text simple (do not include the value)
-                    lblStatusTrigLevelQ.Text = "OK";
-                    lblStatusTrigLevelQ.ForeColor = Color.Green;
-                }
-                catch (Exception ex)
-                {
-                    Logger.Instance.Error("QueryTriggerLevel test failed: " + InnermostMessage(ex));
-                    lblStatusTrigLevelQ.Text = "Fail (" + InnermostMessage(ex) + ")";
-                    lblStatusTrigLevelQ.ForeColor = Color.Red;
-
-                    // Keep Set disabled on failure
-                    if (btnTestTrigLevelSet != null)
+                    else
                     {
                         btnTestTrigLevelSet.Tag = null;
                         btnTestTrigLevelSet.Enabled = false;
                     }
                 }
+            });
+        }
+        
+        private async void btnTestTrigLevelSet_Click(object sender, EventArgs e)
+        {
+            SaveOverrideOnTestClick(ScopeCommand.SetTriggerLevel, txtCmdTrigLevelSet.Text);
+            await WithButtonDisabledAsync((Button)sender, lblStatusTrigLevelSet, async () =>
+            {
+                await WithOtherTestButtonsDisabledAsync((Button)sender, async () =>
+                {
+                    try
+                    {
+                        await EnsureConnectedAsync();
+                        var ct = _cts?.Token ?? CancellationToken.None;
+
+                        double target;
+                        if (btnTestTrigLevelSet != null && btnTestTrigLevelSet.Tag is double d)
+                            target = d;
+                        else
+                            target = await _scope.QueryTriggerLevelAsync(ct).ConfigureAwait(true);
+
+                        await RunSetTriggerLevelSuiteAsync(target).ConfigureAwait(true);
+
+                        lblStatusTrigLevelSet.Text = "OK";
+                        lblStatusTrigLevelSet.ForeColor = Color.Green;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Instance.Error("SetTriggerLevel test failed: " + InnermostMessage(ex));
+                        lblStatusTrigLevelSet.Text = "Fail (" + InnermostMessage(ex) + ")";
+                        lblStatusTrigLevelSet.ForeColor = Color.Red;
+                    }
+                });
+            });
+        }
+
+        private async void btnTestTimeDivQ_Click(object sender, EventArgs e)
+        {
+            SaveOverrideOnTestClick(ScopeCommand.QueryTimeDiv, txtCmdTimeDivQ.Text);
+            await WithButtonDisabledAsync((Button)sender, lblStatusTimeDivQ, async () =>
+            {
+                double seconds = 0;
+                bool success = false;
+
+                await WithOtherTestButtonsDisabledAsync((Button)sender, async () =>
+                {
+                    try
+                    {
+                        await EnsureConnectedAsync();
+                        seconds = await QueryTimeDivViaSuiteAsync().ConfigureAwait(true);
+
+                        lblStatusTimeDivQ.Text = "OK";
+                        lblStatusTimeDivQ.ForeColor = Color.Green;
+                        success = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Instance.Error("QueryTimeDiv test failed: " + InnermostMessage(ex));
+                        lblStatusTimeDivQ.Text = "Fail (" + InnermostMessage(ex) + ")";
+                        lblStatusTimeDivQ.ForeColor = Color.Red;
+                    }
+                });
+
+                // Apply final Set-button state after other buttons have been restored
+                if (btnTestTimeDivSet != null)
+                {
+                    if (success)
+                    {
+                        btnTestTimeDivSet.Tag = seconds;
+                        btnTestTimeDivSet.Enabled = true;
+                        if (lblStatusTimeDivSet.Text == "Not tested - first run \"Query TIME/DIV\"")
+                        {
+                            lblStatusTimeDivSet.Text = "Not tested";
+                        }
+                    }
+                    else
+                    {
+                        btnTestTimeDivSet.Tag = null;
+                        btnTestTimeDivSet.Enabled = false;
+                    }
+                }
+            });
+        }
+
+        private async void btnTestTimeDivSet_Click(object sender, EventArgs e)
+        {
+            SaveOverrideOnTestClick(ScopeCommand.SetTimeDiv, txtCmdTimeDivSet.Text);
+            await WithButtonDisabledAsync((Button)sender, lblStatusTimeDivSet, async () =>
+            {
+                await WithOtherTestButtonsDisabledAsync((Button)sender, async () =>
+                {
+                    try
+                    {
+                        await EnsureConnectedAsync();
+
+                        double targetSeconds;
+                        if (btnTestTimeDivSet != null && btnTestTimeDivSet.Tag is double s2)
+                            targetSeconds = s2;
+                        else
+                            targetSeconds = await QueryTimeDivViaSuiteAsync().ConfigureAwait(true);
+
+                        await RunSetTimeDivSuiteAsync(targetSeconds).ConfigureAwait(true);
+
+                        lblStatusTimeDivSet.Text = "OK";
+                        lblStatusTimeDivSet.ForeColor = Color.Green;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Instance.Error("SetTimeDiv test failed: " + InnermostMessage(ex));
+                        lblStatusTimeDivSet.Text = "Fail (" + InnermostMessage(ex) + ")";
+                        lblStatusTimeDivSet.ForeColor = Color.Red;
+                    }
+                });
+            });
+        }
+
+        private async void btnTestSysErr_Click(object sender, EventArgs e)
+        {
+            SaveOverrideOnTestClick(ScopeCommand.PopLastSystemError, txtCmdSysErr.Text);
+            await WithButtonDisabledAsync((Button)sender, lblStatusSysErr, async () =>
+            {
+                await WithOtherTestButtonsDisabledAsync((Button)sender, async () =>
+                {
+                    await RunSuiteAsync(ScopeTestSuite.PopLastSystemError, txtCmdSysErr.Text, lblStatusSysErr);
+                });
+            });
+        }
+
+        private async void btnTestOpc_Click(object sender, EventArgs e)
+        {
+            SaveOverrideOnTestClick(ScopeCommand.OperationComplete, txtCmdOpc.Text);
+            await WithButtonDisabledAsync((Button)sender, lblStatusOpc, async () =>
+            {
+                await WithOtherTestButtonsDisabledAsync((Button)sender, async () =>
+                {
+                    await RunSuiteAsync(ScopeTestSuite.OperationComplete, txtCmdOpc.Text, lblStatusOpc);
+                });
+            });
+        }
+
+        private async void btnTestDumpImage_Click(object sender, EventArgs e)
+        {
+            SaveOverrideOnTestClick(ScopeCommand.DumpImage, txtCmdDumpImage.Text);
+
+            await WithButtonDisabledAsync((Button)sender, lblStatusDumpImage, async () =>
+            {
+                await WithOtherTestButtonsDisabledAsync((Button)sender, async () =>
+                {
+                    try
+                    {
+                        await EnsureConnectedAsync();
+
+                        // Log suite header
+                        Logger.Instance.Debug("---");
+                        Logger.Instance.Debug(ScopeTestSuiteRegistry.GetDisplayName(ScopeTestSuite.DumpImage) + ":");
+
+                        // Execute pre-steps (all steps except DumpImage) using profile defaults
+                        var steps = ScopeTestSuiteRegistry.Resolve(_config, ScopeTestSuite.DumpImage);
+                        foreach (var step in steps)
+                        {
+                            if (step == ScopeCommand.DumpImage) continue;
+
+                            if (IsQuery(step))
+                            {
+                                var scpi = GetDefaultScpiForCurrentProfile(step);
+                                await _scope.SendRawQueryAsync(scpi, _cts?.Token ?? System.Threading.CancellationToken.None);
+                            }
+                            else
+                            {
+                                var scpi = GetDefaultScpiForCurrentProfile(step);
+                                await _scope.SendRawWriteAsync(scpi, _cts?.Token ?? System.Threading.CancellationToken.None);
+                            }
+                        }
+
+                        var cmd = (txtCmdDumpImage.Text ?? string.Empty).Trim();
+                        if (string.IsNullOrWhiteSpace(cmd))
+                            throw new InvalidOperationException("DumpImage command is empty.");
+
+                        var raw = await _scope.SendRawDumpAndReadAsync(cmd, _cts?.Token ?? System.Threading.CancellationToken.None);
+                        var payload = StripIeee4882Block(raw);
+
+                        if (payload == null || payload.Length == 0)
+                            throw new InvalidOperationException("No image data received.");
+
+                        try
+                        {
+                            using (var ms = new System.IO.MemoryStream(payload))
+                            using (var img = System.Drawing.Image.FromStream(ms))
+                            {
+                                var clone = (System.Drawing.Image)img.Clone();
+                                var old = picScreen.Image;
+                                picScreen.Image = clone;
+                                try { old?.Dispose(); } catch { }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Instance.Error("Image decode failed: " + InnermostMessage(ex));
+                        }
+
+                        lblStatusDumpImage.Text = "OK";
+                        lblStatusDumpImage.ForeColor = System.Drawing.Color.Green;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Instance.Error("DumpImage test failed: " + InnermostMessage(ex));
+                        lblStatusDumpImage.Text = "Fail (" + InnermostMessage(ex) + ")";
+                        lblStatusDumpImage.ForeColor = System.Drawing.Color.Red;
+                    }
+                });
             });
         }
         // Helper: inject numeric into SCPI override. If "{0}" exists, format; else replace last number; else append
@@ -909,214 +1144,6 @@ namespace Oscilloscope_Network_Capture
             }
 
             return (fmt.TrimEnd() + " " + valStr);
-        }
-        private async void btnTestTrigLevelSet_Click(object sender, EventArgs e)
-        {
-            SaveOverrideOnTestClick(ScopeCommand.SetTriggerLevel, txtCmdTrigLevelSet.Text);
-
-            await WithButtonDisabledAsync((Button)sender, lblStatusTrigLevelSet, async () =>
-            {
-                try
-                {
-                    await EnsureConnectedAsync();
-                    var ct = _cts?.Token ?? CancellationToken.None;
-
-                    // Prefer the value cached by the Query button; fallback to a live query if missing
-                    double target;
-                    if (btnTestTrigLevelSet != null && btnTestTrigLevelSet.Tag is double d)
-                        target = d;
-                    else
-                        target = await _scope.QueryTriggerLevelAsync(ct).ConfigureAwait(true);
-
-                    // Formats and runs the suite
-                    await RunSetTriggerLevelSuiteAsync(target).ConfigureAwait(true);
-
-                    // Keep label as-is, without embedding the value
-                    lblStatusTrigLevelSet.Text = "OK";
-                    lblStatusTrigLevelSet.ForeColor = Color.Green;
-                }
-                catch (Exception ex)
-                {
-                    Logger.Instance.Error("SetTriggerLevel test failed: " + InnermostMessage(ex));
-                    lblStatusTrigLevelSet.Text = "Fail (" + InnermostMessage(ex) + ")";
-                    lblStatusTrigLevelSet.ForeColor = Color.Red;
-                }
-            });
-        }
-        private async void btnTestTimeDivQ_Click(object sender, EventArgs e)
-        {
-            SaveOverrideOnTestClick(ScopeCommand.QueryTimeDiv, txtCmdTimeDivQ.Text);
-
-            await WithButtonDisabledAsync((Button)sender, lblStatusTimeDivQ, async () =>
-            {
-                try
-                {
-                    await EnsureConnectedAsync();
-                    var ct = _cts?.Token ?? CancellationToken.None;
-
-                    // Query current TIME/DIV via suite (parses to seconds/div)
-                    double seconds = await QueryTimeDivViaSuiteAsync().ConfigureAwait(true);
-
-                    // IMPORTANT: Do NOT mutate the Set textbox; keep it parameterized with {0}
-                    // This avoids stale or compounded numeric formatting issues when adjusting via +/- keys.
-
-                    // Cache in the Set button and enable it
-                    if (btnTestTimeDivSet != null)
-                    {
-                        btnTestTimeDivSet.Tag = seconds;
-                        btnTestTimeDivSet.Enabled = true;
-                        if (lblStatusTimeDivSet.Text == "Not tested - first run \"Query TIME/DIV\"")
-                        {
-                            lblStatusTimeDivSet.Text = "Not tested";
-                        }
-                    }
-
-                    // Keep label simple
-                    lblStatusTimeDivQ.Text = "OK";
-                    lblStatusTimeDivQ.ForeColor = Color.Green;
-                }
-                catch (Exception ex)
-                {
-                    Logger.Instance.Error("QueryTimeDiv test failed: " + InnermostMessage(ex));
-                    lblStatusTimeDivQ.Text = "Fail (" + InnermostMessage(ex) + ")";
-                    lblStatusTimeDivQ.ForeColor = Color.Red;
-
-                    // Keep Set disabled on failure
-                    if (btnTestTimeDivSet != null)
-                    {
-                        btnTestTimeDivSet.Tag = null;
-                        btnTestTimeDivSet.Enabled = false;
-                    }
-                }
-            });
-        }
-        private async void btnTestTimeDivSet_Click(object sender, EventArgs e)
-        {
-            SaveOverrideOnTestClick(ScopeCommand.SetTimeDiv, txtCmdTimeDivSet.Text);
-
-            await WithButtonDisabledAsync((Button)sender, lblStatusTimeDivSet, async () =>
-            {
-                try
-                {
-                    await EnsureConnectedAsync();
-
-                    // Prefer the value cached by the Query button; fallback to a live query if missing
-                    double targetSeconds;
-                    if (btnTestTimeDivSet != null && btnTestTimeDivSet.Tag is double s)
-                        targetSeconds = s;
-                    else
-                        targetSeconds = await QueryTimeDivViaSuiteAsync().ConfigureAwait(true);
-
-                    // Formats {0} (if present) and runs the full suite (OPC/SysErr, etc.)
-                    await RunSetTimeDivSuiteAsync(targetSeconds).ConfigureAwait(true);
-
-                    // Keep label simple
-                    lblStatusTimeDivSet.Text = "OK";
-                    lblStatusTimeDivSet.ForeColor = Color.Green;
-                }
-                catch (Exception ex)
-                {
-                    Logger.Instance.Error("SetTimeDiv test failed: " + InnermostMessage(ex));
-                    lblStatusTimeDivSet.Text = "Fail (" + InnermostMessage(ex) + ")";
-                    lblStatusTimeDivSet.ForeColor = Color.Red;
-                }
-            });
-        }
-        private async void btnTestSysErr_Click(object sender, EventArgs e)
-        {
-            SaveOverrideOnTestClick(ScopeCommand.PopLastSystemError, txtCmdSysErr.Text);
-            await WithButtonDisabledAsync((Button)sender, lblStatusSysErr, async () =>
-            {
-                await RunSuiteAsync(ScopeTestSuite.PopLastSystemError, txtCmdSysErr.Text, lblStatusSysErr);
-            });
-        }
-        private async void btnTestOpc_Click(object sender, EventArgs e)
-        {
-            SaveOverrideOnTestClick(ScopeCommand.OperationComplete, txtCmdOpc.Text);
-            await WithButtonDisabledAsync((Button)sender, lblStatusOpc, async () =>
-            {
-                await RunSuiteAsync(ScopeTestSuite.OperationComplete, txtCmdOpc.Text, lblStatusOpc);
-            });
-        }
-
-        /*
-        private void numericUpDown1_ValueChanged(object sender, EventArgs e) { }
-        */
-
-        /*
-        private void label2_Click(object sender, EventArgs e) { }
-        */
-
-        private async void btnTestDumpImage_Click(object sender, EventArgs e)
-        {
-            SaveOverrideOnTestClick(ScopeCommand.DumpImage, txtCmdDumpImage.Text);
-
-            await WithButtonDisabledAsync((Button)sender, lblStatusDumpImage, async () =>
-            {
-                try
-                {
-                    await EnsureConnectedAsync();
-
-                    // Log suite header
-                    Logger.Instance.Debug("---");
-                    Logger.Instance.Debug(ScopeTestSuiteRegistry.GetDisplayName(ScopeTestSuite.DumpImage) + ":");
-
-                    // Execute pre-steps (all steps except DumpImage) using profile defaults
-                    var steps = ScopeTestSuiteRegistry.Resolve(_config, ScopeTestSuite.DumpImage);
-                    foreach (var step in steps)
-                    {
-                        if (step == ScopeCommand.DumpImage) continue; // we'll handle it explicitly below
-
-                        if (IsQuery(step))
-                        {
-                            var scpi = GetDefaultScpiForCurrentProfile(step);
-                            await _scope.SendRawQueryAsync(scpi, _cts?.Token ?? System.Threading.CancellationToken.None);
-                        }
-                        else
-                        {
-                            var scpi = GetDefaultScpiForCurrentProfile(step);
-                            await _scope.SendRawWriteAsync(scpi, _cts?.Token ?? System.Threading.CancellationToken.None);
-                        }
-                    }
-
-                    // Now perform the actual dump using the textbox (override) command
-                    var cmd = (txtCmdDumpImage.Text ?? string.Empty).Trim();
-                    if (string.IsNullOrWhiteSpace(cmd))
-                        throw new InvalidOperationException("DumpImage command is empty.");
-
-                    var raw = await _scope.SendRawDumpAndReadAsync(cmd, _cts?.Token ?? System.Threading.CancellationToken.None);
-                    var payload = StripIeee4882Block(raw);
-
-                    if (payload == null || payload.Length == 0)
-                        throw new InvalidOperationException("No image data received.");
-
-                    // Try to preview the image on the Measurements tab (optional)
-                    try
-                    {
-                        using (var ms = new System.IO.MemoryStream(payload))
-                        using (var img = System.Drawing.Image.FromStream(ms))
-                        {
-                            var clone = (System.Drawing.Image)img.Clone();
-                            var old = picScreen.Image;
-                            picScreen.Image = clone;
-                            try { old?.Dispose(); } catch { }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Instance.Error("Image decode failed: " + InnermostMessage(ex));
-                    }
-
-                    lblStatusDumpImage.Text = "OK";
-                    lblStatusDumpImage.ForeColor = System.Drawing.Color.Green;
-                }
-                catch (Exception ex)
-                {
-                    Logger.Instance.Error("DumpImage test failed: " + InnermostMessage(ex));
-                    lblStatusDumpImage.Text = "Fail (" + InnermostMessage(ex) + ")";
-                    lblStatusDumpImage.ForeColor = System.Drawing.Color.Red;
-                }
-            });
         }
         private static byte[] StripIeee4882Block(byte[] raw)
         {
@@ -1384,7 +1411,7 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
-        private async Task CheckForNewVersionAsync()
+        private void CheckForNewVersionAsync()
         {
             try { System.Net.ServicePointManager.SecurityProtocol |= System.Net.SecurityProtocolType.Tls12; } catch { }
 
@@ -1392,20 +1419,16 @@ namespace Oscilloscope_Network_Capture
             {
                 using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(12)))
                 {
-                    var newest = await Oscilloscope_Network_Capture.Core.Online.Online.GetNewestVersionAsync(cts.Token).ConfigureAwait(true);
-                    var current = Oscilloscope_Network_Capture.Core.Online.Online.CurrentVersion?.Trim() ?? string.Empty;
-                    newest = (newest ?? string.Empty).Trim();
 
-                    if (!string.IsNullOrWhiteSpace(newest) &&
-                        !string.Equals(newest, current, StringComparison.OrdinalIgnoreCase))
+                    var newestTask = Oscilloscope_Network_Capture.Core.Online.Online.GetNewestVersionAsync(cts.Token);
+                    versionOnline = (newestTask != null ? newestTask.GetAwaiter().GetResult() : string.Empty).Trim();
+
+                    if (!string.IsNullOrWhiteSpace(versionOnline) &&
+                        !string.Equals(versionOnline, versionThis, StringComparison.OrdinalIgnoreCase))
                     {
                         Logger.Instance.Debug("---");
-                        Logger.Instance.Info("A newer version is available: " + newest);
-                        ShowNewVersionBadge(newest);
-                    }
-                    else
-                    {
-                        Logger.Instance.Debug("You are on the latest version (" + current + ").");
+                        Logger.Instance.Info("Newer version is available: " + versionOnline + " - check \"About\" tab for where to download it.");
+                        ShowNewVersionBadge(versionOnline);
                     }
                 }
             }
@@ -2990,6 +3013,7 @@ namespace Oscilloscope_Network_Capture
         // MODIFIED: use QueryIdentify suite and suppress the "ID: ..." Info line
         private async Task ConnectAndRefreshAsync()
         {
+            Logger.Instance.Debug("---");
             try
             {
                 lblStatus.Text = "Checking...";
@@ -3039,7 +3063,7 @@ namespace Oscilloscope_Network_Capture
                 // Logger.Instance.Info(string.Format("ID: {0}", idn)); // removed
 
                 var parsed = ParseIdn(idn);
-                Logger.Instance.Info("Oscilloscope is identified as:");
+                Logger.Instance.Info("Oscilloscope identified as:");
                 Logger.Instance.Info("Vendor: " + parsed.Vendor);
                 Logger.Instance.Info("Model: " + parsed.Model);
                 Logger.Instance.Info("Firmware: " + parsed.Firmware);
@@ -3112,5 +3136,112 @@ namespace Oscilloscope_Network_Capture
 
             return resp ?? string.Empty;
         }
+
+        // ###########################################################################################
+        // Get the assembly version.
+        // Will transform assembly information into a text string.
+        // ###########################################################################################
+
+        private void GetAssemblyVersion()
+        {
+            try
+            {
+                Assembly assemblyInfo = Assembly.GetExecutingAssembly();
+                string assemblyVersion = FileVersionInfo.GetVersionInfo(assemblyInfo.Location).FileVersion;
+                string year = assemblyVersion.Substring(0, 4);
+                string month = assemblyVersion.Substring(5, 2);
+                string day = assemblyVersion.Substring(8, 2);
+                string rev = assemblyVersion.Substring(11); // will be ignored in RELEASE builds
+                switch (month)
+                {
+                    case "01": month = "January"; break;
+                    case "02": month = "February"; break;
+                    case "03": month = "March"; break;
+                    case "04": month = "April"; break;
+                    case "05": month = "May"; break;
+                    case "06": month = "June"; break;
+                    case "07": month = "July"; break;
+                    case "08": month = "August"; break;
+                    case "09": month = "September"; break;
+                    case "10": month = "October"; break;
+                    case "11": month = "November"; break;
+                    case "12": month = "December"; break;
+                    default: month = "Unknown"; break;
+                }
+                day = day.TrimStart(new Char[] { '0' }); // remove leading zero
+                day = day.TrimEnd(new Char[] { '.' }); // remove last dot
+                string date = year + "-" + month + "-" + day;
+
+                // Beautify revision and build-type 
+                if (rev != "0" && rev != "1")
+                {
+                    rev = "(rev. " + rev + ")";
+                } else
+                {
+                    rev = string.Empty;
+                }
+
+                    // Set the application version
+                    versionThis = (date + " " + rev).Trim();
+
+                Logger.Instance.Info("Application version is "+ versionThis);
+            }
+            catch {}
+        }
+
+        // Add this helper to enumerate all test buttons (now includes btnConnect)
+        private IEnumerable<Button> EnumerateTestSuiteButtons()
+        {
+            // Prefer designer fields if available
+            var fields = new Button[]
+            {
+        btnTestIdentify, btnTestClearStats, btnTestActiveTrig, btnTestStop, btnTestSingle,
+        btnTestRun, btnTestTrigMode, btnTestTrigLevelQ, btnTestTrigLevelSet,
+        btnTestTimeDivQ, btnTestTimeDivSet, btnTestDumpImage, btnTestSysErr, btnTestOpc,
+        btnConnect
+            };
+
+            foreach (var b in fields)
+                if (b != null) yield return b;
+
+            // Fallback: find by name if any field was null
+            var names = new[]
+            {
+                "btnTestIdentify","btnTestClearStats","btnTestActiveTrig","btnTestStop","btnTestSingle",
+                "btnTestRun","btnTestTrigMode","btnTestTrigLevelQ","btnTestTrigLevelSet",
+                "btnTestTimeDivQ","btnTestTimeDivSet","btnTestDumpImage","btnTestSysErr","btnTestOpc",
+                "btnConnect"
+            };
+            foreach (var n in names)
+            {
+                var found = this.Controls.Find(n, true).FirstOrDefault() as Button;
+                if (found != null) yield return found;
+            }
+        }
+
+        // Add this helper to disable other test buttons and restore their original states
+        private async Task WithOtherTestButtonsDisabledAsync(Button self, Func<Task> action)
+        {
+            var others = EnumerateTestSuiteButtons()
+                .Where(b => b != null && !ReferenceEquals(b, self))
+                .Distinct()
+                .ToList();
+
+            var original = new Dictionary<Button, bool>(others.Count);
+            foreach (var b in others) original[b] = b.Enabled;
+
+            try
+            {
+                foreach (var b in others) b.Enabled = false;
+                await action().ConfigureAwait(true);
+            }
+            finally
+            {
+                foreach (var kv in original) kv.Key.Enabled = kv.Value;
+            }
+        }
+
+
+
     }
 }

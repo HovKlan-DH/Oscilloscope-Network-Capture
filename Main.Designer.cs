@@ -1113,6 +1113,8 @@
             // checkBoxForceAcquisition
             // 
             this.checkBoxForceAcquisition.AutoSize = true;
+            this.checkBoxForceAcquisition.Checked = true;
+            this.checkBoxForceAcquisition.CheckState = System.Windows.Forms.CheckState.Checked;
             this.checkBoxForceAcquisition.Location = new System.Drawing.Point(13, 80);
             this.checkBoxForceAcquisition.Name = "checkBoxForceAcquisition";
             this.checkBoxForceAcquisition.Size = new System.Drawing.Size(232, 24);
@@ -1164,7 +1166,7 @@
             this.textBoxFilenameFormat.Name = "textBoxFilenameFormat";
             this.textBoxFilenameFormat.Size = new System.Drawing.Size(284, 24);
             this.textBoxFilenameFormat.TabIndex = 63;
-            this.textBoxFilenameFormat.Text = "{COMPONENT}_{NUMBER}_{REGION}";
+            this.textBoxFilenameFormat.Text = "{COMPONENT}_{NUMBER}_{VAR2}_{DATE}_{TIME}";
             // 
             // label3
             // 
@@ -1465,7 +1467,7 @@
             this.labelNewVersion5.Text = "New version available ";
             this.labelNewVersion5.Visible = false;
             // 
-            // Form1
+            // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -1475,9 +1477,9 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(4);
             this.MinimumSize = new System.Drawing.Size(1085, 697);
-            this.Name = "Form1";
+            this.Name = "Main";
             this.Text = "Oscilloscope Network Capture";
-            this.Load += new System.EventHandler(this.Form1_Load);
+            this.Load += new System.EventHandler(this.Main_Load);
             ((System.ComponentModel.ISupportInitialize)(this.numPort)).EndInit();
             this.tabMain.ResumeLayout(false);
             this.tabConfigScope.ResumeLayout(false);
