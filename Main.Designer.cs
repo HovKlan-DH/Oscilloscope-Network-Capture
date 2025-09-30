@@ -105,6 +105,7 @@
             this.checkBoxForceAcquisition = new System.Windows.Forms.CheckBox();
             this.checkBoxEnableBeep = new System.Windows.Forms.CheckBox();
             this.tabCapturing = new System.Windows.Forms.TabPage();
+            this.label15 = new System.Windows.Forms.Label();
             this.textBoxFilenameFormat = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
             this.label12 = new System.Windows.Forms.Label();
@@ -132,6 +133,7 @@
             this.tabAbout = new System.Windows.Forms.TabPage();
             this.richTextBox1 = new System.Windows.Forms.RichTextBox();
             this.labelNewVersion5 = new System.Windows.Forms.Label();
+            this.richTextBoxHelp = new System.Windows.Forms.RichTextBox();
             ((System.ComponentModel.ISupportInitialize)(this.numPort)).BeginInit();
             this.tabMain.SuspendLayout();
             this.tabConfigScope.SuspendLayout();
@@ -171,9 +173,9 @@
             this.btnConnect.Location = new System.Drawing.Point(351, 47);
             this.btnConnect.Margin = new System.Windows.Forms.Padding(4);
             this.btnConnect.Name = "btnConnect";
-            this.btnConnect.Size = new System.Drawing.Size(293, 28);
+            this.btnConnect.Size = new System.Drawing.Size(203, 57);
             this.btnConnect.TabIndex = 6;
-            this.btnConnect.Text = "Check oscilloscope connectivity";
+            this.btnConnect.Text = "Check oscilloscope connectivity and start capture mode";
             this.btnConnect.UseVisualStyleBackColor = true;
             this.btnConnect.Click += new System.EventHandler(this.btnConnect_Click);
             // 
@@ -352,9 +354,9 @@
             this.label11.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label11.Location = new System.Drawing.Point(16, 200);
             this.label11.Name = "label11";
-            this.label11.Size = new System.Drawing.Size(243, 20);
+            this.label11.Size = new System.Drawing.Size(427, 20);
             this.label11.TabIndex = 58;
-            this.label11.Text = "SCPI commands for Rigol Generic";
+            this.label11.Text = "Test-suites for SCPI commands specifically for Rigol Generic";
             // 
             // label8
             // 
@@ -383,7 +385,7 @@
             // 
             this.lblStatus.AutoSize = true;
             this.lblStatus.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatus.Location = new System.Drawing.Point(351, 78);
+            this.lblStatus.Location = new System.Drawing.Point(351, 109);
             this.lblStatus.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatus.Name = "lblStatus";
             this.lblStatus.Size = new System.Drawing.Size(232, 20);
@@ -394,7 +396,7 @@
             // 
             this.lblStatusOpc.AutoSize = true;
             this.lblStatusOpc.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusOpc.Location = new System.Drawing.Point(625, 580);
+            this.lblStatusOpc.Location = new System.Drawing.Point(625, 285);
             this.lblStatusOpc.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusOpc.Name = "lblStatusOpc";
             this.lblStatusOpc.Size = new System.Drawing.Size(79, 20);
@@ -403,7 +405,7 @@
             // 
             // btnTestOpc
             // 
-            this.btnTestOpc.Location = new System.Drawing.Point(537, 576);
+            this.btnTestOpc.Location = new System.Drawing.Point(537, 281);
             this.btnTestOpc.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestOpc.Name = "btnTestOpc";
             this.btnTestOpc.Size = new System.Drawing.Size(80, 22);
@@ -414,7 +416,7 @@
             // 
             // txtCmdOpc
             // 
-            this.txtCmdOpc.Location = new System.Drawing.Point(223, 576);
+            this.txtCmdOpc.Location = new System.Drawing.Point(223, 281);
             this.txtCmdOpc.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdOpc.Name = "txtCmdOpc";
             this.txtCmdOpc.Size = new System.Drawing.Size(302, 27);
@@ -423,7 +425,7 @@
             // lblCmdOpc
             // 
             this.lblCmdOpc.AutoSize = true;
-            this.lblCmdOpc.Location = new System.Drawing.Point(16, 580);
+            this.lblCmdOpc.Location = new System.Drawing.Point(16, 285);
             this.lblCmdOpc.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCmdOpc.Name = "lblCmdOpc";
             this.lblCmdOpc.Size = new System.Drawing.Size(200, 20);
@@ -434,7 +436,7 @@
             // 
             this.lblStatusSysErr.AutoSize = true;
             this.lblStatusSysErr.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusSysErr.Location = new System.Drawing.Point(625, 552);
+            this.lblStatusSysErr.Location = new System.Drawing.Point(625, 256);
             this.lblStatusSysErr.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusSysErr.Name = "lblStatusSysErr";
             this.lblStatusSysErr.Size = new System.Drawing.Size(79, 20);
@@ -443,7 +445,7 @@
             // 
             // btnTestSysErr
             // 
-            this.btnTestSysErr.Location = new System.Drawing.Point(537, 549);
+            this.btnTestSysErr.Location = new System.Drawing.Point(537, 253);
             this.btnTestSysErr.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestSysErr.Name = "btnTestSysErr";
             this.btnTestSysErr.Size = new System.Drawing.Size(80, 22);
@@ -454,7 +456,7 @@
             // 
             // txtCmdSysErr
             // 
-            this.txtCmdSysErr.Location = new System.Drawing.Point(223, 549);
+            this.txtCmdSysErr.Location = new System.Drawing.Point(223, 253);
             this.txtCmdSysErr.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdSysErr.Name = "txtCmdSysErr";
             this.txtCmdSysErr.Size = new System.Drawing.Size(302, 27);
@@ -463,7 +465,7 @@
             // lblCmdSysErr
             // 
             this.lblCmdSysErr.AutoSize = true;
-            this.lblCmdSysErr.Location = new System.Drawing.Point(16, 553);
+            this.lblCmdSysErr.Location = new System.Drawing.Point(16, 257);
             this.lblCmdSysErr.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCmdSysErr.Name = "lblCmdSysErr";
             this.lblCmdSysErr.Size = new System.Drawing.Size(160, 20);
@@ -474,7 +476,7 @@
             // 
             this.lblStatusDumpImage.AutoSize = true;
             this.lblStatusDumpImage.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusDumpImage.Location = new System.Drawing.Point(625, 525);
+            this.lblStatusDumpImage.Location = new System.Drawing.Point(625, 583);
             this.lblStatusDumpImage.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusDumpImage.Name = "lblStatusDumpImage";
             this.lblStatusDumpImage.Size = new System.Drawing.Size(79, 20);
@@ -483,7 +485,7 @@
             // 
             // btnTestDumpImage
             // 
-            this.btnTestDumpImage.Location = new System.Drawing.Point(537, 522);
+            this.btnTestDumpImage.Location = new System.Drawing.Point(537, 580);
             this.btnTestDumpImage.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestDumpImage.Name = "btnTestDumpImage";
             this.btnTestDumpImage.Size = new System.Drawing.Size(80, 22);
@@ -494,7 +496,7 @@
             // 
             // txtCmdDumpImage
             // 
-            this.txtCmdDumpImage.Location = new System.Drawing.Point(223, 522);
+            this.txtCmdDumpImage.Location = new System.Drawing.Point(223, 580);
             this.txtCmdDumpImage.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdDumpImage.Name = "txtCmdDumpImage";
             this.txtCmdDumpImage.Size = new System.Drawing.Size(302, 27);
@@ -503,7 +505,7 @@
             // lblCmdDumpImage
             // 
             this.lblCmdDumpImage.AutoSize = true;
-            this.lblCmdDumpImage.Location = new System.Drawing.Point(16, 526);
+            this.lblCmdDumpImage.Location = new System.Drawing.Point(16, 584);
             this.lblCmdDumpImage.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCmdDumpImage.Name = "lblCmdDumpImage";
             this.lblCmdDumpImage.Size = new System.Drawing.Size(137, 20);
@@ -514,7 +516,7 @@
             // 
             this.lblStatusTimeDivSet.AutoSize = true;
             this.lblStatusTimeDivSet.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusTimeDivSet.Location = new System.Drawing.Point(625, 499);
+            this.lblStatusTimeDivSet.Location = new System.Drawing.Point(625, 557);
             this.lblStatusTimeDivSet.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusTimeDivSet.Name = "lblStatusTimeDivSet";
             this.lblStatusTimeDivSet.Size = new System.Drawing.Size(265, 20);
@@ -523,7 +525,7 @@
             // 
             // btnTestTimeDivSet
             // 
-            this.btnTestTimeDivSet.Location = new System.Drawing.Point(537, 495);
+            this.btnTestTimeDivSet.Location = new System.Drawing.Point(537, 553);
             this.btnTestTimeDivSet.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestTimeDivSet.Name = "btnTestTimeDivSet";
             this.btnTestTimeDivSet.Size = new System.Drawing.Size(80, 22);
@@ -534,7 +536,7 @@
             // 
             // txtCmdTimeDivSet
             // 
-            this.txtCmdTimeDivSet.Location = new System.Drawing.Point(223, 495);
+            this.txtCmdTimeDivSet.Location = new System.Drawing.Point(223, 553);
             this.txtCmdTimeDivSet.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdTimeDivSet.Name = "txtCmdTimeDivSet";
             this.txtCmdTimeDivSet.Size = new System.Drawing.Size(302, 27);
@@ -543,7 +545,7 @@
             // lblCmdTimeDivSet
             // 
             this.lblCmdTimeDivSet.AutoSize = true;
-            this.lblCmdTimeDivSet.Location = new System.Drawing.Point(16, 499);
+            this.lblCmdTimeDivSet.Location = new System.Drawing.Point(16, 557);
             this.lblCmdTimeDivSet.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCmdTimeDivSet.Name = "lblCmdTimeDivSet";
             this.lblCmdTimeDivSet.Size = new System.Drawing.Size(97, 20);
@@ -554,7 +556,7 @@
             // 
             this.lblStatusTimeDivQ.AutoSize = true;
             this.lblStatusTimeDivQ.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusTimeDivQ.Location = new System.Drawing.Point(625, 471);
+            this.lblStatusTimeDivQ.Location = new System.Drawing.Point(625, 529);
             this.lblStatusTimeDivQ.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusTimeDivQ.Name = "lblStatusTimeDivQ";
             this.lblStatusTimeDivQ.Size = new System.Drawing.Size(79, 20);
@@ -563,7 +565,7 @@
             // 
             // btnTestTimeDivQ
             // 
-            this.btnTestTimeDivQ.Location = new System.Drawing.Point(537, 468);
+            this.btnTestTimeDivQ.Location = new System.Drawing.Point(537, 526);
             this.btnTestTimeDivQ.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestTimeDivQ.Name = "btnTestTimeDivQ";
             this.btnTestTimeDivQ.Size = new System.Drawing.Size(80, 22);
@@ -574,7 +576,7 @@
             // 
             // txtCmdTimeDivQ
             // 
-            this.txtCmdTimeDivQ.Location = new System.Drawing.Point(223, 468);
+            this.txtCmdTimeDivQ.Location = new System.Drawing.Point(223, 526);
             this.txtCmdTimeDivQ.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdTimeDivQ.Name = "txtCmdTimeDivQ";
             this.txtCmdTimeDivQ.Size = new System.Drawing.Size(302, 27);
@@ -583,7 +585,7 @@
             // lblCmdTimeDivQ
             // 
             this.lblCmdTimeDivQ.AutoSize = true;
-            this.lblCmdTimeDivQ.Location = new System.Drawing.Point(16, 472);
+            this.lblCmdTimeDivQ.Location = new System.Drawing.Point(16, 530);
             this.lblCmdTimeDivQ.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCmdTimeDivQ.Name = "lblCmdTimeDivQ";
             this.lblCmdTimeDivQ.Size = new System.Drawing.Size(115, 20);
@@ -594,7 +596,7 @@
             // 
             this.lblStatusTrigLevelSet.AutoSize = true;
             this.lblStatusTrigLevelSet.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusTrigLevelSet.Location = new System.Drawing.Point(625, 444);
+            this.lblStatusTrigLevelSet.Location = new System.Drawing.Point(625, 502);
             this.lblStatusTrigLevelSet.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusTrigLevelSet.Name = "lblStatusTrigLevelSet";
             this.lblStatusTrigLevelSet.Size = new System.Drawing.Size(282, 20);
@@ -603,7 +605,7 @@
             // 
             // btnTestTrigLevelSet
             // 
-            this.btnTestTrigLevelSet.Location = new System.Drawing.Point(537, 441);
+            this.btnTestTrigLevelSet.Location = new System.Drawing.Point(537, 499);
             this.btnTestTrigLevelSet.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestTrigLevelSet.Name = "btnTestTrigLevelSet";
             this.btnTestTrigLevelSet.Size = new System.Drawing.Size(80, 22);
@@ -614,7 +616,7 @@
             // 
             // txtCmdTrigLevelSet
             // 
-            this.txtCmdTrigLevelSet.Location = new System.Drawing.Point(223, 441);
+            this.txtCmdTrigLevelSet.Location = new System.Drawing.Point(223, 499);
             this.txtCmdTrigLevelSet.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdTrigLevelSet.Name = "txtCmdTrigLevelSet";
             this.txtCmdTrigLevelSet.Size = new System.Drawing.Size(302, 27);
@@ -623,7 +625,7 @@
             // lblCmdTrigLevelSet
             // 
             this.lblCmdTrigLevelSet.AutoSize = true;
-            this.lblCmdTrigLevelSet.Location = new System.Drawing.Point(16, 445);
+            this.lblCmdTrigLevelSet.Location = new System.Drawing.Point(16, 503);
             this.lblCmdTrigLevelSet.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCmdTrigLevelSet.Name = "lblCmdTrigLevelSet";
             this.lblCmdTrigLevelSet.Size = new System.Drawing.Size(114, 20);
@@ -634,7 +636,7 @@
             // 
             this.lblStatusTrigLevelQ.AutoSize = true;
             this.lblStatusTrigLevelQ.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusTrigLevelQ.Location = new System.Drawing.Point(625, 418);
+            this.lblStatusTrigLevelQ.Location = new System.Drawing.Point(625, 476);
             this.lblStatusTrigLevelQ.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusTrigLevelQ.Name = "lblStatusTrigLevelQ";
             this.lblStatusTrigLevelQ.Size = new System.Drawing.Size(79, 20);
@@ -643,7 +645,7 @@
             // 
             // btnTestTrigLevelQ
             // 
-            this.btnTestTrigLevelQ.Location = new System.Drawing.Point(537, 414);
+            this.btnTestTrigLevelQ.Location = new System.Drawing.Point(537, 472);
             this.btnTestTrigLevelQ.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestTrigLevelQ.Name = "btnTestTrigLevelQ";
             this.btnTestTrigLevelQ.Size = new System.Drawing.Size(80, 22);
@@ -654,7 +656,7 @@
             // 
             // txtCmdTrigLevelQ
             // 
-            this.txtCmdTrigLevelQ.Location = new System.Drawing.Point(223, 414);
+            this.txtCmdTrigLevelQ.Location = new System.Drawing.Point(223, 472);
             this.txtCmdTrigLevelQ.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdTrigLevelQ.Name = "txtCmdTrigLevelQ";
             this.txtCmdTrigLevelQ.Size = new System.Drawing.Size(302, 27);
@@ -663,7 +665,7 @@
             // lblCmdTrigLevelQ
             // 
             this.lblCmdTrigLevelQ.AutoSize = true;
-            this.lblCmdTrigLevelQ.Location = new System.Drawing.Point(16, 418);
+            this.lblCmdTrigLevelQ.Location = new System.Drawing.Point(16, 476);
             this.lblCmdTrigLevelQ.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCmdTrigLevelQ.Name = "lblCmdTrigLevelQ";
             this.lblCmdTrigLevelQ.Size = new System.Drawing.Size(132, 20);
@@ -674,7 +676,7 @@
             // 
             this.lblStatusTrigMode.AutoSize = true;
             this.lblStatusTrigMode.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusTrigMode.Location = new System.Drawing.Point(625, 390);
+            this.lblStatusTrigMode.Location = new System.Drawing.Point(625, 448);
             this.lblStatusTrigMode.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusTrigMode.Name = "lblStatusTrigMode";
             this.lblStatusTrigMode.Size = new System.Drawing.Size(79, 20);
@@ -683,7 +685,7 @@
             // 
             // btnTestTrigMode
             // 
-            this.btnTestTrigMode.Location = new System.Drawing.Point(537, 387);
+            this.btnTestTrigMode.Location = new System.Drawing.Point(537, 445);
             this.btnTestTrigMode.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestTrigMode.Name = "btnTestTrigMode";
             this.btnTestTrigMode.Size = new System.Drawing.Size(80, 22);
@@ -694,7 +696,7 @@
             // 
             // txtCmdTrigMode
             // 
-            this.txtCmdTrigMode.Location = new System.Drawing.Point(223, 387);
+            this.txtCmdTrigMode.Location = new System.Drawing.Point(223, 445);
             this.txtCmdTrigMode.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdTrigMode.Name = "txtCmdTrigMode";
             this.txtCmdTrigMode.Size = new System.Drawing.Size(302, 27);
@@ -703,7 +705,7 @@
             // lblCmdTrigMode
             // 
             this.lblCmdTrigMode.AutoSize = true;
-            this.lblCmdTrigMode.Location = new System.Drawing.Point(16, 391);
+            this.lblCmdTrigMode.Location = new System.Drawing.Point(16, 449);
             this.lblCmdTrigMode.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCmdTrigMode.Name = "lblCmdTrigMode";
             this.lblCmdTrigMode.Size = new System.Drawing.Size(140, 20);
@@ -714,7 +716,7 @@
             // 
             this.lblStatusSingle.AutoSize = true;
             this.lblStatusSingle.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusSingle.Location = new System.Drawing.Point(625, 336);
+            this.lblStatusSingle.Location = new System.Drawing.Point(625, 394);
             this.lblStatusSingle.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusSingle.Name = "lblStatusSingle";
             this.lblStatusSingle.Size = new System.Drawing.Size(79, 20);
@@ -723,7 +725,7 @@
             // 
             // btnTestSingle
             // 
-            this.btnTestSingle.Location = new System.Drawing.Point(537, 333);
+            this.btnTestSingle.Location = new System.Drawing.Point(537, 391);
             this.btnTestSingle.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestSingle.Name = "btnTestSingle";
             this.btnTestSingle.Size = new System.Drawing.Size(80, 22);
@@ -734,7 +736,7 @@
             // 
             // txtCmdSingle
             // 
-            this.txtCmdSingle.Location = new System.Drawing.Point(223, 333);
+            this.txtCmdSingle.Location = new System.Drawing.Point(223, 391);
             this.txtCmdSingle.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdSingle.Name = "txtCmdSingle";
             this.txtCmdSingle.Size = new System.Drawing.Size(302, 27);
@@ -743,7 +745,7 @@
             // lblCmdSingle
             // 
             this.lblCmdSingle.AutoSize = true;
-            this.lblCmdSingle.Location = new System.Drawing.Point(16, 363);
+            this.lblCmdSingle.Location = new System.Drawing.Point(16, 421);
             this.lblCmdSingle.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCmdSingle.Name = "lblCmdSingle";
             this.lblCmdSingle.Size = new System.Drawing.Size(114, 20);
@@ -754,7 +756,7 @@
             // 
             this.lblStatusRun.AutoSize = true;
             this.lblStatusRun.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusRun.Location = new System.Drawing.Point(625, 363);
+            this.lblStatusRun.Location = new System.Drawing.Point(625, 421);
             this.lblStatusRun.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusRun.Name = "lblStatusRun";
             this.lblStatusRun.Size = new System.Drawing.Size(79, 20);
@@ -763,7 +765,7 @@
             // 
             // btnTestRun
             // 
-            this.btnTestRun.Location = new System.Drawing.Point(537, 360);
+            this.btnTestRun.Location = new System.Drawing.Point(537, 418);
             this.btnTestRun.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestRun.Name = "btnTestRun";
             this.btnTestRun.Size = new System.Drawing.Size(80, 22);
@@ -774,7 +776,7 @@
             // 
             // txtCmdRun
             // 
-            this.txtCmdRun.Location = new System.Drawing.Point(223, 360);
+            this.txtCmdRun.Location = new System.Drawing.Point(223, 418);
             this.txtCmdRun.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdRun.Name = "txtCmdRun";
             this.txtCmdRun.Size = new System.Drawing.Size(302, 27);
@@ -783,7 +785,7 @@
             // lblCmdRun
             // 
             this.lblCmdRun.AutoSize = true;
-            this.lblCmdRun.Location = new System.Drawing.Point(16, 336);
+            this.lblCmdRun.Location = new System.Drawing.Point(16, 394);
             this.lblCmdRun.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCmdRun.Name = "lblCmdRun";
             this.lblCmdRun.Size = new System.Drawing.Size(130, 20);
@@ -794,7 +796,7 @@
             // 
             this.lblStatusStop.AutoSize = true;
             this.lblStatusStop.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusStop.Location = new System.Drawing.Point(625, 309);
+            this.lblStatusStop.Location = new System.Drawing.Point(625, 367);
             this.lblStatusStop.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusStop.Name = "lblStatusStop";
             this.lblStatusStop.Size = new System.Drawing.Size(79, 20);
@@ -803,7 +805,7 @@
             // 
             // btnTestStop
             // 
-            this.btnTestStop.Location = new System.Drawing.Point(537, 306);
+            this.btnTestStop.Location = new System.Drawing.Point(537, 364);
             this.btnTestStop.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestStop.Name = "btnTestStop";
             this.btnTestStop.Size = new System.Drawing.Size(80, 22);
@@ -814,7 +816,7 @@
             // 
             // txtCmdStop
             // 
-            this.txtCmdStop.Location = new System.Drawing.Point(223, 306);
+            this.txtCmdStop.Location = new System.Drawing.Point(223, 364);
             this.txtCmdStop.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdStop.Name = "txtCmdStop";
             this.txtCmdStop.Size = new System.Drawing.Size(302, 27);
@@ -823,7 +825,7 @@
             // lblCmdStop
             // 
             this.lblCmdStop.AutoSize = true;
-            this.lblCmdStop.Location = new System.Drawing.Point(16, 309);
+            this.lblCmdStop.Location = new System.Drawing.Point(16, 367);
             this.lblCmdStop.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCmdStop.Name = "lblCmdStop";
             this.lblCmdStop.Size = new System.Drawing.Size(120, 20);
@@ -834,7 +836,7 @@
             // 
             this.lblStatusActiveTrig.AutoSize = true;
             this.lblStatusActiveTrig.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusActiveTrig.Location = new System.Drawing.Point(625, 282);
+            this.lblStatusActiveTrig.Location = new System.Drawing.Point(625, 340);
             this.lblStatusActiveTrig.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusActiveTrig.Name = "lblStatusActiveTrig";
             this.lblStatusActiveTrig.Size = new System.Drawing.Size(79, 20);
@@ -843,7 +845,7 @@
             // 
             // btnTestActiveTrig
             // 
-            this.btnTestActiveTrig.Location = new System.Drawing.Point(537, 279);
+            this.btnTestActiveTrig.Location = new System.Drawing.Point(537, 337);
             this.btnTestActiveTrig.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestActiveTrig.Name = "btnTestActiveTrig";
             this.btnTestActiveTrig.Size = new System.Drawing.Size(80, 22);
@@ -854,7 +856,7 @@
             // 
             // txtCmdActiveTrig
             // 
-            this.txtCmdActiveTrig.Location = new System.Drawing.Point(223, 279);
+            this.txtCmdActiveTrig.Location = new System.Drawing.Point(223, 337);
             this.txtCmdActiveTrig.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdActiveTrig.Name = "txtCmdActiveTrig";
             this.txtCmdActiveTrig.Size = new System.Drawing.Size(302, 27);
@@ -863,7 +865,7 @@
             // lblCmdActiveTrig
             // 
             this.lblCmdActiveTrig.AutoSize = true;
-            this.lblCmdActiveTrig.Location = new System.Drawing.Point(16, 282);
+            this.lblCmdActiveTrig.Location = new System.Drawing.Point(16, 340);
             this.lblCmdActiveTrig.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCmdActiveTrig.Name = "lblCmdActiveTrig";
             this.lblCmdActiveTrig.Size = new System.Drawing.Size(140, 20);
@@ -874,7 +876,7 @@
             // 
             this.lblStatusClearStats.AutoSize = true;
             this.lblStatusClearStats.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusClearStats.Location = new System.Drawing.Point(625, 254);
+            this.lblStatusClearStats.Location = new System.Drawing.Point(625, 312);
             this.lblStatusClearStats.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusClearStats.Name = "lblStatusClearStats";
             this.lblStatusClearStats.Size = new System.Drawing.Size(79, 20);
@@ -883,7 +885,7 @@
             // 
             // btnTestClearStats
             // 
-            this.btnTestClearStats.Location = new System.Drawing.Point(537, 251);
+            this.btnTestClearStats.Location = new System.Drawing.Point(537, 309);
             this.btnTestClearStats.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestClearStats.Name = "btnTestClearStats";
             this.btnTestClearStats.Size = new System.Drawing.Size(80, 22);
@@ -894,7 +896,7 @@
             // 
             // txtCmdClearStats
             // 
-            this.txtCmdClearStats.Location = new System.Drawing.Point(223, 251);
+            this.txtCmdClearStats.Location = new System.Drawing.Point(223, 309);
             this.txtCmdClearStats.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdClearStats.Name = "txtCmdClearStats";
             this.txtCmdClearStats.Size = new System.Drawing.Size(302, 27);
@@ -903,7 +905,7 @@
             // lblCmdClearStats
             // 
             this.lblCmdClearStats.AutoSize = true;
-            this.lblCmdClearStats.Location = new System.Drawing.Point(16, 255);
+            this.lblCmdClearStats.Location = new System.Drawing.Point(16, 313);
             this.lblCmdClearStats.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCmdClearStats.Name = "lblCmdClearStats";
             this.lblCmdClearStats.Size = new System.Drawing.Size(142, 20);
@@ -914,7 +916,7 @@
             // 
             this.lblStatusIdentify.AutoSize = true;
             this.lblStatusIdentify.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusIdentify.Location = new System.Drawing.Point(625, 228);
+            this.lblStatusIdentify.Location = new System.Drawing.Point(625, 229);
             this.lblStatusIdentify.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusIdentify.Name = "lblStatusIdentify";
             this.lblStatusIdentify.Size = new System.Drawing.Size(79, 20);
@@ -923,7 +925,7 @@
             // 
             // btnTestIdentify
             // 
-            this.btnTestIdentify.Location = new System.Drawing.Point(537, 224);
+            this.btnTestIdentify.Location = new System.Drawing.Point(537, 225);
             this.btnTestIdentify.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestIdentify.Name = "btnTestIdentify";
             this.btnTestIdentify.Size = new System.Drawing.Size(80, 22);
@@ -934,7 +936,7 @@
             // 
             // txtCmdIdentify
             // 
-            this.txtCmdIdentify.Location = new System.Drawing.Point(223, 224);
+            this.txtCmdIdentify.Location = new System.Drawing.Point(223, 225);
             this.txtCmdIdentify.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdIdentify.Name = "txtCmdIdentify";
             this.txtCmdIdentify.Size = new System.Drawing.Size(302, 27);
@@ -943,7 +945,7 @@
             // lblCmdIdentify
             // 
             this.lblCmdIdentify.AutoSize = true;
-            this.lblCmdIdentify.Location = new System.Drawing.Point(16, 228);
+            this.lblCmdIdentify.Location = new System.Drawing.Point(16, 229);
             this.lblCmdIdentify.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCmdIdentify.Name = "lblCmdIdentify";
             this.lblCmdIdentify.Size = new System.Drawing.Size(176, 20);
@@ -978,9 +980,9 @@
             this.checkBoxEnableDelete.AutoSize = true;
             this.checkBoxEnableDelete.Location = new System.Drawing.Point(13, 207);
             this.checkBoxEnableDelete.Name = "checkBoxEnableDelete";
-            this.checkBoxEnableDelete.Size = new System.Drawing.Size(371, 24);
+            this.checkBoxEnableDelete.Size = new System.Drawing.Size(326, 24);
             this.checkBoxEnableDelete.TabIndex = 63;
-            this.checkBoxEnableDelete.Text = "[DELETE] in capture mode will delete last saved file";
+            this.checkBoxEnableDelete.Text = "Keyboard [DELETE] will delete last saved file";
             this.checkBoxEnableDelete.UseVisualStyleBackColor = true;
             // 
             // label14
@@ -1136,6 +1138,7 @@
             // 
             // tabCapturing
             // 
+            this.tabCapturing.Controls.Add(this.label15);
             this.tabCapturing.Controls.Add(this.textBoxFilenameFormat);
             this.tabCapturing.Controls.Add(this.label3);
             this.tabCapturing.Controls.Add(this.label12);
@@ -1158,6 +1161,15 @@
             this.tabCapturing.TabIndex = 1;
             this.tabCapturing.Text = "Capturing";
             this.tabCapturing.UseVisualStyleBackColor = true;
+            // 
+            // label15
+            // 
+            this.label15.ForeColor = System.Drawing.Color.Gray;
+            this.label15.Location = new System.Drawing.Point(7, 346);
+            this.label15.Name = "label15";
+            this.label15.Size = new System.Drawing.Size(285, 44);
+            this.label15.TabIndex = 64;
+            this.label15.Text = "Network connectivity not checked";
             // 
             // textBoxFilenameFormat
             // 
@@ -1209,9 +1221,9 @@
             // 
             this.buttonCaptureStart.Location = new System.Drawing.Point(8, 274);
             this.buttonCaptureStart.Name = "buttonCaptureStart";
-            this.buttonCaptureStart.Size = new System.Drawing.Size(284, 28);
+            this.buttonCaptureStart.Size = new System.Drawing.Size(284, 52);
             this.buttonCaptureStart.TabIndex = 10;
-            this.buttonCaptureStart.Text = "Start capture mode";
+            this.buttonCaptureStart.Text = "Check oscilloscope connectivity and start capture mode";
             this.buttonCaptureStart.UseVisualStyleBackColor = true;
             // 
             // label5
@@ -1393,6 +1405,7 @@
             // 
             // tabHelp
             // 
+            this.tabHelp.Controls.Add(this.richTextBoxHelp);
             this.tabHelp.Controls.Add(this.label13);
             this.tabHelp.Controls.Add(this.labelNewVersion4);
             this.tabHelp.Location = new System.Drawing.Point(4, 29);
@@ -1466,6 +1479,14 @@
             this.labelNewVersion5.TabIndex = 0;
             this.labelNewVersion5.Text = "New version available ";
             this.labelNewVersion5.Visible = false;
+            // 
+            // richTextBoxHelp
+            // 
+            this.richTextBoxHelp.Location = new System.Drawing.Point(8, 60);
+            this.richTextBoxHelp.Name = "richTextBoxHelp";
+            this.richTextBoxHelp.Size = new System.Drawing.Size(1008, 530);
+            this.richTextBoxHelp.TabIndex = 61;
+            this.richTextBoxHelp.Text = "";
             // 
             // Main
             // 
@@ -1576,6 +1597,8 @@
         private System.Windows.Forms.ComboBox comboBoxAdjustToGrid;
         private System.Windows.Forms.Label label14;
         private System.Windows.Forms.CheckBox checkBoxEnableDelete;
+        private System.Windows.Forms.Label label15;
+        private System.Windows.Forms.RichTextBox richTextBoxHelp;
     }
 }
 

@@ -27,6 +27,10 @@ namespace Oscilloscope_Network_Capture
         // Overlay shown on picScreen after delete
         private Label _deleteOverlayLabel;
         private System.Windows.Forms.Timer _deleteOverlayTimer;
+        
+        private enum KeyActionType { None = 0, AdjustTrigger = 1, AdjustTimeDiv = 2, Other = 3 }
+        private KeyActionType _activeKeyAction = KeyActionType.None;
+        private int _keyActionBusy; // 0 = idle, 1 = a capture-mode key action is running
 
         private string versionThis = "";
         private string versionOnline = "";
@@ -441,7 +445,8 @@ namespace Oscilloscope_Network_Capture
                                ?? this.Controls.Find("button1", true).FirstOrDefault() as Button;
             if (_btnCaptureStart != null)
             {
-                _btnCaptureStart.Click += async (s, a) => await StartCaptureModeAsync();
+                _btnCaptureStart.Click -= async (s, a) => await StartCaptureModeAsync();
+                _btnCaptureStart.Click += async (s, a) => await RunConnectivityCheckAsync(_btnCaptureStart);
             }
 
             // Enable layout persistence after initial show
@@ -461,6 +466,9 @@ namespace Oscilloscope_Network_Capture
             // Persist/restore Adjust-to-grid combobox
             WireAdjustToGridComboPersistence();
 
+            PopulateHelpTabRtf();
+
+            /*
             // Auto-connect on startup if a config file already existed (not first run)
             if (_hadConfigOnStartup)
             {
@@ -468,6 +476,85 @@ namespace Oscilloscope_Network_Capture
                 {
                     try { await ConnectAndRefreshAsync(); } catch { }
                 }));
+            }
+            */
+            if (_hadConfigOnStartup)
+            {
+                BeginInvoke(new Action(async () =>
+                {
+                    try { await ConnectAndRefreshAsync(); } catch { }
+                    await AutoStartCaptureModeIfConnectedAsync();
+                }));
+            }
+        }
+
+        private Task ExecuteCaptureKeyAsync(Func<Task> action)
+        {
+            if (action == null) return Task.CompletedTask;
+
+            // Reject if another key action is in-flight
+            if (Interlocked.CompareExchange(ref _keyActionBusy, 1, 0) != 0)
+            {
+                Logger.Instance.Debug("Keyboard command ignored, as another operation is in progress.");
+                return Task.CompletedTask;
+            }
+
+            return Run();
+
+            async Task Run()
+            {
+                try
+                {
+                    await action().ConfigureAwait(true);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Instance.Error("Key action failed: " + InnermostMessage(ex));
+                }
+                finally
+                {
+                    Interlocked.Exchange(ref _keyActionBusy, 0);
+                }
+            }
+        }
+
+        // Add an overload that allows "speedy access" coalescing for same action type
+        private Task ExecuteCaptureKeyAsync(Func<Task> action, KeyActionType type, Action coalesceIfBusy)
+        {
+            if (action == null) return Task.CompletedTask;
+
+            // If something is running:
+            if (Interlocked.CompareExchange(ref _keyActionBusy, 1, 0) != 0)
+            {
+                // If it's the same kind of action, coalesce (e.g., add another +/- step) and return fast
+                if (_activeKeyAction == type && coalesceIfBusy != null)
+                {
+                    coalesceIfBusy();
+                    return Task.CompletedTask;
+                }
+
+                Logger.Instance.Debug("Keyboard command ignored, as another operation is in progress.");
+                return Task.CompletedTask;
+            }
+
+            _activeKeyAction = type;
+            return Run();
+
+            async Task Run()
+            {
+                try
+                {
+                    await action().ConfigureAwait(true);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Instance.Error("Key action failed: " + InnermostMessage(ex));
+                }
+                finally
+                {
+                    _activeKeyAction = KeyActionType.None;
+                    Interlocked.Exchange(ref _keyActionBusy, 0);
+                }
             }
         }
 
@@ -528,6 +615,66 @@ namespace Oscilloscope_Network_Capture
             var ip = (txtIp.Text ?? string.Empty).Trim();
             var port = (int)numPort.Value;
             return string.Format("{0}:{1}", ip, port);
+        }
+
+        // Add this helper near the other private helpers (below ComposeResource / ToModelPattern region)
+        private void SetConnectivityStatus(string text, Color color)
+        {
+            try
+            {
+                if (lblStatus != null)
+                {
+                    lblStatus.Text = text ?? string.Empty;
+                    lblStatus.ForeColor = color;
+                }
+
+                var alt = this.Controls.Find("label15", true).FirstOrDefault() as Label;
+                if (alt != null)
+                {
+                    alt.Text = text ?? string.Empty;
+                    alt.ForeColor = color;
+                }
+            }
+            catch { /* best-effort */ }
+        }
+
+        // Add near SetConnectivityStatus
+        private void SetConnectButtonsEnabled(bool enabled)
+        {
+            try
+            {
+                if (btnConnect != null) btnConnect.Enabled = enabled;
+
+                // Ensure we have a handle to buttonCaptureStart
+                if (_btnCaptureStart == null)
+                {
+                    _btnCaptureStart = this.Controls.Find("buttonCaptureStart", true).FirstOrDefault() as Button
+                                       ?? this.Controls.Find("button1", true).FirstOrDefault() as Button;
+                }
+                if (_btnCaptureStart != null) _btnCaptureStart.Enabled = enabled;
+            }
+            catch { }
+        }
+
+        // Shared connectivity flow for any button that should behave like "Connect"
+        private async Task RunConnectivityCheckAsync(Button selfButton)
+        {
+            try
+            {
+                SetConnectButtonsEnabled(false);
+
+                await WithOtherTestButtonsDisabledAsync(selfButton, async () =>
+                {
+                    await ConnectAndRefreshAsync();
+                });
+
+                await AutoStartCaptureModeIfConnectedAsync();
+            }
+            finally
+            {
+                SetConnectButtonsEnabled(true);
+                if (selfButton != null && selfButton.CanFocus) selfButton.Focus();
+            }
         }
 
         private static string ToDisplayModel(string modelPattern) => modelPattern == "*" ? "Generic" : modelPattern;
@@ -724,21 +871,11 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
+        // In btnConnect_Click, auto-start capture mode after a successful ConnectAndRefreshAsync
         private async void btnConnect_Click(object sender, EventArgs e)
         {
-            try
-            {
-                btnConnect.Enabled = false;
-                await WithOtherTestButtonsDisabledAsync(btnConnect, async () =>
-                {
-                    await ConnectAndRefreshAsync();
-                });
-            }
-            finally
-            {
-                btnConnect.Enabled = true;
-                if (btnConnect.CanFocus) btnConnect.Focus();
-            }
+            var btn = sender as Button ?? btnConnect;
+            await RunConnectivityCheckAsync(btn);
         }
 
         // Save per-profile override at time of testing — only if different from default
@@ -1114,6 +1251,7 @@ namespace Oscilloscope_Network_Capture
                             Logger.Instance.Error("Image decode failed: " + InnermostMessage(ex));
                         }
 
+                        Logger.Instance.Info("Dumped image.");
                         lblStatusDumpImage.Text = "OK";
                         lblStatusDumpImage.ForeColor = System.Drawing.Color.Green;
                     }
@@ -1305,7 +1443,6 @@ namespace Oscilloscope_Network_Capture
                     LogIdnVendorModelFirmware(lastQueryResponse);
                 }
 
-                // NEW: final Info lines per suite (printed last)
                 if (!suiteFailed)
                 {
                     switch (suite)
@@ -1317,28 +1454,41 @@ namespace Oscilloscope_Network_Capture
                         case ScopeTestSuite.QueryActiveTrigger:
                             {
                                 var s = TrimQuotes(lastQueryResponse ?? string.Empty).Trim();
-                                Logger.Instance.Info("Trigger status set to " + (string.IsNullOrEmpty(s) ? "(empty)" : s));
+                                Logger.Instance.Info("Trigger read as " + (string.IsNullOrEmpty(s) ? "(empty)" : s));
                                 break;
                             }
 
                         case ScopeTestSuite.Stop:
-                            Logger.Instance.Info("Trigger mode has been set to STOP");
+                            Logger.Instance.Info("Trigger set to STOP");
                             break;
 
                         case ScopeTestSuite.Run:
-                            Logger.Instance.Info("Trigger mode has been set to RUN");
+                            Logger.Instance.Info("Trigger set to RUN");
                             break;
 
                         case ScopeTestSuite.Single:
-                            Logger.Instance.Info("Trigger mode has been set to SINGLE");
+                            Logger.Instance.Info("Trigger set to SINGLE");
                             break;
 
                         case ScopeTestSuite.QueryTriggerMode:
                             {
                                 var s = TrimQuotes(lastQueryResponse ?? string.Empty).Trim();
-                                Logger.Instance.Info("Trigger mode is set to " + (string.IsNullOrEmpty(s) ? "(empty)" : s));
+                                Logger.Instance.Info("Trigger mode read as " + (string.IsNullOrEmpty(s) ? "(empty)" : s));
                                 break;
                             }
+
+                        case ScopeTestSuite.DumpImage:
+                            Logger.Instance.Info("Dumped image from raw network stream.");
+                            break;
+
+                        // NEW: final Debug lines
+                        case ScopeTestSuite.PopLastSystemError:
+                            Logger.Instance.Info("Popped last system error.");
+                            break;
+
+                        case ScopeTestSuite.OperationComplete:
+                            Logger.Instance.Info("Operation completed.");
+                            break;
                     }
                 }
 
@@ -1387,7 +1537,7 @@ namespace Oscilloscope_Network_Capture
                 var vendor = cboVendor.SelectedItem as string ?? (_config?.Vendor ?? string.Empty);
                 var modelDisplay = cboModel.SelectedItem as string ?? ToDisplayModel(_config?.Model ?? "*");
                 if (string.IsNullOrWhiteSpace(vendor) || string.IsNullOrWhiteSpace(modelDisplay)) return;
-                lbl.Text = string.Format("SCPI commands for {0} {1}", vendor, modelDisplay);
+                lbl.Text = string.Format("Test-suites for SCPI commands specifically for {0} {1}", vendor, modelDisplay);
             }
             catch { }
         }
@@ -1427,7 +1577,7 @@ namespace Oscilloscope_Network_Capture
                         !string.Equals(versionOnline, versionThis, StringComparison.OrdinalIgnoreCase))
                     {
                         Logger.Instance.Debug("---");
-                        Logger.Instance.Info("Newer version is available: " + versionOnline + " - check \"About\" tab for where to download it.");
+                        Logger.Instance.Info("Newer version is available: " + versionOnline + " - view \"About\" tab for where to download it.");
                         ShowNewVersionBadge(versionOnline);
                     }
                 }
@@ -1469,7 +1619,7 @@ namespace Oscilloscope_Network_Capture
             var nextFileName = baseName + ".png";
 
             rtb.Clear();
-            rtb.AppendText("Capture mode enabled. Press [ENTER] to capture image and [ESC] to exit capture mode. View \"Help\" tab to see all keyboard commands available." + Environment.NewLine);
+            rtb.AppendText("Capture mode enabled. Press [ENTER] to capture image. View \"Help\" tab to see all keyboard commands available." + Environment.NewLine);
             rtb.AppendText("Next image will be saved with filename [");
 
             // Bold NEXT filename only
@@ -1611,25 +1761,35 @@ namespace Oscilloscope_Network_Capture
             }
 
             _captureMode = true;
-            if (_btnCaptureStart != null) _btnCaptureStart.Enabled = false;
             this.KeyPreview = true;
             this.KeyDown -= Form1_Capture_KeyDown;
             this.KeyDown += Form1_Capture_KeyDown;
             Logger.Instance.Info("Capture mode enabled.");
 
-            // Update action box with instructions and next filename (bold)
             UpdateActionRichTextForNextFilename();
         }
 
-        private void ExitCaptureMode()
+        // Add this helper near other private helpers (e.g., below StartCaptureModeAsync / ExitCaptureMode)
+        private async Task AutoStartCaptureModeIfConnectedAsync()
         {
-            _captureMode = false;
-            if (_btnCaptureStart != null) _btnCaptureStart.Enabled = true;
-            this.KeyDown -= Form1_Capture_KeyDown;
-            Logger.Instance.Info("Capture mode disabled.");
+            try
+            {
+                if (IsDisposed) return;
+                if (_captureMode) return; // already active
+                if (_scope != null && _scope.IsConnected)
+                {
+                    Logger.Instance.Info("Auto-starting capture mode.");
+                    await StartCaptureModeAsync().ConfigureAwait(true);
+                }
+            }
+            catch
+            {
+                // swallow; auto-start is best-effort
+            }
         }
 
-        // Modify the capture-mode key handler to include DELETE
+        // Update the capture-mode key handler to route scope-affecting actions through the busy gate
+        // Update the capture-mode key handler to enforce the allowed tabs
         private void Form1_Capture_KeyDown(object sender, KeyEventArgs e)
         {
             if (!_captureMode) return;
@@ -1638,13 +1798,10 @@ namespace Oscilloscope_Network_Capture
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
-                _ = CaptureAndSaveAsync();
-            }
-            else if (e.KeyCode == Keys.Escape)
-            {
-                e.Handled = true;
-                e.SuppressKeyPress = true;
-                ExitCaptureMode();
+                _ = ExecuteCaptureKeyAsync(async () =>
+                {
+                    await CaptureAndSaveAsync();
+                });
             }
             else if (e.KeyCode == Keys.Delete)
             {
@@ -1660,47 +1817,76 @@ namespace Oscilloscope_Network_Capture
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
-                _ = RunSuiteHeadlessAsync(ScopeTestSuite.Single);
+                _ = ExecuteCaptureKeyAsync(async () => { await RunSuiteHeadlessAsync(ScopeTestSuite.Single); });
             }
             // / => RUN (Numpad / or / key)
             else if (e.KeyCode == Keys.Divide || e.KeyCode == Keys.OemQuestion)
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
-                _ = RunSuiteHeadlessAsync(ScopeTestSuite.Run);
+                _ = ExecuteCaptureKeyAsync(async () => { await RunSuiteHeadlessAsync(ScopeTestSuite.Run); });
             }
+
             // UP => adjust trigger up
-            else if (e.KeyCode == Keys.Up)
+            if (e.KeyCode == Keys.Up)
             {
-                // Treat Oemplus as + (works even without Shift on some layouts)
                 e.Handled = true;
                 e.SuppressKeyPress = true;
-                _ = AdjustTriggerLevelAsync(+1);
+
+                _ = ExecuteCaptureKeyAsync(
+                    async () =>
+                    {
+                        AdjustTriggerLevelAsync(+1);
+                        var worker = _triggerAdjustWorker;
+                        if (worker != null) await worker.ConfigureAwait(true);
+                    },
+                    KeyActionType.AdjustTrigger,
+                    coalesceIfBusy: () => AdjustTriggerLevelAsync(+1)
+                );
             }
-            // - => adjust trigger down
+            // DOWN => adjust trigger down
             else if (e.KeyCode == Keys.Down)
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
-                _ = AdjustTriggerLevelAsync(-1);
+
+                _ = ExecuteCaptureKeyAsync(
+                    async () =>
+                    {
+                        AdjustTriggerLevelAsync(-1);
+                        var worker = _triggerAdjustWorker;
+                        if (worker != null) await worker.ConfigureAwait(true);
+                    },
+                    KeyActionType.AdjustTrigger,
+                    coalesceIfBusy: () => AdjustTriggerLevelAsync(-1)
+                );
             }
             // PLUS => zoom-in (smaller TIME/DIV)
             else if (e.KeyCode == Keys.Add || e.KeyCode == Keys.Oemplus)
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
-                _ = AdjustTimeDivAsync(+1);
+                _ = ExecuteCaptureKeyAsync(async () => { await AdjustTimeDivAsync(+1); });
             }
             // MINUS => zoom-out (larger TIME/DIV)
             else if (e.KeyCode == Keys.Subtract || e.KeyCode == Keys.OemMinus)
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
-                _ = AdjustTimeDivAsync(-1);
+                _ = ExecuteCaptureKeyAsync(async () => { await AdjustTimeDivAsync(-1); });
+            }
+            // Numpad Decimal => ClearStatistics
+            else if (e.KeyCode == Keys.Decimal)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                _ = ExecuteCaptureKeyAsync(async () =>
+                {
+                    await RunSuiteHeadlessAsync(ScopeTestSuite.ClearStatistics);
+                });
             }
         }
 
-        // Query current TIME/DIV via suite and parse seconds/div as double
         // Query current TIME/DIV via suite and parse seconds/div as double
         private async Task<double> QueryTimeDivViaSuiteAsync()
         {
@@ -1711,16 +1897,25 @@ namespace Oscilloscope_Network_Capture
 
             var steps = ScopeTestSuiteRegistry.Resolve(_config, ScopeTestSuite.QueryTimeDiv);
             string primary = GetPrimaryScpiForSuite(ScopeTestSuite.QueryTimeDiv);
-            string resp = null;
 
-            foreach (var step in steps)
+            string timeDivResp = null;
+
+            for (int i = 0; i < steps.Count; i++)
             {
-                if (step == steps.First())
+                var step = steps[i];
+                bool first = (i == 0);
+
+                if (first)
                 {
                     if (IsQuery(step))
-                        resp = await _scope.SendRawQueryAsync(primary, ct).ConfigureAwait(true);
+                    {
+                        var r = await _scope.SendRawQueryAsync(primary, ct).ConfigureAwait(true);
+                        if (step == ScopeCommand.QueryTimeDiv) timeDivResp = r;
+                    }
                     else
+                    {
                         await _scope.SendRawWriteAsync(primary, ct).ConfigureAwait(true);
+                    }
                 }
                 else
                 {
@@ -1728,30 +1923,36 @@ namespace Oscilloscope_Network_Capture
                     if (string.IsNullOrWhiteSpace(scpi)) continue;
 
                     if (IsQuery(step))
-                        resp = await _scope.SendRawQueryAsync(scpi, ct).ConfigureAwait(true);
+                    {
+                        var r = await _scope.SendRawQueryAsync(scpi, ct).ConfigureAwait(true);
+                        if (step == ScopeCommand.QueryTimeDiv) timeDivResp = r;
+                    }
                     else
+                    {
                         await _scope.SendRawWriteAsync(scpi, ct).ConfigureAwait(true);
+                    }
                 }
             }
 
-            // Parse e.g. "2.000000e-06"
+            if (string.IsNullOrWhiteSpace(timeDivResp))
+                throw new InvalidOperationException("No TIME/DIV response received.");
+
+            // Parse e.g. "2.000000e-06" or "11000e0"
             double seconds;
-            if (!double.TryParse((resp ?? string.Empty).Trim(),
-                                 System.Globalization.NumberStyles.Float | System.Globalization.NumberStyles.AllowLeadingSign,
-                                 System.Globalization.CultureInfo.InvariantCulture,
+            if (!double.TryParse(timeDivResp.Trim(),
+                                 NumberStyles.Float | NumberStyles.AllowLeadingSign,
+                                 CultureInfo.InvariantCulture,
                                  out seconds))
             {
-                var m = System.Text.RegularExpressions.Regex.Match(resp ?? string.Empty, @"[+-]?(?:\d+\.?\d*|\d*\.?\d+)(?:[eE][+-]?\d+)?");
+                var m = Regex.Match(timeDivResp ?? string.Empty, @"[+-]?(?:\d+\.?\d*|\d*\.?\d+)(?:[eE][+-]?\d+)?");
                 if (!m.Success || !double.TryParse(m.Value,
-                                                    System.Globalization.NumberStyles.Float | System.Globalization.NumberStyles.AllowLeadingSign,
-                                                    System.Globalization.CultureInfo.InvariantCulture,
-                                                    out seconds))
-                    throw new InvalidOperationException("Unable to parse TIME/DIV: " + (resp ?? "(empty)"));
+                                                   NumberStyles.Float | NumberStyles.AllowLeadingSign,
+                                                   CultureInfo.InvariantCulture,
+                                                   out seconds))
+                    throw new InvalidOperationException("Unable to parse TIME/DIV: " + (timeDivResp ?? "(empty)"));
             }
 
-            // NEW: human-readable Info line
-            Logger.Instance.Info("TIME/DIV is set to " + FormatSecondsToSi(seconds));
-
+            Logger.Instance.Info("TIME/DIV read as " + FormatSecondsToSi(seconds));
             return seconds;
         }
 
@@ -2124,23 +2325,30 @@ namespace Oscilloscope_Network_Capture
         {
             var ct = _cts?.Token ?? CancellationToken.None;
 
-            // Suite header
             Logger.Instance.Debug("---");
             Logger.Instance.Debug(ScopeTestSuiteRegistry.GetDisplayName(ScopeTestSuite.QueryTriggerLevel) + ":");
 
-            // Resolve steps (usually a single query)
             var steps = ScopeTestSuiteRegistry.Resolve(_config, ScopeTestSuite.QueryTriggerLevel);
             string primary = GetPrimaryScpiForSuite(ScopeTestSuite.QueryTriggerLevel);
-            string resp = null;
 
-            foreach (var step in steps)
+            string trigResp = null;
+
+            for (int i = 0; i < steps.Count; i++)
             {
-                if (step == steps.First())
+                var step = steps[i];
+                bool first = (i == 0);
+
+                if (first)
                 {
                     if (IsQuery(step))
-                        resp = await _scope.SendRawQueryAsync(primary, ct).ConfigureAwait(true);
+                    {
+                        var r = await _scope.SendRawQueryAsync(primary, ct).ConfigureAwait(true);
+                        if (step == ScopeCommand.QueryTriggerLevel) trigResp = r;
+                    }
                     else
+                    {
                         await _scope.SendRawWriteAsync(primary, ct).ConfigureAwait(true);
+                    }
                 }
                 else
                 {
@@ -2148,25 +2356,35 @@ namespace Oscilloscope_Network_Capture
                     if (string.IsNullOrWhiteSpace(scpi)) continue;
 
                     if (IsQuery(step))
-                        resp = await _scope.SendRawQueryAsync(scpi, ct).ConfigureAwait(true);
+                    {
+                        var r = await _scope.SendRawQueryAsync(scpi, ct).ConfigureAwait(true);
+                        if (step == ScopeCommand.QueryTriggerLevel) trigResp = r;
+                    }
                     else
+                    {
                         await _scope.SendRawWriteAsync(scpi, ct).ConfigureAwait(true);
+                    }
                 }
             }
 
-            // Parse a double like "3.299990e+00"
+            if (string.IsNullOrWhiteSpace(trigResp))
+                throw new InvalidOperationException("Unable to parse trigger level: (no response)");
+
             double volts;
-            if (!double.TryParse((resp ?? string.Empty).Trim(), NumberStyles.Float | NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out volts))
+            if (!double.TryParse((trigResp ?? string.Empty).Trim(),
+                                 NumberStyles.Float | NumberStyles.AllowLeadingSign,
+                                 CultureInfo.InvariantCulture,
+                                 out volts))
             {
-                // Fallback: extract first floating token
-                var m = Regex.Match(resp ?? string.Empty, @"[+-]?(?:\d+\.?\d*|\d*\.?\d+)(?:[eE][+-]?\d+)?");
-                if (!m.Success || !double.TryParse(m.Value, NumberStyles.Float | NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out volts))
-                    throw new InvalidOperationException("Unable to parse trigger level: " + (resp ?? "(empty)"));
+                var m = Regex.Match(trigResp ?? string.Empty, @"[+-]?(?:\d+\.?\d*|\d*\.?\d+)(?:[eE][+-]?\d+)?");
+                if (!m.Success || !double.TryParse(m.Value,
+                                                   NumberStyles.Float | NumberStyles.AllowLeadingSign,
+                                                   CultureInfo.InvariantCulture,
+                                                   out volts))
+                    throw new InvalidOperationException("Unable to parse trigger level: " + (trigResp ?? "(empty)"));
             }
 
-            // Final, human-readable Info line (printed last for this suite)
-            Logger.Instance.Info("Trigger level is set to " + FormatVoltsToSi(volts));
-
+            Logger.Instance.Info("Trigger level read as " + FormatVoltsToSi(volts));
             return volts;
         }
 
@@ -2223,7 +2441,7 @@ namespace Oscilloscope_Network_Capture
             }
 
             // Final, human-readable Info line (printed last for this suite)
-            Logger.Instance.Info("Trigger level is set to " + FormatVoltsToSi(targetVolts));
+            Logger.Instance.Info("Trigger level set to " + FormatVoltsToSi(targetVolts));
         }
 
         private static string FormatSecondsToSi(double seconds)
@@ -2322,7 +2540,6 @@ namespace Oscilloscope_Network_Capture
                 LogIdnVendorModelFirmware(lastQueryResponse);
             }
 
-            // NEW: final Info lines per suite (printed last)
             switch (suite)
             {
                 case ScopeTestSuite.ClearStatistics:
@@ -2332,28 +2549,41 @@ namespace Oscilloscope_Network_Capture
                 case ScopeTestSuite.QueryActiveTrigger:
                     {
                         var s = TrimQuotes(lastQueryResponse ?? string.Empty).Trim();
-                        Logger.Instance.Info("Trigger status set to " + (string.IsNullOrEmpty(s) ? "(empty)" : s));
+                        Logger.Instance.Info("Trigger read as " + (string.IsNullOrEmpty(s) ? "(empty)" : s));
                         break;
                     }
 
                 case ScopeTestSuite.Stop:
-                    Logger.Instance.Info("Trigger mode has been set to STOP");
+                    Logger.Instance.Info("Trigger set to STOP");
                     break;
 
                 case ScopeTestSuite.Run:
-                    Logger.Instance.Info("Trigger mode has been set to RUN");
+                    Logger.Instance.Info("Trigger set to RUN");
                     break;
 
                 case ScopeTestSuite.Single:
-                    Logger.Instance.Info("Trigger mode has been set to SINGLE");
+                    Logger.Instance.Info("Trigger set to SINGLE");
                     break;
 
                 case ScopeTestSuite.QueryTriggerMode:
                     {
                         var s = TrimQuotes(lastQueryResponse ?? string.Empty).Trim();
-                        Logger.Instance.Info("Trigger mode is set to " + (string.IsNullOrEmpty(s) ? "(empty)" : s));
+                        Logger.Instance.Info("Trigger mode read as " + (string.IsNullOrEmpty(s) ? "(empty)" : s));
                         break;
                     }
+
+                case ScopeTestSuite.DumpImage:
+                    Logger.Instance.Info("Dumped image from raw network stream.");
+                    break;
+
+                // NEW: final Debug lines
+                case ScopeTestSuite.PopLastSystemError:
+                    Logger.Instance.Info("Popped last system error.");
+                    break;
+
+                case ScopeTestSuite.OperationComplete:
+                    Logger.Instance.Info("Operation completed.");
+                    break;
             }
         }
 
@@ -2984,7 +3214,19 @@ namespace Oscilloscope_Network_Capture
                 {
                     int totalRows = desired + 2;
                     int newY = baseY + totalRows * rowH + 10;
-                    buttonCaptureStart.Location = new Point(buttonCaptureStart.Location.X, newY);
+
+                    // Move the button
+                    int btnX = buttonCaptureStart.Location.X;
+                    buttonCaptureStart.Location = new Point(btnX, newY);
+
+                    // Move label15 directly under buttonCaptureStart
+                    var altStatus = (label15 != null ? label15 : this.Controls.Find("label15", true).FirstOrDefault() as Label);
+                    if (altStatus != null)
+                    {
+                        int lblX = btnX;
+                        int lblY = buttonCaptureStart.Bottom + 4; // small spacing below the button
+                        altStatus.Location = new Point(lblX, lblY);
+                    }
                 }
             }
             catch { }
@@ -3016,14 +3258,12 @@ namespace Oscilloscope_Network_Capture
             Logger.Instance.Debug("---");
             try
             {
-                lblStatus.Text = "Checking...";
-                lblStatus.ForeColor = Color.Gray;
+                SetConnectivityStatus("Checking...", Color.Gray);
 
                 var vendor = cboVendor.SelectedItem as string;
                 var modelDisplay = cboModel.SelectedItem as string;
                 var modelPattern = ToModelPattern(modelDisplay);
 
-                // Persist current selection/connection settings
                 _config.ScopeIp = txtIp.Text?.Trim();
                 _config.ScopePort = (int)numPort.Value;
                 _config.Vendor = vendor;
@@ -3056,11 +3296,7 @@ namespace Oscilloscope_Network_Capture
                     Logger.Instance.Info("Network session already established.");
                 }
 
-                // Change 1: run the QueryIdentify suite instead of IdentifyAsync
                 var idn = await QueryIdentifyViaSuiteAsync().ConfigureAwait(true);
-
-                // Change 2: suppress the Info line that logs "ID: ..."
-                // Logger.Instance.Info(string.Format("ID: {0}", idn)); // removed
 
                 var parsed = ParseIdn(idn);
                 Logger.Instance.Info("Oscilloscope identified as:");
@@ -3068,24 +3304,20 @@ namespace Oscilloscope_Network_Capture
                 Logger.Instance.Info("Model: " + parsed.Model);
                 Logger.Instance.Info("Firmware: " + parsed.Firmware);
 
-                lblStatus.Text = "Success - oscilloscope is connectable via network";
-                lblStatus.ForeColor = Color.Green;
+                SetConnectivityStatus("Success - oscilloscope is connectable via network, and capture mode has now been enabled", Color.Green);
 
-                // Refresh commands and re-apply any overrides
                 PopulateCommandTextboxes();
                 ApplyScpiOverridesForCurrentProfile();
             }
             catch (TimeoutException tex)
             {
                 Logger.Instance.Error("Network session cannot be established: " + InnermostMessage(tex));
-                lblStatus.Text = "Network session cannot be established (timeout)";
-                lblStatus.ForeColor = Color.Red;
+                SetConnectivityStatus("Network session cannot be established (timeout)", Color.Red);
             }
             catch (Exception ex)
             {
                 Logger.Instance.Error("Connectivity check failed: " + InnermostMessage(ex));
-                lblStatus.Text = "Failure - oscilloscope is not connectable via network";
-                lblStatus.ForeColor = Color.Red;
+                SetConnectivityStatus("Failure - oscilloscope is not connectable via network", Color.Red);
             }
         }
 
@@ -3099,6 +3331,29 @@ namespace Oscilloscope_Network_Capture
                 if (!string.IsNullOrWhiteSpace(parsed.Firmware)) Logger.Instance.Info("Firmware: " + parsed.Firmware);
             }
             catch { /* ignore parse/log failures */ }
+        }
+
+        // Add this helper near your other private helpers
+        private bool IsKeyboardContextAllowed()
+        {
+            try
+            {
+                if (!_captureMode) return false;
+                if (tabMain == null) return false;
+
+                var selected = tabMain.SelectedTab;
+                if (selected == null) return false;
+
+                // Prefer designer fields; fallback to Find by name if null
+                var capturingTab = tabCapturing ?? this.Controls.Find("tabCapturing", true).FirstOrDefault() as TabPage;
+                var debugTab = tabDebug ?? this.Controls.Find("tabDebug", true).FirstOrDefault() as TabPage;
+
+                return ReferenceEquals(selected, capturingTab) || ReferenceEquals(selected, debugTab);
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private async Task<string> QueryIdentifyViaSuiteAsync()
@@ -3192,26 +3447,26 @@ namespace Oscilloscope_Network_Capture
         // Add this helper to enumerate all test buttons (now includes btnConnect)
         private IEnumerable<Button> EnumerateTestSuiteButtons()
         {
-            // Prefer designer fields if available
             var fields = new Button[]
             {
         btnTestIdentify, btnTestClearStats, btnTestActiveTrig, btnTestStop, btnTestSingle,
         btnTestRun, btnTestTrigMode, btnTestTrigLevelQ, btnTestTrigLevelSet,
         btnTestTimeDivQ, btnTestTimeDivSet, btnTestDumpImage, btnTestSysErr, btnTestOpc,
-        btnConnect
+        btnConnect,
+        _btnCaptureStart // include mirror connect button if we have it
             };
 
             foreach (var b in fields)
                 if (b != null) yield return b;
 
-            // Fallback: find by name if any field was null
             var names = new[]
             {
-                "btnTestIdentify","btnTestClearStats","btnTestActiveTrig","btnTestStop","btnTestSingle",
-                "btnTestRun","btnTestTrigMode","btnTestTrigLevelQ","btnTestTrigLevelSet",
-                "btnTestTimeDivQ","btnTestTimeDivSet","btnTestDumpImage","btnTestSysErr","btnTestOpc",
-                "btnConnect"
-            };
+        "btnTestIdentify","btnTestClearStats","btnTestActiveTrig","btnTestStop","btnTestSingle",
+        "btnTestRun","btnTestTrigMode","btnTestTrigLevelQ","btnTestTrigLevelSet",
+        "btnTestTimeDivQ","btnTestTimeDivSet","btnTestDumpImage","btnTestSysErr","btnTestOpc",
+        "btnConnect",
+        "buttonCaptureStart","button1" // try both possible capture-start names
+    };
             foreach (var n in names)
             {
                 var found = this.Controls.Find(n, true).FirstOrDefault() as Button;
@@ -3241,7 +3496,116 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
+        // Place these helpers near other private helpers (e.g., after SetConnectButtonsEnabled)
 
+        private void PopulateHelpTabRtf()
+        {
+            try
+            {
+                // Prefer an explicit help RichTextBox name, else find one on the Help tab, else any that looks like help.
+                var rtb = this.Controls.Find("richTextBoxHelp", true).FirstOrDefault() as RichTextBox;
 
+                if (rtb == null)
+                {
+                    var tabHelp = this.Controls.Find("tabHelp", true).FirstOrDefault() as TabPage;
+                    if (tabHelp != null)
+                        rtb = tabHelp.Controls.OfType<RichTextBox>().FirstOrDefault();
+
+                    if (rtb == null)
+                        rtb = this.Controls.OfType<RichTextBox>()
+                                .FirstOrDefault(x => (x.Name ?? string.Empty).IndexOf("help", StringComparison.OrdinalIgnoreCase) >= 0);
+                }
+
+                if (rtb != null)
+                {
+                    rtb.Rtf = BuildHelpRtf();
+                }
+            }
+            catch { /* best-effort */ }
+        }
+
+        private static string BuildHelpRtf()
+        {
+            var sb = new StringBuilder();
+
+            // RTF header: fonts and colors (f0 = Segoe UI, f1 = Courier New)
+            sb.Append(@"{\rtf1\ansi\deff0");
+            sb.Append(@"{\fonttbl{\f0 Segoe UI;}{\f1 Courier New;}}");
+            // colortbl: 0=auto; 1=dark text; 2=white; 3=light gray (keycap highlight); 4=green; 5=red
+            sb.Append(@"{\colortbl ;\red33\green33\blue33;\red255\green255\blue255;\red230\green230\blue230;\red0\green128\blue0;\red192\green0\blue0;}");
+            sb.Append(@"\viewkind4\uc1");
+
+            // Default paragraph settings: Segoe UI 9pt
+            sb.Append(@"\pard\sa120\f0\fs18\cf1 ");
+
+            // Title (bold, still 9pt)
+            sb.Append(@"\b Keyboard Shortcuts\par\b0");
+
+            // Intro
+            sb.Append(@"\sa80 Capture Mode enables keyboard shortcuts for faster operation. In some builds, shortcuts are only active on the ");
+            sb.Append(@"\i Capturing\i0 and \i Debug\i0 tabs.\par");
+
+            // How to use
+            sb.Append(@"\sa120\b How to use\par\b0");
+            sb.Append(@"\sa40 - Ensure a successful connectivity check (Capture Mode may auto-start after connect).\par");
+            sb.Append(@"- Make sure this window has focus so keystrokes are received.\par");
+
+            // Shortcuts
+            sb.Append(@"\sa120\b Shortcuts\par\b0");
+
+            // Capture image
+            sb.Append(@"\sa40\b Capture image:\tab "); sb.Append(Keycap("[ENTER]")); sb.Append(@"\par\b0");
+            sb.Append(@"\li720\sa20 Takes a screenshot and saves it using the configured filename format.\par\li0");
+
+            // Delete last saved
+            sb.Append(@"\sa40\b Delete last saved file:\tab "); sb.Append(Keycap("[DELETE]")); sb.Append(@"\par\b0");
+            sb.Append(@"\li720\sa20 Requires "); sb.Append(@"\i ""Enable Delete""\i0"); sb.Append(@" and decrements "); sb.Append(Keycap("{NUMBER}")); sb.Append(@".\par\li0");
+
+            // Trigger adjust
+            sb.Append(@"\sa40\b Adjust trigger level:\tab "); sb.Append(Keycap("[UP]")); sb.Append(@" (up), "); sb.Append(Keycap("[DOWN]")); sb.Append(@" (down)\par\b0");
+            sb.Append(@"\li720\sa20 Steps snap to the selected grid step ("); sb.Append(Keycap("Adjust-to-grid")); sb.Append(@"); rapid presses are coalesced.\par\li0");
+
+            // TIME/DIV
+            sb.Append(@"\sa40\b TIME/DIV (zoom):\tab "); sb.Append(Keycap("[+]")); sb.Append(@" (zoom in), "); sb.Append(Keycap("[-]")); sb.Append(@" (zoom out)\par\b0");
+            sb.Append(@"\li720\sa20 Both the main [+/-] and Numpad [+/-] keys are supported.\par\li0");
+
+            // Acquisition control
+            sb.Append(@"\sa40\b Acquisition control:\tab "); sb.Append(Keycap("[*]")); sb.Append(@" = SINGLE, "); sb.Append(Keycap("[/]")); sb.Append(@" = RUN\par\b0");
+            sb.Append(@"\li720\sa20 "); sb.Append(Keycap("[*]")); sb.Append(@" can be Numpad * or "); sb.Append(Keycap("Shift+8")); sb.Append(@"; ");
+            sb.Append(Keycap("[/]")); sb.Append(@" can be Numpad / or the main slash key.\par\li0");
+
+            // Clear statistics
+            sb.Append(@"\sa40\b Clear statistics:\tab "); sb.Append(Keycap("[NUMPAD .]")); sb.Append(@"\par\b0");
+            sb.Append(@"\li720\sa20 Clears measurement statistics on the instrument.\par\li0");
+
+            // Notes
+            sb.Append(@"\sa120\b Notes\par\b0");
+            sb.Append(@"\sa20 - "); sb.Append(Keycap("[ESC]")); sb.Append(@" is intentionally unassigned.\par");
+            sb.Append(@"- The delete hotkey only works when ""Enable Delete"" is turned on.\par");
+            sb.Append(@"- Adjust-to-grid step is configurable and persisted in settings.\par");
+
+            // Troubleshooting
+            sb.Append(@"\sa120\b Troubleshooting\par\b0");
+            sb.Append(@"\sa20 - If shortcuts do not respond, verify Capture Mode is enabled and this window has focus.\par");
+            sb.Append(@"- If NumPad keys do not trigger, check Num Lock.\par");
+            sb.Append(@"- If your build limits shortcuts to tabs, switch to "); sb.Append(@"\i Capturing\i0 or \i Debug\i0"); sb.Append(@".\par");
+
+            // End
+            sb.Append(@"}");
+
+            return sb.ToString();
+        }
+
+        private static string Keycap(string text)
+        {
+            // Light-gray background, bold, Courier New
+            return @"{\highlight3\cf1\b\f1 " + RtfEscape(text) + @"}\highlight0\cf1\b0\f0";
+        }
+
+        private static string RtfEscape(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return string.Empty;
+            return s.Replace(@"\", @"\\").Replace("{", @"\{").Replace("}", @"\}");
+        }
     }
 }
