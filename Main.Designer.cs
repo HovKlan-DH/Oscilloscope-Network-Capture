@@ -28,7 +28,7 @@
             this.txtIp = new System.Windows.Forms.TextBox();
             this.numPort = new System.Windows.Forms.NumericUpDown();
             this.tabMain = new System.Windows.Forms.TabControl();
-            this.tabConfigScope = new System.Windows.Forms.TabPage();
+            this.tabConfiguration = new System.Windows.Forms.TabPage();
             this.label11 = new System.Windows.Forms.Label();
             this.label8 = new System.Windows.Forms.Label();
             this.labelNewVersion1 = new System.Windows.Forms.Label();
@@ -89,7 +89,7 @@
             this.btnTestIdentify = new System.Windows.Forms.Button();
             this.txtCmdIdentify = new System.Windows.Forms.TextBox();
             this.lblCmdIdentify = new System.Windows.Forms.Label();
-            this.tabConfigMisc = new System.Windows.Forms.TabPage();
+            this.tabSettings = new System.Windows.Forms.TabPage();
             this.checkBoxEnableDelete = new System.Windows.Forms.CheckBox();
             this.label14 = new System.Windows.Forms.Label();
             this.comboBoxAdjustToGrid = new System.Windows.Forms.ComboBox();
@@ -128,16 +128,17 @@
             this.textBoxEmail = new System.Windows.Forms.TextBox();
             this.rtbLog = new System.Windows.Forms.RichTextBox();
             this.tabHelp = new System.Windows.Forms.TabPage();
-            this.label13 = new System.Windows.Forms.Label();
+            this.richTextBoxHelp = new System.Windows.Forms.RichTextBox();
             this.labelNewVersion4 = new System.Windows.Forms.Label();
             this.tabAbout = new System.Windows.Forms.TabPage();
             this.richTextBox1 = new System.Windows.Forms.RichTextBox();
             this.labelNewVersion5 = new System.Windows.Forms.Label();
-            this.richTextBoxHelp = new System.Windows.Forms.RichTextBox();
+            this.txtTimeDivValues = new System.Windows.Forms.TextBox();
+            this.label13 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.numPort)).BeginInit();
             this.tabMain.SuspendLayout();
-            this.tabConfigScope.SuspendLayout();
-            this.tabConfigMisc.SuspendLayout();
+            this.tabConfiguration.SuspendLayout();
+            this.tabSettings.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownDelayMs)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownVariables)).BeginInit();
             this.tabCapturing.SuspendLayout();
@@ -255,8 +256,8 @@
             this.tabMain.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.tabMain.Controls.Add(this.tabConfigScope);
-            this.tabMain.Controls.Add(this.tabConfigMisc);
+            this.tabMain.Controls.Add(this.tabConfiguration);
+            this.tabMain.Controls.Add(this.tabSettings);
             this.tabMain.Controls.Add(this.tabCapturing);
             this.tabMain.Controls.Add(this.tabDebug);
             this.tabMain.Controls.Add(this.tabHelp);
@@ -265,88 +266,90 @@
             this.tabMain.Margin = new System.Windows.Forms.Padding(4);
             this.tabMain.Name = "tabMain";
             this.tabMain.SelectedIndex = 0;
-            this.tabMain.Size = new System.Drawing.Size(1065, 651);
+            this.tabMain.Size = new System.Drawing.Size(1065, 721);
             this.tabMain.TabIndex = 100;
             // 
-            // tabConfigScope
+            // tabConfiguration
             // 
-            this.tabConfigScope.Controls.Add(this.label11);
-            this.tabConfigScope.Controls.Add(this.label8);
-            this.tabConfigScope.Controls.Add(this.labelNewVersion1);
-            this.tabConfigScope.Controls.Add(this.lblStatus);
-            this.tabConfigScope.Controls.Add(this.lblStatusOpc);
-            this.tabConfigScope.Controls.Add(this.btnTestOpc);
-            this.tabConfigScope.Controls.Add(this.txtCmdOpc);
-            this.tabConfigScope.Controls.Add(this.lblCmdOpc);
-            this.tabConfigScope.Controls.Add(this.lblStatusSysErr);
-            this.tabConfigScope.Controls.Add(this.btnTestSysErr);
-            this.tabConfigScope.Controls.Add(this.txtCmdSysErr);
-            this.tabConfigScope.Controls.Add(this.lblCmdSysErr);
-            this.tabConfigScope.Controls.Add(this.lblStatusDumpImage);
-            this.tabConfigScope.Controls.Add(this.btnTestDumpImage);
-            this.tabConfigScope.Controls.Add(this.txtCmdDumpImage);
-            this.tabConfigScope.Controls.Add(this.lblCmdDumpImage);
-            this.tabConfigScope.Controls.Add(this.lblStatusTimeDivSet);
-            this.tabConfigScope.Controls.Add(this.btnTestTimeDivSet);
-            this.tabConfigScope.Controls.Add(this.txtCmdTimeDivSet);
-            this.tabConfigScope.Controls.Add(this.lblCmdTimeDivSet);
-            this.tabConfigScope.Controls.Add(this.lblStatusTimeDivQ);
-            this.tabConfigScope.Controls.Add(this.btnTestTimeDivQ);
-            this.tabConfigScope.Controls.Add(this.txtCmdTimeDivQ);
-            this.tabConfigScope.Controls.Add(this.lblCmdTimeDivQ);
-            this.tabConfigScope.Controls.Add(this.lblStatusTrigLevelSet);
-            this.tabConfigScope.Controls.Add(this.btnTestTrigLevelSet);
-            this.tabConfigScope.Controls.Add(this.txtCmdTrigLevelSet);
-            this.tabConfigScope.Controls.Add(this.lblCmdTrigLevelSet);
-            this.tabConfigScope.Controls.Add(this.lblStatusTrigLevelQ);
-            this.tabConfigScope.Controls.Add(this.btnTestTrigLevelQ);
-            this.tabConfigScope.Controls.Add(this.txtCmdTrigLevelQ);
-            this.tabConfigScope.Controls.Add(this.lblCmdTrigLevelQ);
-            this.tabConfigScope.Controls.Add(this.lblStatusTrigMode);
-            this.tabConfigScope.Controls.Add(this.btnTestTrigMode);
-            this.tabConfigScope.Controls.Add(this.txtCmdTrigMode);
-            this.tabConfigScope.Controls.Add(this.lblCmdTrigMode);
-            this.tabConfigScope.Controls.Add(this.lblStatusSingle);
-            this.tabConfigScope.Controls.Add(this.btnTestSingle);
-            this.tabConfigScope.Controls.Add(this.txtCmdSingle);
-            this.tabConfigScope.Controls.Add(this.lblCmdSingle);
-            this.tabConfigScope.Controls.Add(this.lblStatusRun);
-            this.tabConfigScope.Controls.Add(this.btnTestRun);
-            this.tabConfigScope.Controls.Add(this.txtCmdRun);
-            this.tabConfigScope.Controls.Add(this.lblCmdRun);
-            this.tabConfigScope.Controls.Add(this.lblStatusStop);
-            this.tabConfigScope.Controls.Add(this.btnTestStop);
-            this.tabConfigScope.Controls.Add(this.txtCmdStop);
-            this.tabConfigScope.Controls.Add(this.lblCmdStop);
-            this.tabConfigScope.Controls.Add(this.lblStatusActiveTrig);
-            this.tabConfigScope.Controls.Add(this.btnTestActiveTrig);
-            this.tabConfigScope.Controls.Add(this.txtCmdActiveTrig);
-            this.tabConfigScope.Controls.Add(this.lblCmdActiveTrig);
-            this.tabConfigScope.Controls.Add(this.lblStatusClearStats);
-            this.tabConfigScope.Controls.Add(this.btnTestClearStats);
-            this.tabConfigScope.Controls.Add(this.txtCmdClearStats);
-            this.tabConfigScope.Controls.Add(this.lblCmdClearStats);
-            this.tabConfigScope.Controls.Add(this.lblStatusIdentify);
-            this.tabConfigScope.Controls.Add(this.btnTestIdentify);
-            this.tabConfigScope.Controls.Add(this.txtCmdIdentify);
-            this.tabConfigScope.Controls.Add(this.lblCmdIdentify);
-            this.tabConfigScope.Controls.Add(this.numPort);
-            this.tabConfigScope.Controls.Add(this.txtIp);
-            this.tabConfigScope.Controls.Add(this.lblPort);
-            this.tabConfigScope.Controls.Add(this.lblIp);
-            this.tabConfigScope.Controls.Add(this.lblModel);
-            this.tabConfigScope.Controls.Add(this.lblVendor);
-            this.tabConfigScope.Controls.Add(this.btnConnect);
-            this.tabConfigScope.Controls.Add(this.cboModel);
-            this.tabConfigScope.Controls.Add(this.cboVendor);
-            this.tabConfigScope.Location = new System.Drawing.Point(4, 29);
-            this.tabConfigScope.Margin = new System.Windows.Forms.Padding(4);
-            this.tabConfigScope.Name = "tabConfigScope";
-            this.tabConfigScope.Padding = new System.Windows.Forms.Padding(4);
-            this.tabConfigScope.Size = new System.Drawing.Size(1057, 618);
-            this.tabConfigScope.TabIndex = 0;
-            this.tabConfigScope.Text = "Configuration Oscilloscope";
-            this.tabConfigScope.UseVisualStyleBackColor = true;
+            this.tabConfiguration.Controls.Add(this.txtTimeDivValues);
+            this.tabConfiguration.Controls.Add(this.label13);
+            this.tabConfiguration.Controls.Add(this.label11);
+            this.tabConfiguration.Controls.Add(this.label8);
+            this.tabConfiguration.Controls.Add(this.labelNewVersion1);
+            this.tabConfiguration.Controls.Add(this.lblStatus);
+            this.tabConfiguration.Controls.Add(this.lblStatusOpc);
+            this.tabConfiguration.Controls.Add(this.btnTestOpc);
+            this.tabConfiguration.Controls.Add(this.txtCmdOpc);
+            this.tabConfiguration.Controls.Add(this.lblCmdOpc);
+            this.tabConfiguration.Controls.Add(this.lblStatusSysErr);
+            this.tabConfiguration.Controls.Add(this.btnTestSysErr);
+            this.tabConfiguration.Controls.Add(this.txtCmdSysErr);
+            this.tabConfiguration.Controls.Add(this.lblCmdSysErr);
+            this.tabConfiguration.Controls.Add(this.lblStatusDumpImage);
+            this.tabConfiguration.Controls.Add(this.btnTestDumpImage);
+            this.tabConfiguration.Controls.Add(this.txtCmdDumpImage);
+            this.tabConfiguration.Controls.Add(this.lblCmdDumpImage);
+            this.tabConfiguration.Controls.Add(this.lblStatusTimeDivSet);
+            this.tabConfiguration.Controls.Add(this.btnTestTimeDivSet);
+            this.tabConfiguration.Controls.Add(this.txtCmdTimeDivSet);
+            this.tabConfiguration.Controls.Add(this.lblCmdTimeDivSet);
+            this.tabConfiguration.Controls.Add(this.lblStatusTimeDivQ);
+            this.tabConfiguration.Controls.Add(this.btnTestTimeDivQ);
+            this.tabConfiguration.Controls.Add(this.txtCmdTimeDivQ);
+            this.tabConfiguration.Controls.Add(this.lblCmdTimeDivQ);
+            this.tabConfiguration.Controls.Add(this.lblStatusTrigLevelSet);
+            this.tabConfiguration.Controls.Add(this.btnTestTrigLevelSet);
+            this.tabConfiguration.Controls.Add(this.txtCmdTrigLevelSet);
+            this.tabConfiguration.Controls.Add(this.lblCmdTrigLevelSet);
+            this.tabConfiguration.Controls.Add(this.lblStatusTrigLevelQ);
+            this.tabConfiguration.Controls.Add(this.btnTestTrigLevelQ);
+            this.tabConfiguration.Controls.Add(this.txtCmdTrigLevelQ);
+            this.tabConfiguration.Controls.Add(this.lblCmdTrigLevelQ);
+            this.tabConfiguration.Controls.Add(this.lblStatusTrigMode);
+            this.tabConfiguration.Controls.Add(this.btnTestTrigMode);
+            this.tabConfiguration.Controls.Add(this.txtCmdTrigMode);
+            this.tabConfiguration.Controls.Add(this.lblCmdTrigMode);
+            this.tabConfiguration.Controls.Add(this.lblStatusSingle);
+            this.tabConfiguration.Controls.Add(this.btnTestSingle);
+            this.tabConfiguration.Controls.Add(this.txtCmdSingle);
+            this.tabConfiguration.Controls.Add(this.lblCmdSingle);
+            this.tabConfiguration.Controls.Add(this.lblStatusRun);
+            this.tabConfiguration.Controls.Add(this.btnTestRun);
+            this.tabConfiguration.Controls.Add(this.txtCmdRun);
+            this.tabConfiguration.Controls.Add(this.lblCmdRun);
+            this.tabConfiguration.Controls.Add(this.lblStatusStop);
+            this.tabConfiguration.Controls.Add(this.btnTestStop);
+            this.tabConfiguration.Controls.Add(this.txtCmdStop);
+            this.tabConfiguration.Controls.Add(this.lblCmdStop);
+            this.tabConfiguration.Controls.Add(this.lblStatusActiveTrig);
+            this.tabConfiguration.Controls.Add(this.btnTestActiveTrig);
+            this.tabConfiguration.Controls.Add(this.txtCmdActiveTrig);
+            this.tabConfiguration.Controls.Add(this.lblCmdActiveTrig);
+            this.tabConfiguration.Controls.Add(this.lblStatusClearStats);
+            this.tabConfiguration.Controls.Add(this.btnTestClearStats);
+            this.tabConfiguration.Controls.Add(this.txtCmdClearStats);
+            this.tabConfiguration.Controls.Add(this.lblCmdClearStats);
+            this.tabConfiguration.Controls.Add(this.lblStatusIdentify);
+            this.tabConfiguration.Controls.Add(this.btnTestIdentify);
+            this.tabConfiguration.Controls.Add(this.txtCmdIdentify);
+            this.tabConfiguration.Controls.Add(this.lblCmdIdentify);
+            this.tabConfiguration.Controls.Add(this.numPort);
+            this.tabConfiguration.Controls.Add(this.txtIp);
+            this.tabConfiguration.Controls.Add(this.lblPort);
+            this.tabConfiguration.Controls.Add(this.lblIp);
+            this.tabConfiguration.Controls.Add(this.lblModel);
+            this.tabConfiguration.Controls.Add(this.lblVendor);
+            this.tabConfiguration.Controls.Add(this.btnConnect);
+            this.tabConfiguration.Controls.Add(this.cboModel);
+            this.tabConfiguration.Controls.Add(this.cboVendor);
+            this.tabConfiguration.Location = new System.Drawing.Point(4, 29);
+            this.tabConfiguration.Margin = new System.Windows.Forms.Padding(4);
+            this.tabConfiguration.Name = "tabConfiguration";
+            this.tabConfiguration.Padding = new System.Windows.Forms.Padding(4);
+            this.tabConfiguration.Size = new System.Drawing.Size(1057, 688);
+            this.tabConfiguration.TabIndex = 0;
+            this.tabConfiguration.Text = "Configuration";
+            this.tabConfiguration.UseVisualStyleBackColor = true;
             // 
             // label11
             // 
@@ -364,9 +367,9 @@
             this.label8.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label8.Location = new System.Drawing.Point(3, 6);
             this.label8.Name = "label8";
-            this.label8.Size = new System.Drawing.Size(267, 28);
+            this.label8.Size = new System.Drawing.Size(143, 28);
             this.label8.TabIndex = 57;
-            this.label8.Text = "Configuration Oscilloscope";
+            this.label8.Text = "Configuration";
             // 
             // labelNewVersion1
             // 
@@ -952,28 +955,28 @@
             this.lblCmdIdentify.TabIndex = 55;
             this.lblCmdIdentify.Text = "Query identify instrument";
             // 
-            // tabConfigMisc
+            // tabSettings
             // 
-            this.tabConfigMisc.Controls.Add(this.checkBoxEnableDelete);
-            this.tabConfigMisc.Controls.Add(this.label14);
-            this.tabConfigMisc.Controls.Add(this.comboBoxAdjustToGrid);
-            this.tabConfigMisc.Controls.Add(this.labelNewVersion6);
-            this.tabConfigMisc.Controls.Add(this.checkBoxTrimUnderscore);
-            this.tabConfigMisc.Controls.Add(this.label9);
-            this.tabConfigMisc.Controls.Add(this.checkBoxDeleteDoubleUnderscore);
-            this.tabConfigMisc.Controls.Add(this.label7);
-            this.tabConfigMisc.Controls.Add(this.numericUpDownDelayMs);
-            this.tabConfigMisc.Controls.Add(this.label6);
-            this.tabConfigMisc.Controls.Add(this.numericUpDownVariables);
-            this.tabConfigMisc.Controls.Add(this.checkBoxForceClear);
-            this.tabConfigMisc.Controls.Add(this.checkBoxForceAcquisition);
-            this.tabConfigMisc.Controls.Add(this.checkBoxEnableBeep);
-            this.tabConfigMisc.Location = new System.Drawing.Point(4, 29);
-            this.tabConfigMisc.Name = "tabConfigMisc";
-            this.tabConfigMisc.Size = new System.Drawing.Size(1057, 618);
-            this.tabConfigMisc.TabIndex = 5;
-            this.tabConfigMisc.Text = "Configuration Misc";
-            this.tabConfigMisc.UseVisualStyleBackColor = true;
+            this.tabSettings.Controls.Add(this.checkBoxEnableDelete);
+            this.tabSettings.Controls.Add(this.label14);
+            this.tabSettings.Controls.Add(this.comboBoxAdjustToGrid);
+            this.tabSettings.Controls.Add(this.labelNewVersion6);
+            this.tabSettings.Controls.Add(this.checkBoxTrimUnderscore);
+            this.tabSettings.Controls.Add(this.label9);
+            this.tabSettings.Controls.Add(this.checkBoxDeleteDoubleUnderscore);
+            this.tabSettings.Controls.Add(this.label7);
+            this.tabSettings.Controls.Add(this.numericUpDownDelayMs);
+            this.tabSettings.Controls.Add(this.label6);
+            this.tabSettings.Controls.Add(this.numericUpDownVariables);
+            this.tabSettings.Controls.Add(this.checkBoxForceClear);
+            this.tabSettings.Controls.Add(this.checkBoxForceAcquisition);
+            this.tabSettings.Controls.Add(this.checkBoxEnableBeep);
+            this.tabSettings.Location = new System.Drawing.Point(4, 29);
+            this.tabSettings.Name = "tabSettings";
+            this.tabSettings.Size = new System.Drawing.Size(1057, 618);
+            this.tabSettings.TabIndex = 5;
+            this.tabSettings.Text = "Settings";
+            this.tabSettings.UseVisualStyleBackColor = true;
             // 
             // checkBoxEnableDelete
             // 
@@ -1039,9 +1042,9 @@
             this.label9.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label9.Location = new System.Drawing.Point(3, 6);
             this.label9.Name = "label9";
-            this.label9.Size = new System.Drawing.Size(193, 28);
+            this.label9.Size = new System.Drawing.Size(89, 28);
             this.label9.TabIndex = 58;
-            this.label9.Text = "Configuration Misc";
+            this.label9.Text = "Settings";
             // 
             // checkBoxDeleteDoubleUnderscore
             // 
@@ -1365,7 +1368,7 @@
             this.buttonSendToDeveloper.Name = "buttonSendToDeveloper";
             this.buttonSendToDeveloper.Size = new System.Drawing.Size(328, 27);
             this.buttonSendToDeveloper.TabIndex = 3;
-            this.buttonSendToDeveloper.Text = "Send configuration file and debug info to developer";
+            this.buttonSendToDeveloper.Text = "Send debug info and configuration file to developer";
             this.buttonSendToDeveloper.UseVisualStyleBackColor = true;
             this.buttonSendToDeveloper.Click += new System.EventHandler(this.buttonSendToDeveloper_Click);
             // 
@@ -1406,7 +1409,6 @@
             // tabHelp
             // 
             this.tabHelp.Controls.Add(this.richTextBoxHelp);
-            this.tabHelp.Controls.Add(this.label13);
             this.tabHelp.Controls.Add(this.labelNewVersion4);
             this.tabHelp.Location = new System.Drawing.Point(4, 29);
             this.tabHelp.Margin = new System.Windows.Forms.Padding(4);
@@ -1417,15 +1419,19 @@
             this.tabHelp.Text = "Help";
             this.tabHelp.UseVisualStyleBackColor = true;
             // 
-            // label13
+            // richTextBoxHelp
             // 
-            this.label13.AutoSize = true;
-            this.label13.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label13.Location = new System.Drawing.Point(3, 6);
-            this.label13.Name = "label13";
-            this.label13.Size = new System.Drawing.Size(56, 28);
-            this.label13.TabIndex = 60;
-            this.label13.Text = "Help";
+            this.richTextBoxHelp.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.richTextBoxHelp.BackColor = System.Drawing.Color.White;
+            this.richTextBoxHelp.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.richTextBoxHelp.Location = new System.Drawing.Point(8, 23);
+            this.richTextBoxHelp.Name = "richTextBoxHelp";
+            this.richTextBoxHelp.ReadOnly = true;
+            this.richTextBoxHelp.Size = new System.Drawing.Size(1048, 588);
+            this.richTextBoxHelp.TabIndex = 61;
+            this.richTextBoxHelp.Text = "";
             // 
             // labelNewVersion4
             // 
@@ -1480,19 +1486,29 @@
             this.labelNewVersion5.Text = "New version available ";
             this.labelNewVersion5.Visible = false;
             // 
-            // richTextBoxHelp
+            // txtTimeDivValues
             // 
-            this.richTextBoxHelp.Location = new System.Drawing.Point(8, 60);
-            this.richTextBoxHelp.Name = "richTextBoxHelp";
-            this.richTextBoxHelp.Size = new System.Drawing.Size(1008, 530);
-            this.richTextBoxHelp.TabIndex = 61;
-            this.richTextBoxHelp.Text = "";
+            this.txtTimeDivValues.Location = new System.Drawing.Point(223, 607);
+            this.txtTimeDivValues.Margin = new System.Windows.Forms.Padding(4);
+            this.txtTimeDivValues.Name = "txtTimeDivValues";
+            this.txtTimeDivValues.Size = new System.Drawing.Size(302, 27);
+            this.txtTimeDivValues.TabIndex = 59;
+            // 
+            // label13
+            // 
+            this.label13.AutoSize = true;
+            this.label13.Location = new System.Drawing.Point(16, 611);
+            this.label13.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label13.Name = "label13";
+            this.label13.Size = new System.Drawing.Size(206, 20);
+            this.label13.TabIndex = 60;
+            this.label13.Text = "TIME/DIV values and notation";
             // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1067, 650);
+            this.ClientSize = new System.Drawing.Size(1067, 720);
             this.Controls.Add(this.tabMain);
             this.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
@@ -1503,10 +1519,10 @@
             this.Load += new System.EventHandler(this.Main_Load);
             ((System.ComponentModel.ISupportInitialize)(this.numPort)).EndInit();
             this.tabMain.ResumeLayout(false);
-            this.tabConfigScope.ResumeLayout(false);
-            this.tabConfigScope.PerformLayout();
-            this.tabConfigMisc.ResumeLayout(false);
-            this.tabConfigMisc.PerformLayout();
+            this.tabConfiguration.ResumeLayout(false);
+            this.tabConfiguration.PerformLayout();
+            this.tabSettings.ResumeLayout(false);
+            this.tabSettings.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownDelayMs)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDownVariables)).EndInit();
             this.tabCapturing.ResumeLayout(false);
@@ -1535,7 +1551,7 @@
         private System.Windows.Forms.TextBox txtIp;
         private System.Windows.Forms.NumericUpDown numPort;
         private System.Windows.Forms.TabControl tabMain;
-        private System.Windows.Forms.TabPage tabConfigScope;
+        private System.Windows.Forms.TabPage tabConfiguration;
         private System.Windows.Forms.TabPage tabCapturing;
         private System.Windows.Forms.TabPage tabDebug;
         private System.Windows.Forms.TabPage tabHelp;
@@ -1572,7 +1588,7 @@
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Label label5;
         private System.Windows.Forms.RichTextBox richTextBoxAction;
-        private System.Windows.Forms.TabPage tabConfigMisc;
+        private System.Windows.Forms.TabPage tabSettings;
         private System.Windows.Forms.Button buttonCaptureStart;
         private System.Windows.Forms.NumericUpDown numericUpDownVariables;
         private System.Windows.Forms.CheckBox checkBoxForceClear;
@@ -1592,13 +1608,14 @@
         private System.Windows.Forms.TextBox textBoxFilenameFormat;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label labelNewVersion6;
-        private System.Windows.Forms.Label label13;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.ComboBox comboBoxAdjustToGrid;
         private System.Windows.Forms.Label label14;
         private System.Windows.Forms.CheckBox checkBoxEnableDelete;
         private System.Windows.Forms.Label label15;
         private System.Windows.Forms.RichTextBox richTextBoxHelp;
+        private System.Windows.Forms.TextBox txtTimeDivValues;
+        private System.Windows.Forms.Label label13;
     }
 }
 

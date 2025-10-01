@@ -452,9 +452,9 @@ namespace Oscilloscope_Network_Capture
             // Enable layout persistence after initial show
             _suppressLayoutSave = false;
 
-            if (tabConfigMisc != null)
+            if (tabSettings != null)
             {
-                tabConfigMisc.AutoScroll = true;
+                tabSettings.AutoScroll = true;
             }
 
             // Ensure all version badges are placed top-right within their tab
@@ -2973,14 +2973,14 @@ namespace Oscilloscope_Network_Capture
 
         private void BuildVariableNameEditors()
         {
-            if (tabConfigMisc == null) return;
+            if (tabSettings == null) return;
             EnsureVariableNamesListSize();
 
             // Remove existing dynamic controls
-            var toRemove = tabConfigMisc.Controls.Cast<Control>()
+            var toRemove = tabSettings.Controls.Cast<Control>()
                 .Where(c => (c.Name ?? string.Empty).StartsWith(VarNameEditorPrefix) || (c.Name ?? string.Empty).StartsWith(VarNameLabelPrefix))
                 .ToList();
-            foreach (var c in toRemove) { try { tabConfigMisc.Controls.Remove(c); c.Dispose(); } catch { } }
+            foreach (var c in toRemove) { try { tabSettings.Controls.Remove(c); c.Dispose(); } catch { } }
 
             // Position just below numericUpDownVariables with tighter spacing
             int baseY = (numericUpDownVariables != null) ? numericUpDownVariables.Bottom + 6 : 320;
@@ -3011,7 +3011,7 @@ namespace Oscilloscope_Network_Capture
                     ConfigurationService.Save(_config);
                     UpdateVariablesUI(_config.VariableCount);
                     // Update the label next to this editor
-                    var nameLblRef = tabConfigMisc.Controls.Find(VarNameLabelPrefix + idx, true).FirstOrDefault() as Label;
+                    var nameLblRef = tabSettings.Controls.Find(VarNameLabelPrefix + idx, true).FirstOrDefault() as Label;
                     if (nameLblRef != null)
                     {
                         var nm = string.IsNullOrWhiteSpace(upper) ? ("VAR" + (idx + 1)) : upper;
@@ -3020,7 +3020,7 @@ namespace Oscilloscope_Network_Capture
                     }
                     UpdateActionRichTextForNextFilename();
                 };
-                tabConfigMisc.Controls.Add(tb);
+                tabSettings.Controls.Add(tb);
 
                 // Label to the right: shows current variable name token {NAME}
                 var nameLbl = new Label
@@ -3033,7 +3033,7 @@ namespace Oscilloscope_Network_Capture
                 if (string.IsNullOrWhiteSpace(nmTxt)) nmTxt = "VAR" + (i + 1);
                 nameLbl.Text = "{" + nmTxt.ToUpperInvariant() + "}";
                 try { nameLbl.Font = label2?.Font ?? nameLbl.Font; } catch { }
-                tabConfigMisc.Controls.Add(nameLbl);
+                tabSettings.Controls.Add(nameLbl);
             }
 
             // Append permanent, read-only system variables as the last two rows
@@ -3050,7 +3050,7 @@ namespace Oscilloscope_Network_Capture
                 TabStop = false
             };
             try { tbDate.CharacterCasing = CharacterCasing.Upper; } catch { }
-            tabConfigMisc.Controls.Add(tbDate);
+            tabSettings.Controls.Add(tbDate);
 
             var lblDate = new Label
             {
@@ -3060,7 +3060,7 @@ namespace Oscilloscope_Network_Capture
                 Text = "{DATE}"
             };
             try { lblDate.Font = label2?.Font ?? lblDate.Font; } catch { }
-            tabConfigMisc.Controls.Add(lblDate);
+            tabSettings.Controls.Add(lblDate);
 
             // TIME row
             var tbTime = new TextBox
@@ -3073,7 +3073,7 @@ namespace Oscilloscope_Network_Capture
                 TabStop = false
             };
             try { tbTime.CharacterCasing = CharacterCasing.Upper; } catch { }
-            tabConfigMisc.Controls.Add(tbTime);
+            tabSettings.Controls.Add(tbTime);
 
             var lblTime = new Label
             {
@@ -3083,7 +3083,7 @@ namespace Oscilloscope_Network_Capture
                 Text = "{TIME}"
             };
             try { lblTime.Font = label2?.Font ?? lblTime.Font; } catch { }
-            tabConfigMisc.Controls.Add(lblTime);
+            tabSettings.Controls.Add(lblTime);
 
             // Relocate file name cleanup checkboxes under the last (fixed) row
             int endY = afterDynamicY + (2 * rowH) + 8;
@@ -3528,84 +3528,100 @@ namespace Oscilloscope_Network_Capture
         {
             var sb = new StringBuilder();
 
-            // RTF header: fonts and colors (f0 = Segoe UI, f1 = Courier New)
+            // RTF header with font and color tables
             sb.Append(@"{\rtf1\ansi\deff0");
-            sb.Append(@"{\fonttbl{\f0 Segoe UI;}{\f1 Courier New;}}");
-            // colortbl: 0=auto; 1=dark text; 2=white; 3=light gray (keycap highlight); 4=green; 5=red
-            sb.Append(@"{\colortbl ;\red33\green33\blue33;\red255\green255\blue255;\red230\green230\blue230;\red0\green128\blue0;\red192\green0\blue0;}");
-            sb.Append(@"\viewkind4\uc1");
+            sb.Append(@"{\fonttbl{\f0 Segoe UI;}{\f1 Consolas;}}");
+            // colortbl: [0]=auto; [1]=text (black); [2]=keycap bg (light gray)
+            sb.Append(@"{\colortbl ;\red0\green0\blue0;\red230\green234\blue238;}");
+            sb.Append(@"\fs22 "); // 11pt base size
 
-            // Default paragraph settings: Segoe UI 9pt
-            sb.Append(@"\pard\sa120\f0\fs18\cf1 ");
+            sb.Append(@"{\fs28{\b Expected behaviour and how-to-use}}\line ");
+            sb.Append(@"When you launch the application it will try and connect to the oscilloscope. If this is successful, then it has started its ""capture mode"", where you can control your oscilloscope and save an image from it. However, the capture mode will only be active and working, when you are within one of the two tabs:\line ");
+            sb.Append(@"\line");
+            sb.Append(@"    * Capturing\line ");
+            sb.Append(@"    * Debug\line ");
+            sb.Append(@"\line ");
+            sb.Append(@"If you are not in capture mode (meaning, if you are not within any of these two tabs), then you can hit "+ KeycapRtf("ENTER") + @" or "+ KeycapRtf("DELETE") +@", without it saving or deleting any files. It will work very nicely with an external numpad or keyboard next to your oscilloscope, so you can focus specifically on the oscilloscope and your measurement only (one hand at numpad, and one hand for scope measurement). View below for keyboard controls for the oscilloscope.\line ");
+            sb.Append(@"\line");
 
-            // Title (bold, still 9pt)
-            sb.Append(@"\b Keyboard Shortcuts\par\b0");
+            sb.Append(@"{\fs28{\b Standard and protocol used:}}\line ");
+            sb.Append(@"    * IEEE 488.2 standard\line ");
+            sb.Append(@"    * SCPI socket protocol\line ");
+            sb.Append(@"\line");
 
-            // Intro
-            sb.Append(@"\sa80 Capture Mode enables keyboard shortcuts for faster operation. In some builds, shortcuts are only active on the ");
-            sb.Append(@"\i Capturing\i0 and \i Debug\i0 tabs.\par");
+            sb.Append(@"{\fs28{\b Variables to use in filename format}}\line ");
+            sb.Append(@"    * " + KeycapRtf("{NUMBER}") + @" is a sequential number counting up for every measurement you do (e.g. it could be IC pin number 7)\line ");
+            sb.Append(@"    * " + KeycapRtf("{COMPONENT}") + @" is the component you are measuring on\line ");
+            sb.Append(@"    * " + KeycapRtf("{VAR2}") + @" is some text or number you define yourself - you can have up to 5 variables\line ");
+            sb.Append(@"    * " + KeycapRtf("{DATE}") + @" is YYYYMMDD - e.g. 20251231\line ");
+            sb.Append(@"    * " + KeycapRtf("{TIME}") + @" is HHMMSS - e.g. 235959\line ");
+            sb.Append(@"\line");
 
-            // How to use
-            sb.Append(@"\sa120\b How to use\par\b0");
-            sb.Append(@"\sa40 - Ensure a successful connectivity check (Capture Mode may auto-start after connect).\par");
-            sb.Append(@"- Make sure this window has focus so keystrokes are received.\par");
+            sb.Append(@"{\fs28{\b General}}\line ");
+            sb.Append(@"You can always change the value of a variable on-the-fly, and it will be used for the next saved file.\line ");
+            sb.Append(@"\line");
 
-            // Shortcuts
-            sb.Append(@"\sa120\b Shortcuts\par\b0");
+            sb.Append(@"{\fs28{\b Keyboard commands (only in capture mode)}}\line ");
+            sb.Append("    * " + KeycapRtf("ENTER") + " will save image from scope to a file with a specific filename format, and increase the "+ KeycapRtf("{NUMBER}") + @"\line ");
+            sb.Append("    * " + KeycapRtf("DELETE") + " will delete last saved file; requires a checkbox to be set in \"Settings\" \\line ");
+            sb.Append("    * " + KeycapRtf("*") + " to set SINGLE trigger on scope\\line ");
+            sb.Append("    * " + KeycapRtf("/") + " to RESUME acquisition on scope\\line ");
+            sb.Append("    * " + KeycapRtf("NUMPAD DECIMAL") + " to \"Clear Statistics\" on scope\\line ");
+            sb.Append("    * " + KeycapRtf("+") + " to decrease TIME/DIV timespan (zoom-in)\\line ");
+            sb.Append("    * " + KeycapRtf("-") + " to increase TIME/DIV timespan (zoom-out)\\line ");
+            sb.Append("    * " + KeycapRtf("ARROW UP") + " to raise trigger level\\line ");
+            sb.Append("    * " + KeycapRtf("ARROW DOWN") + " to lower trigger level\\line ");
+            sb.Append(@"\line");
 
-            // Capture image
-            sb.Append(@"\sa40\b Capture image:\tab "); sb.Append(Keycap("[ENTER]")); sb.Append(@"\par\b0");
-            sb.Append(@"\li720\sa20 Takes a screenshot and saves it using the configured filename format.\par\li0");
+            sb.Append(@"{\fs28{\b Checkboxes}}\line ");
+            sb.Append("    * Enable beep at capturing\\line ");
+            sb.Append("        - Will give a subtle beep before and after capturing an image\\line ");
+            sb.Append("    * Force acquisition after capture\\line ");
+            sb.Append("        - Even if scope was put in STOP mode at capture time, then it will be forced in to RUN mode again\\line ");
+            sb.Append("    * Force \"Clear Statistics\" before capture\\line ");
+            sb.Append("        - Before capturing image, then it will clear scope statistics\\line ");
+            sb.Append("    * Delay in milliseconds to settle on new statistics (0-5000)\\line ");
+            sb.Append("        - After clearing the statistics, then give it some time to adjust the numbers before capturing\\line ");
+            sb.Append("    * Snap-to-grid for trigger level\\line ");
+            sb.Append("        - The trigger level voltage change, and then snap to nearest \"snap-level\"\\line ");
+            sb.Append("    * Keyboard [DELETE] will delete last saved file\\line ");
+            sb.Append("        - When checked you will be able to delete the last saved file\\line ");
+            sb.Append("        - It is just an awareness for you, to ensure you do not inadvertently delete a file by mistake\\line ");
+            sb.Append(@"\line");
 
-            // Delete last saved
-            sb.Append(@"\sa40\b Delete last saved file:\tab "); sb.Append(Keycap("[DELETE]")); sb.Append(@"\par\b0");
-            sb.Append(@"\li720\sa20 Requires "); sb.Append(@"\i ""Enable Delete""\i0"); sb.Append(@" and decrements "); sb.Append(Keycap("{NUMBER}")); sb.Append(@".\par\li0");
+            sb.Append(@"{\fs28{\b Troubleshoot no connectivity to you oscilloscope}}\line ");
+            sb.Append(@"Make sure the IP address and port is open in your firewall.\line\line ");
+            sb.Append(@"Also, sometimes it helps power-recycling the scope, if some wrong commands have been sent.\line ");
+            sb.Append(@"\line");
 
-            // Trigger adjust
-            sb.Append(@"\sa40\b Adjust trigger level:\tab "); sb.Append(Keycap("[UP]")); sb.Append(@" (up), "); sb.Append(Keycap("[DOWN]")); sb.Append(@" (down)\par\b0");
-            sb.Append(@"\li720\sa20 Steps snap to the selected grid step ("); sb.Append(Keycap("Adjust-to-grid")); sb.Append(@"); rapid presses are coalesced.\par\li0");
+            sb.Append(@"{\fs28{\b How you can help to get your oscilloscope supported in tool}}\line ");
+            sb.Append(@"Find the SCP command reference for your oscilloscope, and tweak the test-suites in ""Configuration"" until they are all correct and works.\line ");
+            sb.Append(@"When increasing and decreasing TIME/DIV or trigger level, then make sure the scope does not ""tilt"" and go over-range, so make sure the values and notations are correct.\line ");
+            sb.Append(@"When everything is working as expected, then follow this simple little guide:\line");
+            sb.Append(@"\line");
+            sb.Append("    * Launch the application\\line ");
+            sb.Append("    * Go through each test-suite in \"Configuration\"\\line ");
+            sb.Append("    * Go to the \"Debug\" tab, and press the button \"Send debug info and configuration file to developer\"\\line ");
+            sb.Append("        - I would appreciate if you fill in your email, so I can connect with you for any questions I may have :-)\\line ");
 
-            // TIME/DIV
-            sb.Append(@"\sa40\b TIME/DIV (zoom):\tab "); sb.Append(Keycap("[+]")); sb.Append(@" (zoom in), "); sb.Append(Keycap("[-]")); sb.Append(@" (zoom out)\par\b0");
-            sb.Append(@"\li720\sa20 Both the main [+/-] and Numpad [+/-] keys are supported.\par\li0");
+            sb.Append(@"\line");
 
-            // Acquisition control
-            sb.Append(@"\sa40\b Acquisition control:\tab "); sb.Append(Keycap("[*]")); sb.Append(@" = SINGLE, "); sb.Append(Keycap("[/]")); sb.Append(@" = RUN\par\b0");
-            sb.Append(@"\li720\sa20 "); sb.Append(Keycap("[*]")); sb.Append(@" can be Numpad * or "); sb.Append(Keycap("Shift+8")); sb.Append(@"; ");
-            sb.Append(Keycap("[/]")); sb.Append(@" can be Numpad / or the main slash key.\par\li0");
-
-            // Clear statistics
-            sb.Append(@"\sa40\b Clear statistics:\tab "); sb.Append(Keycap("[NUMPAD .]")); sb.Append(@"\par\b0");
-            sb.Append(@"\li720\sa20 Clears measurement statistics on the instrument.\par\li0");
-
-            // Notes
-            sb.Append(@"\sa120\b Notes\par\b0");
-            sb.Append(@"\sa20 - "); sb.Append(Keycap("[ESC]")); sb.Append(@" is intentionally unassigned.\par");
-            sb.Append(@"- The delete hotkey only works when ""Enable Delete"" is turned on.\par");
-            sb.Append(@"- Adjust-to-grid step is configurable and persisted in settings.\par");
-
-            // Troubleshooting
-            sb.Append(@"\sa120\b Troubleshooting\par\b0");
-            sb.Append(@"\sa20 - If shortcuts do not respond, verify Capture Mode is enabled and this window has focus.\par");
-            sb.Append(@"- If NumPad keys do not trigger, check Num Lock.\par");
-            sb.Append(@"- If your build limits shortcuts to tabs, switch to "); sb.Append(@"\i Capturing\i0 or \i Debug\i0"); sb.Append(@".\par");
-
-            // End
-            sb.Append(@"}");
+            sb.Append("}");
 
             return sb.ToString();
         }
 
-        private static string Keycap(string text)
+        private static string KeycapRtf(string text)
         {
-            // Light-gray background, bold, Courier New
-            return @"{\highlight3\cf1\b\f1 " + RtfEscape(text) + @"}\highlight0\cf1\b0\f0";
+            // base font for keys a tad smaller than body
+            var inner = $"\\f0\\fs20\\cf1\\highlight2\\~{EscapeRtf(text)}\\~\\highlight0";
+            return "{" + inner + "}";
         }
 
-        private static string RtfEscape(string s)
+        private static string EscapeRtf(string s)
         {
-            if (string.IsNullOrEmpty(s)) return string.Empty;
-            return s.Replace(@"\", @"\\").Replace("{", @"\{").Replace("}", @"\}");
+            if (string.IsNullOrEmpty(s)) return "";
+            return s.Replace("\\", "\\\\").Replace("{", "\\{").Replace("}", "\\}");
         }
     }
 }
