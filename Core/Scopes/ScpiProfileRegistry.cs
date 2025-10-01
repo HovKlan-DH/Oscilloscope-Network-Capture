@@ -14,71 +14,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
         private static readonly List<TimeDivEntry> _timeDivs = new List<TimeDivEntry>();
 
         private static bool _initialized;
-        private static readonly object _sync = new object();
-
-        public static IEnumerable<ScopeScpiProfile> Profiles
-        {
-            get { Ensure(); return _profiles; }
-        }
-
-        public static ScopeScpiProfile Find(string vendor, string model)
-        {
-            Ensure();
-            // Try most specific first (model match), then vendor default
-            var matches = _profiles.Where(p => p.Vendor.Equals(vendor ?? string.Empty, StringComparison.OrdinalIgnoreCase))
-                                   .OrderByDescending(p => Specificity(p.ModelPattern));
-            foreach (var p in matches)
-            {
-                if (ModelMatches(p.ModelPattern, model))
-                    return p;
-            }
-            return null;
-        }
-
-        // NEW: public API to access TIME/DIV values
-        public static IReadOnlyList<double> GetTimeDivValues(string vendor, string model)
-        {
-            Ensure();
-            var td = FindTimeDivEntry(vendor, model);
-            return td?.Values ?? Array.Empty<double>();
-        }
-
-        public static bool TryGetNextTimeDiv(string vendor, string model, double current, out double next)
-        {
-            Ensure();
-            var td = FindTimeDivEntry(vendor, model);
-            if (td == null || td.Values.Count == 0) { next = current; return false; }
-            return TryGetNext(td.Values, current, out next);
-        }
-
-        public static bool TryGetPrevTimeDiv(string vendor, string model, double current, out double prev)
-        {
-            Ensure();
-            var td = FindTimeDivEntry(vendor, model);
-            if (td == null || td.Values.Count == 0) { prev = current; return false; }
-            return TryGetPrev(td.Values, current, out prev);
-        }
-
-        private static int Specificity(string pattern)
-        {
-            if (string.IsNullOrEmpty(pattern) || pattern == "*") return 0;
-            return pattern.Replace("*", string.Empty).Length;
-        }
-
-        private static bool ModelMatches(string pattern, string model)
-        {
-            if (string.IsNullOrEmpty(pattern) || pattern == "*") return true;
-            if (string.IsNullOrEmpty(model)) return false;
-            pattern = pattern.ToLowerInvariant();
-            model = model.ToLowerInvariant();
-            if (pattern.StartsWith("*") && pattern.EndsWith("*"))
-                return model.Contains(pattern.Trim('*'));
-            if (pattern.StartsWith("*"))
-                return model.EndsWith(pattern.TrimStart('*'));
-            if (pattern.EndsWith("*"))
-                return model.StartsWith(pattern.TrimEnd('*'));
-            return model.Equals(pattern);
-        }
+        private static readonly object _sync = new object();      
 
         private static void Ensure()
         {
@@ -108,8 +44,8 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                     .Map(ScopeCommand.PopLastSystemError, ":SYSTEM:ERROR?")
                     .Map(ScopeCommand.OperationComplete, "*OPC?"));
 
-                // Rigol DS2202A model-specific overrides
-                _profiles.Add(new ScopeScpiProfile("Rigol", "DS2202A")
+                // Rigol MSO2000A/DS2000A Series overrides
+                _profiles.Add(new ScopeScpiProfile("Rigol", "MSO2000A/DS2000A Series")
                     .Map(ScopeCommand.ClearStatistics, ":MEASURE:STATISTIC:RESET"));
 
                 // SIGLENT defaults
@@ -141,12 +77,26 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                 // Rigol generic TIME/DIV values (seconds per division)
                 _timeDivs.Add(new TimeDivEntry("Rigol", "*", new[]
                 {
-                    2e-9, 5e-9, 10e-9, 20e-9, 50e-9,
-                    100e-9, 200e-9, 500e-9, 1e-6, 2e-6, 5e-6,
-                    10e-6, 20e-6, 50e-6, 100e-6, 200e-6, 500e-6,
-                    1e-3, 2e-3, 5e-3, 10e-3, 20e-3, 50e-3,
-                    100e-3, 200e-3, 500e-3, 1, 2, 5, 10, 20, 50, 100,
-                    200, 500, 1000
+                    "2e-9", "5e-9", "10e-9", "20e-9", "50e-9",
+                    "100e-9", "200e-9", "500e-9", "1e-6", "2e-6", "5e-6",
+                    "10e-6", "20e-6", "50e-6", "100e-6", "200e-6", "500e-6",
+                    "1e-3", "2e-3", "5e-3", "10e-3", "20e-3", "50e-3",
+                    "100e-3", "200e-3", "500e-3", "1", "2", "5", "10", "20", "50", "100",
+                    "200", "500", "1000"
+                }));
+                _timeDivs.Add(new TimeDivEntry("Rigol", "MSO2000A/DS2000A Series", new[]
+                {
+                    "2nS", "5nS", "10nS", "20nS", "50nS",
+                    "100nS", "200nS", "500nS", "1uS", "2uS", "5uS",
+                    "10uS", "20uS", "50uS", "100uS", "200uS", "500uS",
+                    "1mS", "2mS", "5mS", "10mS", "20mS", "50mS",
+                    "100mS", "200mS", "500mS", "1S", "2S", "5S", "10S", "20S", "50S", "100S",
+                    "200", "500", "1000"
+                }));
+                _timeDivs.Add(new TimeDivEntry("Siglent", "*", new[]
+                {
+                    "2nS", "100nS", "10mS", "20mS", "10uS",
+                    "20uS", "10mS", "20mS", "1S", "10S", "500S"
                 }));
 
                 // Example: Rigol DS2202A could override the above if needed
@@ -162,6 +112,151 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
 
                 _initialized = true;
             }
+        }
+
+        // Helper: format doubles as compact scientific tokens like "2e-9"
+        private static string FormatDoubleAsToken(double v)
+        {
+            var s = v.ToString("G17", CultureInfo.InvariantCulture).ToLowerInvariant();
+            s = Regex.Replace(s, @"e([+-])0+(\d+)", "e$1$2"); // e-09 -> e-9
+            return s;
+        }
+
+        public static IEnumerable<ScopeScpiProfile> Profiles
+        {
+            get { Ensure(); return _profiles; }
+        }
+
+        // NEW: apply a runtime override for TIME/DIV tokens for a specific vendor+model.
+        // Pass null/empty text to clear the override (reverts to defaults).
+        public static void SetTimeDivTextOverride(string vendor, string model, string rawCsv)
+        {
+            Ensure();
+            lock (_sync)
+            {
+                var keyExact = MakeOverrideKey(vendor, model);
+
+                // Build tokens from CSV (may be empty)
+                var tokens = (rawCsv ?? string.Empty)
+                    .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(t => (t ?? string.Empty).Trim())
+                    .Where(t => !string.IsNullOrWhiteSpace(t))
+                    .ToList();
+
+                // Always install an override entry, even if empty (disables stepping to defaults)
+                var entry = new TimeDivEntry(vendor ?? string.Empty, string.IsNullOrWhiteSpace(model) ? "*" : model, tokens);
+
+                TimeDivOverrides[keyExact] = entry;
+            }
+        }
+
+        // NEW: returns raw tokens (prefer overrides; else defaults)
+        public static IReadOnlyList<string> GetTimeDivTextValues(string vendor, string model)
+        {
+            Ensure();
+            var td = FindTimeDivOverrideEntry(vendor, model) ?? FindTimeDivEntry(vendor, model);
+            if (td == null)
+                return Array.Empty<string>();
+            return td.Tokens ?? (td.Values ?? Array.Empty<double>()).Select(FormatDoubleAsToken).ToArray();
+        }
+
+        public static ScopeScpiProfile Find(string vendor, string model)
+        {
+            Ensure();
+            // Try most specific first (model match), then vendor default
+            var matches = _profiles.Where(p => p.Vendor.Equals(vendor ?? string.Empty, StringComparison.OrdinalIgnoreCase))
+                                   .OrderByDescending(p => Specificity(p.ModelPattern));
+            foreach (var p in matches)
+            {
+                if (ModelMatches(p.ModelPattern, model))
+                    return p;
+            }
+            return null;
+        }
+
+        // REPLACE: prefer overrides when returning numeric seconds list
+        public static IReadOnlyList<double> GetTimeDivValues(string vendor, string model)
+        {
+            Ensure();
+            var td = FindTimeDivOverrideEntry(vendor, model) ?? FindTimeDivEntry(vendor, model);
+            return td?.Values ?? Array.Empty<double>();
+        }
+
+        // REPLACE: prefer overrides for next
+        public static bool TryGetNextTimeDiv(string vendor, string model, double current, out double next)
+        {
+            Ensure();
+            var td = FindTimeDivOverrideEntry(vendor, model) ?? FindTimeDivEntry(vendor, model);
+            if (td == null || td.Values.Count == 0) { next = current; return false; }
+            return TryGetNext(td.Values, current, out next);
+        }
+
+        // REPLACE: prefer overrides for previous
+        public static bool TryGetPrevTimeDiv(string vendor, string model, double current, out double prev)
+        {
+            Ensure();
+            var td = FindTimeDivOverrideEntry(vendor, model) ?? FindTimeDivEntry(vendor, model);
+            if (td == null || td.Values.Count == 0) { prev = current; return false; }
+            return TryGetPrev(td.Values, current, out prev);
+        }
+
+        // NEW: lookup runtime override (exact vendor+model, then vendor+* only if no specific default exists)
+        private static TimeDivEntry FindTimeDivOverrideEntry(string vendor, string model)
+        {
+            lock (_sync)
+            {
+                var keyExact = MakeOverrideKey(vendor, model);
+                if (TimeDivOverrides.TryGetValue(keyExact, out var e) && e != null)
+                    return e;
+
+                // If there is a specific default entry for this vendor+model, do NOT use the vendor-generic override.
+                bool hasSpecificDefault = _timeDivs.Any(d =>
+                    d.Vendor.Equals(vendor ?? string.Empty, StringComparison.OrdinalIgnoreCase) &&
+                    ModelMatches(d.ModelPattern, model) &&
+                    !string.Equals(d.ModelPattern, "*", StringComparison.Ordinal));
+
+                if (!hasSpecificDefault)
+                {
+                    var keyGeneric = MakeOverrideKey(vendor, "*");
+                    if (TimeDivOverrides.TryGetValue(keyGeneric, out e) && e != null)
+                        return e;
+                }
+
+                return null;
+            }
+        }
+
+        // NEW: stable key for override map
+        private static string MakeOverrideKey(string vendor, string model)
+        {
+            return (vendor ?? string.Empty).Trim().ToUpperInvariant()
+                 + "|"
+                 + (string.IsNullOrWhiteSpace(model) ? "*" : model.Trim().ToUpperInvariant());
+        }
+
+        // NEW: holder for runtime overrides
+        private static readonly Dictionary<string, TimeDivEntry> TimeDivOverrides
+            = new Dictionary<string, TimeDivEntry>(StringComparer.OrdinalIgnoreCase);
+
+        private static int Specificity(string pattern)
+        {
+            if (string.IsNullOrEmpty(pattern) || pattern == "*") return 0;
+            return pattern.Replace("*", string.Empty).Length;
+        }
+
+        private static bool ModelMatches(string pattern, string model)
+        {
+            if (string.IsNullOrEmpty(pattern) || pattern == "*") return true;
+            if (string.IsNullOrEmpty(model)) return false;
+            pattern = pattern.ToLowerInvariant();
+            model = model.ToLowerInvariant();
+            if (pattern.StartsWith("*") && pattern.EndsWith("*"))
+                return model.Contains(pattern.Trim('*'));
+            if (pattern.StartsWith("*"))
+                return model.EndsWith(pattern.TrimStart('*'));
+            if (pattern.EndsWith("*"))
+                return model.StartsWith(pattern.TrimEnd('*'));
+            return model.Equals(pattern);
         }
 
         // ---------------- TIME/DIV helpers ----------------
@@ -203,8 +298,8 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                 case "USECS":
                 case "MICROSECOND":
                 case "MICROSECONDS":
-                case "?S":    // Greek mu uppercase
-                case "µS":    // micro sign + S (may arrive already uppercased oddly)
+                case "?S":    // Greek mu uppercase fallback
+                case "µS":    // micro sign + S
                     scale = 1e-6; break;
 
                 case "NS":
@@ -329,13 +424,38 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
             public string ModelPattern { get; }
 
             private readonly List<double> _values;
-            public IReadOnlyList<double> Values => _values;
+            private readonly List<string> _tokens; // raw tokens for UI
 
+            public IReadOnlyList<double> Values => _values;
+            public IReadOnlyList<string> Tokens => _tokens;
+
+            // Construct from numeric seconds list; auto-generate display tokens
             public TimeDivEntry(string vendor, string modelPattern, IEnumerable<double> values)
             {
                 Vendor = vendor ?? string.Empty;
                 ModelPattern = string.IsNullOrWhiteSpace(modelPattern) ? "*" : modelPattern;
-                _values = (values ?? Enumerable.Empty<double>()).OrderBy(v => v).ToList();
+
+                var vals = (values ?? Enumerable.Empty<double>()).ToList();
+                _values = vals.OrderBy(v => v).ToList();
+                _tokens = vals.Select(FormatDoubleAsToken).ToList();
+            }
+
+            // Construct from tokens; preserve tokens "as-is" for UI, compute numeric list for logic/sending
+            public TimeDivEntry(string vendor, string modelPattern, IEnumerable<string> tokens)
+            {
+                Vendor = vendor ?? string.Empty;
+                ModelPattern = string.IsNullOrWhiteSpace(modelPattern) ? "*" : modelPattern;
+
+                var toks = (tokens ?? Enumerable.Empty<string>()).ToList();
+                _tokens = toks; // exact as provided
+
+                var parsed = new List<double>(toks.Count);
+                foreach (var t in toks)
+                {
+                    if (TryParseTimeToSeconds(t, out var s))
+                        parsed.Add(s);
+                }
+                _values = parsed.OrderBy(v => v).ToList();
             }
         }
     }

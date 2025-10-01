@@ -29,6 +29,8 @@
             this.numPort = new System.Windows.Forms.NumericUpDown();
             this.tabMain = new System.Windows.Forms.TabControl();
             this.tabConfiguration = new System.Windows.Forms.TabPage();
+            this.txtTimeDivValues = new System.Windows.Forms.TextBox();
+            this.label13 = new System.Windows.Forms.Label();
             this.label11 = new System.Windows.Forms.Label();
             this.label8 = new System.Windows.Forms.Label();
             this.labelNewVersion1 = new System.Windows.Forms.Label();
@@ -133,8 +135,6 @@
             this.tabAbout = new System.Windows.Forms.TabPage();
             this.richTextBox1 = new System.Windows.Forms.RichTextBox();
             this.labelNewVersion5 = new System.Windows.Forms.Label();
-            this.txtTimeDivValues = new System.Windows.Forms.TextBox();
-            this.label13 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.numPort)).BeginInit();
             this.tabMain.SuspendLayout();
             this.tabConfiguration.SuspendLayout();
@@ -157,7 +157,7 @@
             this.cboVendor.Margin = new System.Windows.Forms.Padding(4);
             this.cboVendor.Name = "cboVendor";
             this.cboVendor.Size = new System.Drawing.Size(239, 28);
-            this.cboVendor.TabIndex = 0;
+            this.cboVendor.TabIndex = 1;
             // 
             // cboModel
             // 
@@ -167,7 +167,7 @@
             this.cboModel.Margin = new System.Windows.Forms.Padding(4);
             this.cboModel.Name = "cboModel";
             this.cboModel.Size = new System.Drawing.Size(239, 28);
-            this.cboModel.TabIndex = 1;
+            this.cboModel.TabIndex = 2;
             // 
             // btnConnect
             // 
@@ -175,7 +175,7 @@
             this.btnConnect.Margin = new System.Windows.Forms.Padding(4);
             this.btnConnect.Name = "btnConnect";
             this.btnConnect.Size = new System.Drawing.Size(203, 57);
-            this.btnConnect.TabIndex = 6;
+            this.btnConnect.TabIndex = 5;
             this.btnConnect.Text = "Check oscilloscope connectivity and start capture mode";
             this.btnConnect.UseVisualStyleBackColor = true;
             this.btnConnect.Click += new System.EventHandler(this.btnConnect_Click);
@@ -187,7 +187,7 @@
             this.lblVendor.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblVendor.Name = "lblVendor";
             this.lblVendor.Size = new System.Drawing.Size(56, 20);
-            this.lblVendor.TabIndex = 9;
+            this.lblVendor.TabIndex = 1000;
             this.lblVendor.Text = "Vendor";
             // 
             // lblModel
@@ -197,7 +197,7 @@
             this.lblModel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblModel.Name = "lblModel";
             this.lblModel.Size = new System.Drawing.Size(52, 20);
-            this.lblModel.TabIndex = 10;
+            this.lblModel.TabIndex = 1000;
             this.lblModel.Text = "Model";
             // 
             // lblIp
@@ -226,7 +226,7 @@
             this.txtIp.Margin = new System.Windows.Forms.Padding(4);
             this.txtIp.Name = "txtIp";
             this.txtIp.Size = new System.Drawing.Size(239, 27);
-            this.txtIp.TabIndex = 2;
+            this.txtIp.TabIndex = 3;
             // 
             // numPort
             // 
@@ -244,7 +244,7 @@
             0});
             this.numPort.Name = "numPort";
             this.numPort.Size = new System.Drawing.Size(107, 27);
-            this.numPort.TabIndex = 3;
+            this.numPort.TabIndex = 4;
             this.numPort.Value = new decimal(new int[] {
             5025,
             0,
@@ -266,7 +266,7 @@
             this.tabMain.Margin = new System.Windows.Forms.Padding(4);
             this.tabMain.Name = "tabMain";
             this.tabMain.SelectedIndex = 0;
-            this.tabMain.Size = new System.Drawing.Size(1065, 721);
+            this.tabMain.Size = new System.Drawing.Size(1065, 677);
             this.tabMain.TabIndex = 100;
             // 
             // tabConfiguration
@@ -346,10 +346,28 @@
             this.tabConfiguration.Margin = new System.Windows.Forms.Padding(4);
             this.tabConfiguration.Name = "tabConfiguration";
             this.tabConfiguration.Padding = new System.Windows.Forms.Padding(4);
-            this.tabConfiguration.Size = new System.Drawing.Size(1057, 688);
+            this.tabConfiguration.Size = new System.Drawing.Size(1057, 644);
             this.tabConfiguration.TabIndex = 0;
             this.tabConfiguration.Text = "Configuration";
             this.tabConfiguration.UseVisualStyleBackColor = true;
+            // 
+            // txtTimeDivValues
+            // 
+            this.txtTimeDivValues.Location = new System.Drawing.Point(223, 607);
+            this.txtTimeDivValues.Margin = new System.Windows.Forms.Padding(4);
+            this.txtTimeDivValues.Name = "txtTimeDivValues";
+            this.txtTimeDivValues.Size = new System.Drawing.Size(302, 27);
+            this.txtTimeDivValues.TabIndex = 34;
+            // 
+            // label13
+            // 
+            this.label13.AutoSize = true;
+            this.label13.Location = new System.Drawing.Point(16, 611);
+            this.label13.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label13.Name = "label13";
+            this.label13.Size = new System.Drawing.Size(206, 20);
+            this.label13.TabIndex = 60;
+            this.label13.Text = "TIME/DIV values and notation";
             // 
             // label11
             // 
@@ -368,7 +386,7 @@
             this.label8.Location = new System.Drawing.Point(3, 6);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(143, 28);
-            this.label8.TabIndex = 57;
+            this.label8.TabIndex = 1000;
             this.label8.Text = "Configuration";
             // 
             // labelNewVersion1
@@ -412,7 +430,7 @@
             this.btnTestOpc.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestOpc.Name = "btnTestOpc";
             this.btnTestOpc.Size = new System.Drawing.Size(80, 22);
-            this.btnTestOpc.TabIndex = 1;
+            this.btnTestOpc.TabIndex = 11;
             this.btnTestOpc.Text = "Test";
             this.btnTestOpc.UseVisualStyleBackColor = true;
             this.btnTestOpc.Click += new System.EventHandler(this.btnTestOpc_Click);
@@ -423,7 +441,7 @@
             this.txtCmdOpc.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdOpc.Name = "txtCmdOpc";
             this.txtCmdOpc.Size = new System.Drawing.Size(302, 27);
-            this.txtCmdOpc.TabIndex = 2;
+            this.txtCmdOpc.TabIndex = 10;
             // 
             // lblCmdOpc
             // 
@@ -452,7 +470,7 @@
             this.btnTestSysErr.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestSysErr.Name = "btnTestSysErr";
             this.btnTestSysErr.Size = new System.Drawing.Size(80, 22);
-            this.btnTestSysErr.TabIndex = 5;
+            this.btnTestSysErr.TabIndex = 9;
             this.btnTestSysErr.Text = "Test";
             this.btnTestSysErr.UseVisualStyleBackColor = true;
             this.btnTestSysErr.Click += new System.EventHandler(this.btnTestSysErr_Click);
@@ -463,7 +481,7 @@
             this.txtCmdSysErr.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdSysErr.Name = "txtCmdSysErr";
             this.txtCmdSysErr.Size = new System.Drawing.Size(302, 27);
-            this.txtCmdSysErr.TabIndex = 6;
+            this.txtCmdSysErr.TabIndex = 8;
             // 
             // lblCmdSysErr
             // 
@@ -492,7 +510,7 @@
             this.btnTestDumpImage.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestDumpImage.Name = "btnTestDumpImage";
             this.btnTestDumpImage.Size = new System.Drawing.Size(80, 22);
-            this.btnTestDumpImage.TabIndex = 9;
+            this.btnTestDumpImage.TabIndex = 33;
             this.btnTestDumpImage.Text = "Test";
             this.btnTestDumpImage.UseVisualStyleBackColor = true;
             this.btnTestDumpImage.Click += new System.EventHandler(this.btnTestDumpImage_Click);
@@ -503,7 +521,7 @@
             this.txtCmdDumpImage.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdDumpImage.Name = "txtCmdDumpImage";
             this.txtCmdDumpImage.Size = new System.Drawing.Size(302, 27);
-            this.txtCmdDumpImage.TabIndex = 10;
+            this.txtCmdDumpImage.TabIndex = 32;
             // 
             // lblCmdDumpImage
             // 
@@ -532,7 +550,7 @@
             this.btnTestTimeDivSet.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestTimeDivSet.Name = "btnTestTimeDivSet";
             this.btnTestTimeDivSet.Size = new System.Drawing.Size(80, 22);
-            this.btnTestTimeDivSet.TabIndex = 13;
+            this.btnTestTimeDivSet.TabIndex = 31;
             this.btnTestTimeDivSet.Text = "Test";
             this.btnTestTimeDivSet.UseVisualStyleBackColor = true;
             this.btnTestTimeDivSet.Click += new System.EventHandler(this.btnTestTimeDivSet_Click);
@@ -543,7 +561,7 @@
             this.txtCmdTimeDivSet.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdTimeDivSet.Name = "txtCmdTimeDivSet";
             this.txtCmdTimeDivSet.Size = new System.Drawing.Size(302, 27);
-            this.txtCmdTimeDivSet.TabIndex = 14;
+            this.txtCmdTimeDivSet.TabIndex = 30;
             // 
             // lblCmdTimeDivSet
             // 
@@ -572,7 +590,7 @@
             this.btnTestTimeDivQ.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestTimeDivQ.Name = "btnTestTimeDivQ";
             this.btnTestTimeDivQ.Size = new System.Drawing.Size(80, 22);
-            this.btnTestTimeDivQ.TabIndex = 17;
+            this.btnTestTimeDivQ.TabIndex = 29;
             this.btnTestTimeDivQ.Text = "Test";
             this.btnTestTimeDivQ.UseVisualStyleBackColor = true;
             this.btnTestTimeDivQ.Click += new System.EventHandler(this.btnTestTimeDivQ_Click);
@@ -583,7 +601,7 @@
             this.txtCmdTimeDivQ.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdTimeDivQ.Name = "txtCmdTimeDivQ";
             this.txtCmdTimeDivQ.Size = new System.Drawing.Size(302, 27);
-            this.txtCmdTimeDivQ.TabIndex = 18;
+            this.txtCmdTimeDivQ.TabIndex = 28;
             // 
             // lblCmdTimeDivQ
             // 
@@ -612,7 +630,7 @@
             this.btnTestTrigLevelSet.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestTrigLevelSet.Name = "btnTestTrigLevelSet";
             this.btnTestTrigLevelSet.Size = new System.Drawing.Size(80, 22);
-            this.btnTestTrigLevelSet.TabIndex = 21;
+            this.btnTestTrigLevelSet.TabIndex = 27;
             this.btnTestTrigLevelSet.Text = "Test";
             this.btnTestTrigLevelSet.UseVisualStyleBackColor = true;
             this.btnTestTrigLevelSet.Click += new System.EventHandler(this.btnTestTrigLevelSet_Click);
@@ -623,7 +641,7 @@
             this.txtCmdTrigLevelSet.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdTrigLevelSet.Name = "txtCmdTrigLevelSet";
             this.txtCmdTrigLevelSet.Size = new System.Drawing.Size(302, 27);
-            this.txtCmdTrigLevelSet.TabIndex = 22;
+            this.txtCmdTrigLevelSet.TabIndex = 26;
             // 
             // lblCmdTrigLevelSet
             // 
@@ -663,7 +681,7 @@
             this.txtCmdTrigLevelQ.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdTrigLevelQ.Name = "txtCmdTrigLevelQ";
             this.txtCmdTrigLevelQ.Size = new System.Drawing.Size(302, 27);
-            this.txtCmdTrigLevelQ.TabIndex = 26;
+            this.txtCmdTrigLevelQ.TabIndex = 24;
             // 
             // lblCmdTrigLevelQ
             // 
@@ -692,7 +710,7 @@
             this.btnTestTrigMode.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestTrigMode.Name = "btnTestTrigMode";
             this.btnTestTrigMode.Size = new System.Drawing.Size(80, 22);
-            this.btnTestTrigMode.TabIndex = 29;
+            this.btnTestTrigMode.TabIndex = 23;
             this.btnTestTrigMode.Text = "Test";
             this.btnTestTrigMode.UseVisualStyleBackColor = true;
             this.btnTestTrigMode.Click += new System.EventHandler(this.btnTestTrigMode_Click);
@@ -703,7 +721,7 @@
             this.txtCmdTrigMode.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdTrigMode.Name = "txtCmdTrigMode";
             this.txtCmdTrigMode.Size = new System.Drawing.Size(302, 27);
-            this.txtCmdTrigMode.TabIndex = 30;
+            this.txtCmdTrigMode.TabIndex = 22;
             // 
             // lblCmdTrigMode
             // 
@@ -732,7 +750,7 @@
             this.btnTestSingle.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestSingle.Name = "btnTestSingle";
             this.btnTestSingle.Size = new System.Drawing.Size(80, 22);
-            this.btnTestSingle.TabIndex = 33;
+            this.btnTestSingle.TabIndex = 19;
             this.btnTestSingle.Text = "Test";
             this.btnTestSingle.UseVisualStyleBackColor = true;
             this.btnTestSingle.Click += new System.EventHandler(this.btnTestSingle_Click);
@@ -743,7 +761,7 @@
             this.txtCmdSingle.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdSingle.Name = "txtCmdSingle";
             this.txtCmdSingle.Size = new System.Drawing.Size(302, 27);
-            this.txtCmdSingle.TabIndex = 34;
+            this.txtCmdSingle.TabIndex = 18;
             // 
             // lblCmdSingle
             // 
@@ -772,7 +790,7 @@
             this.btnTestRun.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestRun.Name = "btnTestRun";
             this.btnTestRun.Size = new System.Drawing.Size(80, 22);
-            this.btnTestRun.TabIndex = 37;
+            this.btnTestRun.TabIndex = 21;
             this.btnTestRun.Text = "Test";
             this.btnTestRun.UseVisualStyleBackColor = true;
             this.btnTestRun.Click += new System.EventHandler(this.btnTestRun_Click);
@@ -783,7 +801,7 @@
             this.txtCmdRun.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdRun.Name = "txtCmdRun";
             this.txtCmdRun.Size = new System.Drawing.Size(302, 27);
-            this.txtCmdRun.TabIndex = 38;
+            this.txtCmdRun.TabIndex = 20;
             // 
             // lblCmdRun
             // 
@@ -812,7 +830,7 @@
             this.btnTestStop.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestStop.Name = "btnTestStop";
             this.btnTestStop.Size = new System.Drawing.Size(80, 22);
-            this.btnTestStop.TabIndex = 41;
+            this.btnTestStop.TabIndex = 17;
             this.btnTestStop.Text = "Test";
             this.btnTestStop.UseVisualStyleBackColor = true;
             this.btnTestStop.Click += new System.EventHandler(this.btnTestStop_Click);
@@ -823,7 +841,7 @@
             this.txtCmdStop.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdStop.Name = "txtCmdStop";
             this.txtCmdStop.Size = new System.Drawing.Size(302, 27);
-            this.txtCmdStop.TabIndex = 42;
+            this.txtCmdStop.TabIndex = 16;
             // 
             // lblCmdStop
             // 
@@ -852,7 +870,7 @@
             this.btnTestActiveTrig.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestActiveTrig.Name = "btnTestActiveTrig";
             this.btnTestActiveTrig.Size = new System.Drawing.Size(80, 22);
-            this.btnTestActiveTrig.TabIndex = 45;
+            this.btnTestActiveTrig.TabIndex = 15;
             this.btnTestActiveTrig.Text = "Test";
             this.btnTestActiveTrig.UseVisualStyleBackColor = true;
             this.btnTestActiveTrig.Click += new System.EventHandler(this.btnTestActiveTrig_Click);
@@ -863,7 +881,7 @@
             this.txtCmdActiveTrig.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdActiveTrig.Name = "txtCmdActiveTrig";
             this.txtCmdActiveTrig.Size = new System.Drawing.Size(302, 27);
-            this.txtCmdActiveTrig.TabIndex = 46;
+            this.txtCmdActiveTrig.TabIndex = 14;
             // 
             // lblCmdActiveTrig
             // 
@@ -892,7 +910,7 @@
             this.btnTestClearStats.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestClearStats.Name = "btnTestClearStats";
             this.btnTestClearStats.Size = new System.Drawing.Size(80, 22);
-            this.btnTestClearStats.TabIndex = 49;
+            this.btnTestClearStats.TabIndex = 13;
             this.btnTestClearStats.Text = "Test";
             this.btnTestClearStats.UseVisualStyleBackColor = true;
             this.btnTestClearStats.Click += new System.EventHandler(this.btnTestClearStats_Click);
@@ -903,7 +921,7 @@
             this.txtCmdClearStats.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdClearStats.Name = "txtCmdClearStats";
             this.txtCmdClearStats.Size = new System.Drawing.Size(302, 27);
-            this.txtCmdClearStats.TabIndex = 50;
+            this.txtCmdClearStats.TabIndex = 12;
             // 
             // lblCmdClearStats
             // 
@@ -932,7 +950,7 @@
             this.btnTestIdentify.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestIdentify.Name = "btnTestIdentify";
             this.btnTestIdentify.Size = new System.Drawing.Size(80, 22);
-            this.btnTestIdentify.TabIndex = 53;
+            this.btnTestIdentify.TabIndex = 7;
             this.btnTestIdentify.Text = "Test";
             this.btnTestIdentify.UseVisualStyleBackColor = true;
             this.btnTestIdentify.Click += new System.EventHandler(this.btnTestIdentify_Click);
@@ -943,7 +961,7 @@
             this.txtCmdIdentify.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdIdentify.Name = "txtCmdIdentify";
             this.txtCmdIdentify.Size = new System.Drawing.Size(302, 27);
-            this.txtCmdIdentify.TabIndex = 54;
+            this.txtCmdIdentify.TabIndex = 6;
             // 
             // lblCmdIdentify
             // 
@@ -973,7 +991,7 @@
             this.tabSettings.Controls.Add(this.checkBoxEnableBeep);
             this.tabSettings.Location = new System.Drawing.Point(4, 29);
             this.tabSettings.Name = "tabSettings";
-            this.tabSettings.Size = new System.Drawing.Size(1057, 618);
+            this.tabSettings.Size = new System.Drawing.Size(1057, 644);
             this.tabSettings.TabIndex = 5;
             this.tabSettings.Text = "Settings";
             this.tabSettings.UseVisualStyleBackColor = true;
@@ -984,7 +1002,7 @@
             this.checkBoxEnableDelete.Location = new System.Drawing.Point(13, 207);
             this.checkBoxEnableDelete.Name = "checkBoxEnableDelete";
             this.checkBoxEnableDelete.Size = new System.Drawing.Size(326, 24);
-            this.checkBoxEnableDelete.TabIndex = 63;
+            this.checkBoxEnableDelete.TabIndex = 6;
             this.checkBoxEnableDelete.Text = "Keyboard [DELETE] will delete last saved file";
             this.checkBoxEnableDelete.UseVisualStyleBackColor = true;
             // 
@@ -1008,7 +1026,7 @@
             this.comboBoxAdjustToGrid.Location = new System.Drawing.Point(13, 173);
             this.comboBoxAdjustToGrid.Name = "comboBoxAdjustToGrid";
             this.comboBoxAdjustToGrid.Size = new System.Drawing.Size(61, 28);
-            this.comboBoxAdjustToGrid.TabIndex = 61;
+            this.comboBoxAdjustToGrid.TabIndex = 5;
             this.comboBoxAdjustToGrid.Text = "0.25V";
             // 
             // labelNewVersion6
@@ -1032,7 +1050,7 @@
             this.checkBoxTrimUnderscore.Location = new System.Drawing.Point(13, 354);
             this.checkBoxTrimUnderscore.Name = "checkBoxTrimUnderscore";
             this.checkBoxTrimUnderscore.Size = new System.Drawing.Size(504, 24);
-            this.checkBoxTrimUnderscore.TabIndex = 59;
+            this.checkBoxTrimUnderscore.TabIndex = 21;
             this.checkBoxTrimUnderscore.Text = "Delete underscore/whitespace in start/end from filename before saving";
             this.checkBoxTrimUnderscore.UseVisualStyleBackColor = true;
             // 
@@ -1054,7 +1072,7 @@
             this.checkBoxDeleteDoubleUnderscore.Location = new System.Drawing.Point(13, 324);
             this.checkBoxDeleteDoubleUnderscore.Name = "checkBoxDeleteDoubleUnderscore";
             this.checkBoxDeleteDoubleUnderscore.Size = new System.Drawing.Size(475, 24);
-            this.checkBoxDeleteDoubleUnderscore.TabIndex = 7;
+            this.checkBoxDeleteDoubleUnderscore.TabIndex = 20;
             this.checkBoxDeleteDoubleUnderscore.Text = "Delete double underscore/whitespace from filename before saving";
             this.checkBoxDeleteDoubleUnderscore.UseVisualStyleBackColor = true;
             // 
@@ -1077,7 +1095,7 @@
             0});
             this.numericUpDownDelayMs.Name = "numericUpDownDelayMs";
             this.numericUpDownDelayMs.Size = new System.Drawing.Size(61, 27);
-            this.numericUpDownDelayMs.TabIndex = 5;
+            this.numericUpDownDelayMs.TabIndex = 4;
             this.numericUpDownDelayMs.Value = new decimal(new int[] {
             1750,
             0,
@@ -1103,7 +1121,7 @@
             0});
             this.numericUpDownVariables.Name = "numericUpDownVariables";
             this.numericUpDownVariables.Size = new System.Drawing.Size(120, 27);
-            this.numericUpDownVariables.TabIndex = 3;
+            this.numericUpDownVariables.TabIndex = 7;
             // 
             // checkBoxForceClear
             // 
@@ -1111,7 +1129,7 @@
             this.checkBoxForceClear.Location = new System.Drawing.Point(13, 110);
             this.checkBoxForceClear.Name = "checkBoxForceClear";
             this.checkBoxForceClear.Size = new System.Drawing.Size(281, 24);
-            this.checkBoxForceClear.TabIndex = 2;
+            this.checkBoxForceClear.TabIndex = 3;
             this.checkBoxForceClear.Text = "Force \"Clear Statistics\" before capture";
             this.checkBoxForceClear.UseVisualStyleBackColor = true;
             // 
@@ -1123,7 +1141,7 @@
             this.checkBoxForceAcquisition.Location = new System.Drawing.Point(13, 80);
             this.checkBoxForceAcquisition.Name = "checkBoxForceAcquisition";
             this.checkBoxForceAcquisition.Size = new System.Drawing.Size(232, 24);
-            this.checkBoxForceAcquisition.TabIndex = 1;
+            this.checkBoxForceAcquisition.TabIndex = 2;
             this.checkBoxForceAcquisition.Text = "Force acquisition after capture";
             this.checkBoxForceAcquisition.UseVisualStyleBackColor = true;
             // 
@@ -1135,7 +1153,7 @@
             this.checkBoxEnableBeep.Location = new System.Drawing.Point(13, 50);
             this.checkBoxEnableBeep.Name = "checkBoxEnableBeep";
             this.checkBoxEnableBeep.Size = new System.Drawing.Size(198, 24);
-            this.checkBoxEnableBeep.TabIndex = 0;
+            this.checkBoxEnableBeep.TabIndex = 1;
             this.checkBoxEnableBeep.Text = "Enable beep at capturing";
             this.checkBoxEnableBeep.UseVisualStyleBackColor = true;
             // 
@@ -1160,7 +1178,7 @@
             this.tabCapturing.Margin = new System.Windows.Forms.Padding(4);
             this.tabCapturing.Name = "tabCapturing";
             this.tabCapturing.Padding = new System.Windows.Forms.Padding(4);
-            this.tabCapturing.Size = new System.Drawing.Size(1057, 618);
+            this.tabCapturing.Size = new System.Drawing.Size(1057, 644);
             this.tabCapturing.TabIndex = 1;
             this.tabCapturing.Text = "Capturing";
             this.tabCapturing.UseVisualStyleBackColor = true;
@@ -1180,7 +1198,7 @@
             this.textBoxFilenameFormat.Location = new System.Drawing.Point(8, 165);
             this.textBoxFilenameFormat.Name = "textBoxFilenameFormat";
             this.textBoxFilenameFormat.Size = new System.Drawing.Size(284, 24);
-            this.textBoxFilenameFormat.TabIndex = 63;
+            this.textBoxFilenameFormat.TabIndex = 3;
             this.textBoxFilenameFormat.Text = "{COMPONENT}_{NUMBER}_{VAR2}_{DATE}_{TIME}";
             // 
             // label3
@@ -1216,7 +1234,7 @@
             this.button2.Location = new System.Drawing.Point(8, 100);
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(284, 28);
-            this.button2.TabIndex = 11;
+            this.button2.TabIndex = 2;
             this.button2.Text = "Open capture folder";
             this.button2.UseVisualStyleBackColor = true;
             // 
@@ -1225,7 +1243,7 @@
             this.buttonCaptureStart.Location = new System.Drawing.Point(8, 274);
             this.buttonCaptureStart.Name = "buttonCaptureStart";
             this.buttonCaptureStart.Size = new System.Drawing.Size(284, 52);
-            this.buttonCaptureStart.TabIndex = 10;
+            this.buttonCaptureStart.TabIndex = 20;
             this.buttonCaptureStart.Text = "Check oscilloscope connectivity and start capture mode";
             this.buttonCaptureStart.UseVisualStyleBackColor = true;
             // 
@@ -1233,7 +1251,7 @@
             // 
             this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(7, 530);
+            this.label5.Location = new System.Drawing.Point(7, 532);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(52, 20);
             this.label5.TabIndex = 9;
@@ -1246,7 +1264,7 @@
             this.richTextBoxAction.Font = new System.Drawing.Font("Segoe UI", 10.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.richTextBoxAction.Location = new System.Drawing.Point(12, 553);
             this.richTextBoxAction.Name = "richTextBoxAction";
-            this.richTextBoxAction.Size = new System.Drawing.Size(1045, 65);
+            this.richTextBoxAction.Size = new System.Drawing.Size(1045, 83);
             this.richTextBoxAction.TabIndex = 8;
             this.richTextBoxAction.Text = "You should start capture mode";
             // 
@@ -1255,7 +1273,7 @@
             this.textBoxCaptureOutputFolder.Location = new System.Drawing.Point(8, 71);
             this.textBoxCaptureOutputFolder.Name = "textBoxCaptureOutputFolder";
             this.textBoxCaptureOutputFolder.Size = new System.Drawing.Size(284, 27);
-            this.textBoxCaptureOutputFolder.TabIndex = 7;
+            this.textBoxCaptureOutputFolder.TabIndex = 1;
             // 
             // label4
             // 
@@ -1286,7 +1304,7 @@
             0});
             this.numericUpDown1.Name = "numericUpDown1";
             this.numericUpDown1.Size = new System.Drawing.Size(73, 27);
-            this.numericUpDown1.TabIndex = 2;
+            this.numericUpDown1.TabIndex = 4;
             this.numericUpDown1.Value = new decimal(new int[] {
             1,
             0,
@@ -1332,7 +1350,7 @@
             this.tabDebug.Margin = new System.Windows.Forms.Padding(4);
             this.tabDebug.Name = "tabDebug";
             this.tabDebug.Padding = new System.Windows.Forms.Padding(4);
-            this.tabDebug.Size = new System.Drawing.Size(1057, 618);
+            this.tabDebug.Size = new System.Drawing.Size(1057, 644);
             this.tabDebug.TabIndex = 2;
             this.tabDebug.Text = "Debug";
             this.tabDebug.UseVisualStyleBackColor = true;
@@ -1340,7 +1358,7 @@
             // button1
             // 
             this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.button1.Location = new System.Drawing.Point(973, 583);
+            this.button1.Location = new System.Drawing.Point(973, 605);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(75, 27);
             this.button1.TabIndex = 5;
@@ -1364,7 +1382,7 @@
             // buttonSendToDeveloper
             // 
             this.buttonSendToDeveloper.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.buttonSendToDeveloper.Location = new System.Drawing.Point(420, 583);
+            this.buttonSendToDeveloper.Location = new System.Drawing.Point(420, 605);
             this.buttonSendToDeveloper.Name = "buttonSendToDeveloper";
             this.buttonSendToDeveloper.Size = new System.Drawing.Size(328, 27);
             this.buttonSendToDeveloper.TabIndex = 3;
@@ -1376,7 +1394,7 @@
             // 
             this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(7, 562);
+            this.label1.Location = new System.Drawing.Point(7, 584);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(454, 20);
             this.label1.TabIndex = 2;
@@ -1385,7 +1403,7 @@
             // textBoxEmail
             // 
             this.textBoxEmail.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.textBoxEmail.Location = new System.Drawing.Point(11, 585);
+            this.textBoxEmail.Location = new System.Drawing.Point(11, 607);
             this.textBoxEmail.Name = "textBoxEmail";
             this.textBoxEmail.Size = new System.Drawing.Size(403, 27);
             this.textBoxEmail.TabIndex = 1;
@@ -1402,7 +1420,7 @@
             this.rtbLog.Margin = new System.Windows.Forms.Padding(4);
             this.rtbLog.Name = "rtbLog";
             this.rtbLog.ReadOnly = true;
-            this.rtbLog.Size = new System.Drawing.Size(1065, 558);
+            this.rtbLog.Size = new System.Drawing.Size(1065, 580);
             this.rtbLog.TabIndex = 0;
             this.rtbLog.Text = "";
             // 
@@ -1414,7 +1432,7 @@
             this.tabHelp.Margin = new System.Windows.Forms.Padding(4);
             this.tabHelp.Name = "tabHelp";
             this.tabHelp.Padding = new System.Windows.Forms.Padding(4);
-            this.tabHelp.Size = new System.Drawing.Size(1057, 618);
+            this.tabHelp.Size = new System.Drawing.Size(1057, 644);
             this.tabHelp.TabIndex = 3;
             this.tabHelp.Text = "Help";
             this.tabHelp.UseVisualStyleBackColor = true;
@@ -1429,7 +1447,7 @@
             this.richTextBoxHelp.Location = new System.Drawing.Point(8, 23);
             this.richTextBoxHelp.Name = "richTextBoxHelp";
             this.richTextBoxHelp.ReadOnly = true;
-            this.richTextBoxHelp.Size = new System.Drawing.Size(1048, 588);
+            this.richTextBoxHelp.Size = new System.Drawing.Size(1048, 614);
             this.richTextBoxHelp.TabIndex = 61;
             this.richTextBoxHelp.Text = "";
             // 
@@ -1454,7 +1472,7 @@
             this.tabAbout.Margin = new System.Windows.Forms.Padding(4);
             this.tabAbout.Name = "tabAbout";
             this.tabAbout.Padding = new System.Windows.Forms.Padding(4);
-            this.tabAbout.Size = new System.Drawing.Size(1057, 618);
+            this.tabAbout.Size = new System.Drawing.Size(1057, 688);
             this.tabAbout.TabIndex = 4;
             this.tabAbout.Text = "About";
             this.tabAbout.UseVisualStyleBackColor = true;
@@ -1486,34 +1504,16 @@
             this.labelNewVersion5.Text = "New version available ";
             this.labelNewVersion5.Visible = false;
             // 
-            // txtTimeDivValues
-            // 
-            this.txtTimeDivValues.Location = new System.Drawing.Point(223, 607);
-            this.txtTimeDivValues.Margin = new System.Windows.Forms.Padding(4);
-            this.txtTimeDivValues.Name = "txtTimeDivValues";
-            this.txtTimeDivValues.Size = new System.Drawing.Size(302, 27);
-            this.txtTimeDivValues.TabIndex = 59;
-            // 
-            // label13
-            // 
-            this.label13.AutoSize = true;
-            this.label13.Location = new System.Drawing.Point(16, 611);
-            this.label13.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.label13.Name = "label13";
-            this.label13.Size = new System.Drawing.Size(206, 20);
-            this.label13.TabIndex = 60;
-            this.label13.Text = "TIME/DIV values and notation";
-            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1067, 720);
+            this.ClientSize = new System.Drawing.Size(1067, 676);
             this.Controls.Add(this.tabMain);
             this.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(4);
-            this.MinimumSize = new System.Drawing.Size(1085, 697);
+            this.MinimumSize = new System.Drawing.Size(1085, 723);
             this.Name = "Main";
             this.Text = "Oscilloscope Network Capture";
             this.Load += new System.EventHandler(this.Main_Load);

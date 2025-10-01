@@ -224,6 +224,7 @@ namespace Oscilloscope_Network_Capture
                 PopulateCommandTextboxes();        // load default SCPI for selected vendor/model
                 ApplyScpiOverridesForCurrentProfile(); // then apply user overrides (if any)
                 UpdateScpiHeaderLabel();
+                PopulateTimeDivTextbox();
                 ConfigurationService.Save(_config);
             };
 
@@ -234,6 +235,7 @@ namespace Oscilloscope_Network_Capture
                 PopulateCommandTextboxes();        // refresh defaults for the new model
                 ApplyScpiOverridesForCurrentProfile();
                 UpdateScpiHeaderLabel();
+                PopulateTimeDivTextbox();
                 ConfigurationService.Save(_config);
             };
 
@@ -242,6 +244,10 @@ namespace Oscilloscope_Network_Capture
             PopulateCommandTextboxes();
             ApplyScpiOverridesForCurrentProfile();
             UpdateScpiHeaderLabel();
+            PopulateTimeDivTextbox();
+
+            // Wire once
+            WireTimeDivTextbox();
 
             // Prepare error provider for email validation
             _emailErrorProvider = new ErrorProvider();
@@ -822,6 +828,97 @@ namespace Oscilloscope_Network_Capture
             txtCmdOpc.Text = GetCmd(ScopeCommand.OperationComplete);
         }
 
+        // REPLACE: show effective values, preferring saved override if present
+        private void PopulateTimeDivTextbox()
+        {
+            try
+            {
+                var tb = this.Controls.Find("txtTimeDivValues", true).FirstOrDefault() as TextBox;
+                if (tb == null) return;
+
+                var vendor = cboVendor.SelectedItem as string ?? (_config?.Vendor ?? string.Empty);
+                var modelDisplay = cboModel.SelectedItem as string ?? ToDisplayModel(_config?.Model ?? "*");
+                var model = ToModelPattern(modelDisplay);
+
+                // Seed runtime override from config, if present
+                var prof = _config?.ScpiProfiles?.FirstOrDefault(p =>
+                    string.Equals(p.Vendor, vendor, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(p.Model, model, StringComparison.OrdinalIgnoreCase));
+
+                if (prof != null && !string.IsNullOrWhiteSpace(prof.TimeDivValues))
+                {
+                    ScpiProfileRegistry.SetTimeDivTextOverride(vendor, model, prof.TimeDivValues);
+                }
+
+                // Display raw tokens (as-is)
+                var tokens = ScpiProfileRegistry.GetTimeDivTextValues(vendor, model);
+                tb.Text = string.Join(", ", tokens ?? Array.Empty<string>());
+            }
+            catch
+            {
+                // best-effort
+            }
+        }
+
+        // NEW: call once in Main_Load after controls are created (and after _config is loaded)
+        private void WireTimeDivTextbox()
+        {
+            var tb = this.Controls.Find("txtTimeDivValues", true).FirstOrDefault() as TextBox;
+            if (tb == null) return;
+
+            // Apply on focus loss
+            tb.Leave += (s, a) => ApplyTimeDivTextboxToOverrides(tb.Text);
+
+            // Optional: debounce save on edit (keeps UI responsive)
+            var saveTimer = new System.Windows.Forms.Timer { Interval = 500 };
+            saveTimer.Tick += (s, a) =>
+            {
+                saveTimer.Stop();
+                ApplyTimeDivTextboxToOverrides(tb.Text);
+            };
+            tb.TextChanged += (s, a) =>
+            {
+                saveTimer.Stop();
+                saveTimer.Start();
+            };
+        }
+
+        // NEW: parse textbox, apply to ScpiProfileRegistry, and persist in config for current vendor+model
+        private void ApplyTimeDivTextboxToOverrides(string text)
+        {
+            try
+            {
+                var vendor = cboVendor.SelectedItem as string ?? (_config?.Vendor ?? string.Empty);
+                var modelDisplay = cboModel.SelectedItem as string ?? ToDisplayModel(_config?.Model ?? "*");
+                var model = ToModelPattern(modelDisplay);
+
+                // Apply runtime override (immediately affects navigation and SetTimeDiv)
+                ScpiProfileRegistry.SetTimeDivTextOverride(vendor, model, text);
+
+                // Persist in config override for this profile
+                var prof = _config?.ScpiProfiles?.FirstOrDefault(p =>
+                    string.Equals(p.Vendor, vendor, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(p.Model, model, StringComparison.OrdinalIgnoreCase));
+
+                if (prof == null)
+                {
+                    prof = new Oscilloscope_Network_Capture.Core.Configuration.ScpiProfileOverride
+                    {
+                        Vendor = vendor,
+                        Model = model
+                    };
+                    _config.ScpiProfiles.Add(prof);
+                }
+
+                prof.TimeDivValues = text ?? string.Empty;
+                Oscilloscope_Network_Capture.Core.Configuration.ConfigurationService.Save(_config);
+            }
+            catch
+            {
+                // best-effort
+            }
+        }
+
         private void UpdateModelsForVendor()
         {
             var vendor = cboVendor.SelectedItem as string;
@@ -1025,10 +1122,9 @@ namespace Oscilloscope_Network_Capture
                         lblStatusTrigLevelQ.ForeColor = Color.Green;
                         success = true;
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        Logger.Instance.Error("QueryTriggerLevel test failed: " + InnermostMessage(ex));
-                        lblStatusTrigLevelQ.Text = "Fail (" + InnermostMessage(ex) + ")";
+                        lblStatusTrigLevelQ.Text = "Fail";
                         lblStatusTrigLevelQ.ForeColor = Color.Red;
                     }
                 });
@@ -1053,7 +1149,7 @@ namespace Oscilloscope_Network_Capture
                 }
             });
         }
-        
+
         private async void btnTestTrigLevelSet_Click(object sender, EventArgs e)
         {
             SaveOverrideOnTestClick(ScopeCommand.SetTriggerLevel, txtCmdTrigLevelSet.Text);
@@ -1077,10 +1173,9 @@ namespace Oscilloscope_Network_Capture
                         lblStatusTrigLevelSet.Text = "OK";
                         lblStatusTrigLevelSet.ForeColor = Color.Green;
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        Logger.Instance.Error("SetTriggerLevel test failed: " + InnermostMessage(ex));
-                        lblStatusTrigLevelSet.Text = "Fail (" + InnermostMessage(ex) + ")";
+                        lblStatusTrigLevelSet.Text = "Fail";
                         lblStatusTrigLevelSet.ForeColor = Color.Red;
                     }
                 });
@@ -1106,15 +1201,13 @@ namespace Oscilloscope_Network_Capture
                         lblStatusTimeDivQ.ForeColor = Color.Green;
                         success = true;
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        Logger.Instance.Error("QueryTimeDiv test failed: " + InnermostMessage(ex));
-                        lblStatusTimeDivQ.Text = "Fail (" + InnermostMessage(ex) + ")";
+                        lblStatusTimeDivQ.Text = "Fail";
                         lblStatusTimeDivQ.ForeColor = Color.Red;
                     }
                 });
 
-                // Apply final Set-button state after other buttons have been restored
                 if (btnTestTimeDivSet != null)
                 {
                     if (success)
@@ -1157,10 +1250,9 @@ namespace Oscilloscope_Network_Capture
                         lblStatusTimeDivSet.Text = "OK";
                         lblStatusTimeDivSet.ForeColor = Color.Green;
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        Logger.Instance.Error("SetTimeDiv test failed: " + InnermostMessage(ex));
-                        lblStatusTimeDivSet.Text = "Fail (" + InnermostMessage(ex) + ")";
+                        lblStatusTimeDivSet.Text = "Fail";
                         lblStatusTimeDivSet.ForeColor = Color.Red;
                     }
                 });
@@ -1255,15 +1347,15 @@ namespace Oscilloscope_Network_Capture
                         lblStatusDumpImage.Text = "OK";
                         lblStatusDumpImage.ForeColor = System.Drawing.Color.Green;
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        Logger.Instance.Error("DumpImage test failed: " + InnermostMessage(ex));
-                        lblStatusDumpImage.Text = "Fail (" + InnermostMessage(ex) + ")";
+                        lblStatusDumpImage.Text = "Fail";
                         lblStatusDumpImage.ForeColor = System.Drawing.Color.Red;
                     }
                 });
             });
         }
+
         // Helper: inject numeric into SCPI override. If "{0}" exists, format; else replace last number; else append
         private static string InjectNumericArg(string fmt, double value)
         {
@@ -1377,7 +1469,6 @@ namespace Oscilloscope_Network_Capture
                 var steps = ScopeTestSuiteRegistry.Resolve(_config, suite);
                 string lastQueryResponse = null;
                 bool suiteFailed = false;
-                string failReason = null;
 
                 // Separator and suite header before executing
                 Logger.Instance.Debug("---");
@@ -1420,7 +1511,6 @@ namespace Oscilloscope_Network_Capture
                             if (code != 0)
                             {
                                 suiteFailed = true;
-                                failReason = "SysErr: " + (lastQueryResponse ?? string.Empty);
                                 break;
                             }
                         }
@@ -1430,7 +1520,6 @@ namespace Oscilloscope_Network_Capture
                             if (!string.IsNullOrEmpty(s) && s.IndexOf("no error", StringComparison.OrdinalIgnoreCase) < 0)
                             {
                                 suiteFailed = true;
-                                failReason = "SysErr: " + s;
                                 break;
                             }
                         }
@@ -1494,7 +1583,7 @@ namespace Oscilloscope_Network_Capture
 
                 if (suiteFailed)
                 {
-                    statusLabel.Text = "Fail (" + (failReason ?? string.Empty) + ")";
+                    statusLabel.Text = "Fail";
                     statusLabel.ForeColor = Color.Red;
                 }
                 else
@@ -1503,10 +1592,9 @@ namespace Oscilloscope_Network_Capture
                     statusLabel.ForeColor = Color.Green;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Logger.Instance.Error("Suite failed: " + InnermostMessage(ex));
-                statusLabel.Text = "Fail (" + InnermostMessage(ex) + ")";
+                statusLabel.Text = "Fail";
                 statusLabel.ForeColor = Color.Red;
             }
         }
@@ -1984,16 +2072,16 @@ namespace Oscilloscope_Network_Capture
             }
             else if (!string.IsNullOrWhiteSpace(fmtToUse))
             {
-                // Last resort if neither override nor profile contains {0}
                 primaryScpi = (fmtToUse + " " + formattedSeconds).Trim();
             }
             else
             {
-                // Extremely unlikely: no command available; send raw numeric (driver could reject)
                 primaryScpi = formattedSeconds;
             }
 
             bool first = true;
+            string lastQueryResponse = null;
+
             foreach (var step in steps)
             {
                 if (first)
@@ -2011,12 +2099,31 @@ namespace Oscilloscope_Network_Capture
                     continue;
 
                 if (IsQuery(step))
-                    await _scope.SendRawQueryAsync(scpi, ct).ConfigureAwait(true);
+                {
+                    lastQueryResponse = await _scope.SendRawQueryAsync(scpi, ct).ConfigureAwait(true);
+
+                    // Evaluate SYSERR immediately when present
+                    if (step == ScopeCommand.PopLastSystemError)
+                    {
+                        if (TryParseSystemErrorCode(lastQueryResponse, out var code))
+                        {
+                            if (code != 0)
+                                throw new InvalidOperationException("Instrument error: " + (lastQueryResponse ?? string.Empty));
+                        }
+                        else
+                        {
+                            var s = (lastQueryResponse ?? string.Empty).Trim();
+                            if (!string.IsNullOrEmpty(s) && s.IndexOf("no error", StringComparison.OrdinalIgnoreCase) < 0)
+                                throw new InvalidOperationException("Instrument error: " + s);
+                        }
+                    }
+                }
                 else
+                {
                     await _scope.SendRawWriteAsync(scpi, ct).ConfigureAwait(true);
+                }
             }
 
-            // Log as the last line for this suite
             Logger.Instance.Info("TIME/DIV set to " + FormatSecondsToSi(targetSeconds));
         }
 
@@ -2393,7 +2500,6 @@ namespace Oscilloscope_Network_Capture
         {
             var ct = _cts?.Token ?? CancellationToken.None;
 
-            // Suite header
             Logger.Instance.Debug("---");
             Logger.Instance.Debug(ScopeTestSuiteRegistry.GetDisplayName(ScopeTestSuite.SetTriggerLevel) + ":");
 
@@ -2413,11 +2519,12 @@ namespace Oscilloscope_Network_Capture
             }
 
             bool first = true;
+            string lastQueryResponse = null;
+
             foreach (var step in steps)
             {
                 if (first)
                 {
-                    // First step should be SetTriggerLevel
                     if (!string.IsNullOrWhiteSpace(primaryScpi))
                         await _scope.SendRawWriteAsync(primaryScpi, ct).ConfigureAwait(true);
                     else
@@ -2435,12 +2542,31 @@ namespace Oscilloscope_Network_Capture
                     continue;
 
                 if (IsQuery(step))
-                    await _scope.SendRawQueryAsync(scpi, ct).ConfigureAwait(true);
+                {
+                    lastQueryResponse = await _scope.SendRawQueryAsync(scpi, ct).ConfigureAwait(true);
+
+                    // Evaluate SYSERR immediately when present
+                    if (step == ScopeCommand.PopLastSystemError)
+                    {
+                        if (TryParseSystemErrorCode(lastQueryResponse, out var code))
+                        {
+                            if (code != 0)
+                                throw new InvalidOperationException("Instrument error: " + (lastQueryResponse ?? string.Empty));
+                        }
+                        else
+                        {
+                            var s = (lastQueryResponse ?? string.Empty).Trim();
+                            if (!string.IsNullOrEmpty(s) && s.IndexOf("no error", StringComparison.OrdinalIgnoreCase) < 0)
+                                throw new InvalidOperationException("Instrument error: " + s);
+                        }
+                    }
+                }
                 else
+                {
                     await _scope.SendRawWriteAsync(scpi, ct).ConfigureAwait(true);
+                }
             }
 
-            // Final, human-readable Info line (printed last for this suite)
             Logger.Instance.Info("Trigger level set to " + FormatVoltsToSi(targetVolts));
         }
 
@@ -3594,6 +3720,13 @@ namespace Oscilloscope_Network_Capture
             sb.Append(@"Also, sometimes it helps power-recycling the scope, if some wrong commands have been sent.\line ");
             sb.Append(@"\line");
 
+            sb.Append(@"{\fs28{\b Special consideration for a couple of SET commands}}\line ");
+            sb.Append("    * Set trigger level\\line ");
+            sb.Append("        - Keep "+ KeycapRtf("{0}") +" as the value to pass - it will inherit value from \"Query trigger level\", so you cannot manually set a value\\line ");
+            sb.Append("    * Set TIME/DIV\\line ");
+            sb.Append("        - Keep " + KeycapRtf("{0}") + " as the value to pass - it will inherit value from \"Query TIME/DIV\", so you cannot manually set a value\\line ");
+            sb.Append(@"\line");
+
             sb.Append(@"{\fs28{\b How you can help to get your oscilloscope supported in tool}}\line ");
             sb.Append(@"Find the SCP command reference for your oscilloscope, and tweak the test-suites in ""Configuration"" until they are all correct and works.\line ");
             sb.Append(@"When increasing and decreasing TIME/DIV or trigger level, then make sure the scope does not ""tilt"" and go over-range, so make sure the values and notations are correct.\line ");
@@ -3623,5 +3756,7 @@ namespace Oscilloscope_Network_Capture
             if (string.IsNullOrEmpty(s)) return "";
             return s.Replace("\\", "\\\\").Replace("{", "\\{").Replace("}", "\\}");
         }
+
+        
     }
 }
