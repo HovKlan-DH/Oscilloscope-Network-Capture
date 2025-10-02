@@ -22,7 +22,7 @@ My use-case is that I need to do quite a few oscilloscope baseline measurements 
 
 The keyboard actions were implemented to support using an external numpad (or keyboard) placed near your measurement bench, allowing you to control the scope easily without having to fiddle with the knobs.
 
-<img width="602" height="510" alt="image" src="https://github.com/user-attachments/assets/e899a37f-c007-4ba0-82c5-ef021fbe6c5d" />
+<img width="502" height="425" alt="image" src="https://github.com/user-attachments/assets/03fbb77f-1e3b-404e-914b-6f39d02e0f03" />
 
 # Typical ports used (I assume, but not fully sure)
 
