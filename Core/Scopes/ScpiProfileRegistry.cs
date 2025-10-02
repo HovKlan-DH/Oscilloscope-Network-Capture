@@ -9,10 +9,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
     public static class ScpiProfileRegistry
     {
         private static readonly List<ScopeScpiProfile> _profiles = new List<ScopeScpiProfile>();
-
-        // NEW: time/div profiles (seconds per division)
         private static readonly List<TimeDivEntry> _timeDivs = new List<TimeDivEntry>();
-
         private static bool _initialized;
         private static readonly object _sync = new object();      
 
@@ -23,92 +20,228 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
             {
                 if (_initialized) return;
 
-                // -------------------------------------------------
-                // ----------------- SCPI COMMANDS -----------------
-                // -------------------------------------------------
+                // ######################################################################
+                // SCPI COMMANDS
+                // ######################################################################
 
-                // RIGOL defaults
-                _profiles.Add(new ScopeScpiProfile("Rigol")
-                    .Map(ScopeCommand.Identify, "*IDN?")
-                    .Map(ScopeCommand.ClearStatistics, ":CLEAR")
-                    .Map(ScopeCommand.QueryActiveTrigger, ":TRIGGER:STATUS?")
-                    .Map(ScopeCommand.Stop, ":STOP")
-                    .Map(ScopeCommand.Run, ":RUN")
-                    .Map(ScopeCommand.Single, ":SINGLE")
-                    .Map(ScopeCommand.QueryTriggerMode, ":TRIGGER:MODE?")
-                    .Map(ScopeCommand.QueryTriggerLevel, ":TRIGGER:EDGE:LEVEL?")
-                    .Map(ScopeCommand.SetTriggerLevel, ":TRIGGER:EDGE:LEVEL {0}")
-                    .Map(ScopeCommand.QueryTimeDiv, ":TIMEBASE:SCALE?")
-                    .Map(ScopeCommand.SetTimeDiv, ":TIMEBASE:SCALE {0}")
-                    .Map(ScopeCommand.DumpImage, ":DISPLAY:DATA?")
-                    .Map(ScopeCommand.PopLastSystemError, ":SYSTEM:ERROR?")
-                    .Map(ScopeCommand.OperationComplete, "*OPC?"));
+                // Keysight/Agilent
+                // ----------------
+                // InfiniiVision 2000 X-Series
+                // ---
+                // https://www.keysight.com/us/en/assets/9018-06893/programming-guides/9018-06893.pdf
+                //
+                AddSeriesProfiles(
+                    "Keysight",
+                    p => p
+                        .Map(ScopeCommand.Identify, "*IDN?")
+                        .Map(ScopeCommand.ClearStatistics, "*CLS")
+                        .Map(ScopeCommand.QueryActiveTrigger, ":TRIGGER:STATUS?")
+                        .Map(ScopeCommand.Stop, ":STOP")
+                        .Map(ScopeCommand.Run, ":RUN")
+                        .Map(ScopeCommand.Single, ":SINGLE")
+                        .Map(ScopeCommand.QueryTriggerMode, ":TRIGGER:MODE?") // EDGE,GLIT,PATT,TV,DEL,EBUR,OR,RUNT,SHOL,TRAN,SBUS1,USB
+                        .Map(ScopeCommand.QueryTriggerLevel, ":TRIGGER:LEVEL?")
+                        .Map(ScopeCommand.SetTriggerLevel, ":TRIGGER:LEVEL {0}")
+                        .Map(ScopeCommand.QueryTimeDiv, ":TIMEBASE:SCALE?")
+                        .Map(ScopeCommand.SetTimeDiv, ":TIMEBASE:SCALE {0}")
+                        .Map(ScopeCommand.DumpImage, ":DISPLAY:DATA?")
+                        .Map(ScopeCommand.PopLastSystemError, ":SYSTEM:ERROR?")
+                        .Map(ScopeCommand.OperationComplete, "*OPC?"),
+                "InfiniiVision 2000 X-Series"
+                );
 
-                // Rigol MSO2000A/DS2000A Series overrides
-                _profiles.Add(new ScopeScpiProfile("Rigol", "MSO2000A/DS2000A Series")
-                    .Map(ScopeCommand.ClearStatistics, ":MEASURE:STATISTIC:RESET"));
+                // Rigol
+                // -----
+                // DS1000Z/MSO1000Z Series
+                // ---
+                // https://www.batronix.com/files/Rigol/Oszilloskope/_DS&MSO1000Z/MSO_DS1000Z_ProgrammingGuide_EN.pdf
+                //
+                AddSeriesProfiles(
+                    "Rigol",
+                    p => p
+                        .Map(ScopeCommand.Identify, "*IDN?")
+                        .Map(ScopeCommand.ClearStatistics, ":CLEAR") // :MEASURE:STATISTIC:RESET
+                        .Map(ScopeCommand.QueryActiveTrigger, ":TRIGGER:STATUS?")
+                        .Map(ScopeCommand.Stop, ":STOP")
+                        .Map(ScopeCommand.Run, ":RUN")
+                        .Map(ScopeCommand.Single, ":SINGLE")
+                        .Map(ScopeCommand.QueryTriggerMode, ":TRIGGER:MODE?")
+                        .Map(ScopeCommand.QueryTriggerLevel, ":TRIGGER:EDGE:LEVEL?")
+                        .Map(ScopeCommand.SetTriggerLevel, ":TRIGGER:EDGE:LEVEL {0}")
+                        .Map(ScopeCommand.QueryTimeDiv, ":TIMEBASE:SCALE?")
+                        .Map(ScopeCommand.SetTimeDiv, ":TIMEBASE:SCALE {0}")
+                        .Map(ScopeCommand.DumpImage, ":DISPLAY:DATA?")
+                        .Map(ScopeCommand.PopLastSystemError, ":SYSTEM:ERROR?")
+                        .Map(ScopeCommand.OperationComplete, "*OPC?"),
+                "DS1000Z/MSO1000Z Series"
+                );
 
-                // SIGLENT defaults
-                _profiles.Add(new ScopeScpiProfile("Siglent")
-                    .Map(ScopeCommand.Identify, "*IDN?")
-                    .Map(ScopeCommand.ClearStatistics, "*CLS")
-                    .Map(ScopeCommand.QueryActiveTrigger, "TRIG_MODE?")
-                    .Map(ScopeCommand.Stop, "STOP")
-                    .Map(ScopeCommand.Run, "TRIG_MODE AUTO")
-                    .Map(ScopeCommand.Single, "TRIG_MODE SINGLE")
-                    .Map(ScopeCommand.QueryTriggerMode, "TRIG_SELECT?")
-                    .Map(ScopeCommand.QueryTriggerLevel, "TRIG_LEVEL?")
-                    .Map(ScopeCommand.SetTriggerLevel, "TRIG_LEVEL {0}")
-                    .Map(ScopeCommand.QueryTimeDiv, "TIME_DIV?")
-                    .Map(ScopeCommand.SetTimeDiv, "TIME_DIV {0}")
-                    .Map(ScopeCommand.DumpImage, "SCREEN_DUMP")
-                    .Map(ScopeCommand.PopLastSystemError, ":SYST:ERR?")
-                    .Map(ScopeCommand.OperationComplete, "*OPC?"));
+                // Rigol
+                // -----
+                // DS2000A/MSO2000A Series
+                // ---
+                // https://www.batronix.com/files/Rigol/Oszilloskope/_DS&MSO2000A/MSO2000A_DS2000A_ProgrammingGuide_EN.pdf
+                //
+                AddSeriesProfiles(
+                    "Rigol",
+                    p => p
+                        .Map(ScopeCommand.Identify, "*IDN?")
+                        .Map(ScopeCommand.ClearStatistics, ":CLEAR") // :MEASURE:STATISTIC:RESET
+                        .Map(ScopeCommand.QueryActiveTrigger, ":TRIGGER:STATUS?")
+                        .Map(ScopeCommand.Stop, ":STOP")
+                        .Map(ScopeCommand.Run, ":RUN")
+                        .Map(ScopeCommand.Single, ":SINGLE")
+                        .Map(ScopeCommand.QueryTriggerMode, ":TRIGGER:MODE?")
+                        .Map(ScopeCommand.QueryTriggerLevel, ":TRIGGER:EDGE:LEVEL?")
+                        .Map(ScopeCommand.SetTriggerLevel, ":TRIGGER:EDGE:LEVEL {0}")
+                        .Map(ScopeCommand.QueryTimeDiv, ":TIMEBASE:SCALE?")
+                        .Map(ScopeCommand.SetTimeDiv, ":TIMEBASE:SCALE {0}")
+                        .Map(ScopeCommand.DumpImage, ":DISPLAY:DATA?")
+                        .Map(ScopeCommand.PopLastSystemError, ":SYSTEM:ERROR?")
+                        .Map(ScopeCommand.OperationComplete, "*OPC?"),
+                    "DS2000A/MSO2000A Series"
+                );
 
-                // Placeholders for Keysight/Agilent/R&S for later
-                _profiles.Add(new ScopeScpiProfile("Keysight"));
-                _profiles.Add(new ScopeScpiProfile("Agilent")); // historically Agilent -> Keysight
-                _profiles.Add(new ScopeScpiProfile("Rohde & Schwarz"));
+                // Rohde & Schwarz
+                // ---------------
+                // MXO 4 Series
+                // ---
+                // https://www.rohde-schwarz.com/webhelp/MXO4_HTML_UserManual_en/Content/6c816e488c7b4546.htm
+                // https://www.rohde-schwarz.com/cz/driver-pages/remote-control/instrument-error-checking_231244.html
+                // ---
+                AddSeriesProfiles(
+                    "Rohde & Schwarz",
+                    p => p
+                        .Map(ScopeCommand.Identify, "*IDN?")
+                        .Map(ScopeCommand.ClearStatistics, "MEASUREMENT:STATISTICS:RESET")
+                        .Map(ScopeCommand.QueryActiveTrigger, ":TRIGGER:STATUS?")
+                        .Map(ScopeCommand.Stop, ":STOP")
+                        .Map(ScopeCommand.Run, ":RUN")
+                        .Map(ScopeCommand.Single, ":SINGLE")
+                        .Map(ScopeCommand.QueryTriggerMode, "TRIGGER:MODE?") // AUTO,NORMal,FREerun
+                        .Map(ScopeCommand.QueryTriggerLevel, "TRIGGER:LEVEL?")
+                        .Map(ScopeCommand.SetTriggerLevel, "TRIGGER:LEVEL {0}")
+                        .Map(ScopeCommand.QueryTimeDiv, "TIMEBASE:SCALE?")
+                        .Map(ScopeCommand.SetTimeDiv, "TIMEBASE:SCALE {0}")
+                        .Map(ScopeCommand.DumpImage, "HCOPY:DATA?")
+                        .Map(ScopeCommand.PopLastSystemError, "SYSTEM:ERROR?")
+                        .Map(ScopeCommand.OperationComplete, "*OPC?"),
+                    "MXO 4 Series"
+                );
 
-                // -------------------------------------------------
-                // ---------------- TIME/DIV VALUES ----------------
-                // -------------------------------------------------
+                // SIGLENT
+                // -------
+                // SDS1000/1000X Series
+                // SDS2000/2000X Series
+                // --------------------
+                // https://siglentna.com/wp-content/uploads/dlm_uploads/2017/10/ProgrammingGuide_forSDS-1-1.pdf
+                // ---
+                AddSeriesProfiles(
+                    "Siglent",
+                    p => p
+                        .Map(ScopeCommand.Identify, "*IDN?")
+                        .Map(ScopeCommand.ClearStatistics, "*CLS")
+                        .Map(ScopeCommand.QueryActiveTrigger, "TRIG_MODE?")
+                        .Map(ScopeCommand.Stop, "STOP")
+                        .Map(ScopeCommand.Run, "TRIG_MODE AUTO")
+                        .Map(ScopeCommand.Single, "TRIG_MODE SINGLE")
+                        .Map(ScopeCommand.QueryTriggerMode, "TRIG_SELECT?")
+                        .Map(ScopeCommand.QueryTriggerLevel, "TRIG_LEVEL?")
+                        .Map(ScopeCommand.SetTriggerLevel, "TRIG_LEVEL {0}")
+                        .Map(ScopeCommand.QueryTimeDiv, "TIME_DIV?")
+                        .Map(ScopeCommand.SetTimeDiv, "TIME_DIV {0}")
+                        .Map(ScopeCommand.DumpImage, "SCREEN_DUMP")
+                        .Map(ScopeCommand.PopLastSystemError, ":SYST:ERR?")
+                        .Map(ScopeCommand.OperationComplete, "*OPC?"),
+                    "SDS1000/1000X Series",
+                    "SDS2000/2000X Series"
+                );
 
-                // Rigol generic TIME/DIV values (seconds per division)
-                _timeDivs.Add(new TimeDivEntry("Rigol", "*", new[]
-                {
-                    "2e-9", "5e-9", "10e-9", "20e-9", "50e-9",
-                    "100e-9", "200e-9", "500e-9", "1e-6", "2e-6", "5e-6",
-                    "10e-6", "20e-6", "50e-6", "100e-6", "200e-6", "500e-6",
-                    "1e-3", "2e-3", "5e-3", "10e-3", "20e-3", "50e-3",
-                    "100e-3", "200e-3", "500e-3", "1", "2", "5", "10", "20", "50", "100",
-                    "200", "500", "1000"
-                }));
-                _timeDivs.Add(new TimeDivEntry("Rigol", "MSO2000A/DS2000A Series", new[]
-                {
-                    "2nS", "5nS", "10nS", "20nS", "50nS",
-                    "100nS", "200nS", "500nS", "1uS", "2uS", "5uS",
-                    "10uS", "20uS", "50uS", "100uS", "200uS", "500uS",
-                    "1mS", "2mS", "5mS", "10mS", "20mS", "50mS",
-                    "100mS", "200mS", "500mS", "1S", "2S", "5S", "10S", "20S", "50S", "100S",
-                    "200", "500", "1000"
-                }));
-                _timeDivs.Add(new TimeDivEntry("Siglent", "*", new[]
-                {
-                    "2nS", "100nS", "10mS", "20mS", "10uS",
-                    "20uS", "10mS", "20mS", "1S", "10S", "500S"
-                }));
+                // ######################################################################
+                // TIME/DIV VALUES
+                // ######################################################################
 
-                // Example: Rigol DS2202A could override the above if needed
-                // _timeDivs.Add(new TimeDivEntry("Rigol", "DS2202A", new[]{ ... }));
+                // Keysight/Agilent
+                // ----------------
+                // InfiniiVision 2000 X-Series
+                // ---
+                AddTimeDivTokens(
+                    "Keysight",
+                    new[]
+                    {
+                        "5ns","10ns","20ns","50ns","100ns","200ns","500ns",
+                        "1us","2us","5us","10us","20us","50us","100us","200us","500us",
+                        "1ms","2ms","5ms","10ms","20ms","50ms","100ms","200ms","500ms",
+                        "1s","2s","5s","10s","20s","50s"
+                    },
+                    "InfiniiVision 2000 X-Series"
+                );
 
-                // Siglent generic placeholder (1-2-5 decades; replace with real values if different)
-                _timeDivs.Add(new TimeDivEntry("Siglent", "*", Generate125Sequence(1e-9, 50)));
+                // Rigol
+                // -----
+                // DS1000Z Series
+                // ---
+                AddTimeDivTokens(
+                    "Rigol",
+                    new[]
+                    {
+                        "2nS", "5nS", "10nS", "20nS", "50nS", "100nS", "200nS", "500nS",
+                        "1uS", "2uS", "5uS", "10uS", "20uS", "50uS", "100uS", "200uS", "500uS",
+                        "1mS", "2mS", "5mS", "10mS", "20mS", "50mS", "100mS", "200mS", "500mS",
+                        "1S", "2S", "5S", "10S", "20S", "50S", "100S", "200S", "500S", "1000S"
+                    },
+                    "DS1000Z/MSO1000Z Series"
+                );
 
-                // Keysight/Agilent/R&S placeholders until sequences are known
-                _timeDivs.Add(new TimeDivEntry("Keysight", "*", Generate125Sequence("1NS", "2NS", "5NS", "10NS", "20NS", "50NS", "100NS", "200NS", "500NS", "1US", "2US", "5US", "10US", "20US", "50US", "100US", "200US", "500US", "1MS", "2MS", "5MS", "10MS", "20MS", "50MS", "100MS", "200MS", "500MS", "1S", "2S", "5S", "10S", "20S", "50S")));
-                _timeDivs.Add(new TimeDivEntry("Agilent", "*", Generate125Sequence("1NS", "2NS", "5NS", "10NS", "20NS", "50NS", "100NS", "200NS", "500NS", "1US", "2US", "5US", "10US", "20US", "50US", "100US", "200US", "500US", "1MS", "2MS", "5MS", "10MS", "20MS", "50MS", "100MS", "200MS", "500MS", "1S", "2S", "5S", "10S", "20S", "50S")));
-                _timeDivs.Add(new TimeDivEntry("Rohde & Schwarz", "*", Generate125Sequence(1e-9, 50)));
+                // Rigol
+                // -----
+                // DS2000A/MSO2000A Series
+                // ---
+                AddTimeDivTokens(
+                    "Rigol",
+                    new[]
+                    {
+                        "2nS", "5nS", "10nS", "20nS", "50nS", "100nS", "200nS", "500nS",
+                        "1uS", "2uS", "5uS", "10uS", "20uS", "50uS", "100uS", "200uS", "500uS",
+                        "1mS", "2mS", "5mS", "10mS", "20mS", "50mS", "100mS", "200mS", "500mS",
+                        "1S", "2S", "5S", "10S", "20S", "50S", "100S", "200S", "500S", "1000S"
+                    },
+                    "DS2000A/MSO2000A Series"
+                );
+
+                // Rohde & Schwarz
+                // ---------------
+                // MXO 4 Series
+                // ---
+                AddTimeDivTokens(
+                    "Rohde & Schwarz",
+                    new[]
+                    {
+                        "2nS", "5nS", "10nS", "20nS", "50nS", "100nS", "200nS", "500nS",
+                        "1uS", "2uS", "5uS", "10uS", "20uS", "50uS", "100uS", "200uS", "500uS",
+                        "1mS", "2mS", "5mS", "10mS", "20mS", "50mS", "100mS", "200mS", "500mS",
+                        "1S", "2S", "5S", "10S", "20S", "50S", "100S", "200S", "500S", "1000S"
+                    },
+                    "MXO 4 Series"
+                );
+
+                // Siglent
+                // -----
+                // SDS1000/1000X Series
+                // SDS2000/2000X Series
+                // ---
+                AddTimeDivTokens(
+                    "Siglent",
+                    new[]
+                    {
+                        "1nS", "2nS", "5nS", "10nS", "20nS", "50nS", "100nS", "200nS", "500nS",
+                        "1uS", "2uS", "5uS", "10uS", "20uS", "50uS", "100uS", "200uS", "500uS",
+                        "1mS", "2mS", "5mS", "10mS", "20mS", "50mS", "100mS", "200mS", "500mS",
+                        "1S", "2S", "5S", "10S", "20S", "50S"
+                    },
+                    "SDS1000/1000X Series",
+                    "SDS2000/2000X Series"
+                );
 
                 _initialized = true;
             }
@@ -415,6 +548,43 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
             }
             list.Sort();
             return list;
+        }
+
+        // Create identical SCPI profiles for multiple series in one go
+        private static void AddSeriesProfiles(string vendor, Action<ScopeScpiProfile> map, params string[] modelSeries)
+        {
+            if (modelSeries == null || map == null) return;
+            foreach (var series in modelSeries)
+            {
+                if (string.IsNullOrWhiteSpace(series)) continue;
+                var profile = new ScopeScpiProfile(vendor, series);
+                map(profile);
+                _profiles.Add(profile);
+            }
+        }
+
+        // Duplicate the same TIME/DIV token list across multiple series
+        private static void AddTimeDivTokens(string vendor, IEnumerable<string> tokens, params string[] modelSeries)
+        {
+            if (modelSeries == null) return;
+            var tokList = (tokens ?? Enumerable.Empty<string>()).ToArray();
+            foreach (var series in modelSeries)
+            {
+                if (string.IsNullOrWhiteSpace(series)) continue;
+                _timeDivs.Add(new TimeDivEntry(vendor, series, tokList));
+            }
+        }
+
+        // Optional: numeric TIME/DIV duplication across series
+        private static void AddTimeDivValues(string vendor, IEnumerable<double> values, params string[] modelSeries)
+        {
+            if (modelSeries == null) return;
+            var vals = (values ?? Enumerable.Empty<double>()).ToArray();
+            foreach (var series in modelSeries)
+            {
+                if (string.IsNullOrWhiteSpace(series)) continue;
+                _timeDivs.Add(new TimeDivEntry(vendor, series, vals));
+            }
         }
 
         // NEW: simple container for TIME/DIV grids

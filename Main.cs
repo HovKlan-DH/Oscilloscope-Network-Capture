@@ -231,12 +231,16 @@ namespace Oscilloscope_Network_Capture
             cboModel.SelectedIndexChanged += (s, a) =>
             {
                 var modelDisplay = cboModel.SelectedItem as string ?? string.Empty;
-                _config.Model = ToModelPattern(modelDisplay); // e.g., "Generic" => "*"
-                PopulateCommandTextboxes();        // refresh defaults for the new model
+
+                // Persist exact series name
+                _config.Model = modelDisplay;
+
+                PopulateCommandTextboxes();
                 ApplyScpiOverridesForCurrentProfile();
                 UpdateScpiHeaderLabel();
                 PopulateTimeDivTextbox();
-                ConfigurationService.Save(_config);
+
+                Oscilloscope_Network_Capture.Core.Configuration.ConfigurationService.Save(_config);
             };
 
             // Then do the initial populate:
@@ -473,6 +477,10 @@ namespace Oscilloscope_Network_Capture
             WireAdjustToGridComboPersistence();
 
             PopulateHelpTabRtf();
+            PopulateAboutTabRtf();
+
+            // Make hyperlinks clickable in both Help and About
+            WireRichTextBoxHyperlinks("richTextBoxHelp", "richTextBoxAbout");
 
             /*
             // Auto-connect on startup if a config file already existed (not first run)
@@ -717,11 +725,10 @@ namespace Oscilloscope_Network_Capture
             var vendor = cboVendor.SelectedItem as string;
             var modelDisplay = cboModel.SelectedItem as string;
             var model = ToModelPattern(modelDisplay);
-            var profSpecific = ScpiProfileRegistry.Find(vendor, model);
-            var profDefault = ScpiProfileRegistry.Find(vendor, "*");
+
             string scpi;
+            var profSpecific = ScpiProfileRegistry.Find(vendor, model);
             if (profSpecific != null && profSpecific.TryGet(cmd, out scpi)) return scpi;
-            if (profDefault != null && profDefault.TryGet(cmd, out scpi)) return scpi;
             return string.Empty;
         }
 
@@ -802,13 +809,11 @@ namespace Oscilloscope_Network_Capture
             var modelDisplay = cboModel.SelectedItem as string;
             var model = ToModelPattern(modelDisplay);
             var profSpecific = ScpiProfileRegistry.Find(vendor, model);
-            var profDefault = ScpiProfileRegistry.Find(vendor, "*");
 
             string GetCmd(ScopeCommand cmd)
             {
                 string scpi;
                 if (profSpecific != null && profSpecific.TryGet(cmd, out scpi)) return scpi;
-                if (profDefault != null && profDefault.TryGet(cmd, out scpi)) return scpi;
                 return string.Empty;
             }
 
@@ -836,11 +841,17 @@ namespace Oscilloscope_Network_Capture
                 var tb = this.Controls.Find("txtTimeDivValues", true).FirstOrDefault() as TextBox;
                 if (tb == null) return;
 
-                var vendor = cboVendor.SelectedItem as string ?? (_config?.Vendor ?? string.Empty);
-                var modelDisplay = cboModel.SelectedItem as string ?? ToDisplayModel(_config?.Model ?? "*");
+                var vendor = cboVendor.SelectedItem as string;
+                var modelDisplay = cboModel.SelectedItem as string;
                 var model = ToModelPattern(modelDisplay);
 
-                // Seed runtime override from config, if present
+                if (string.IsNullOrWhiteSpace(vendor) || string.IsNullOrWhiteSpace(model))
+                {
+                    tb.Text = string.Empty;
+                    return;
+                }
+
+                // Seed runtime override from config, if present for this exact vendor+model
                 var prof = _config?.ScpiProfiles?.FirstOrDefault(p =>
                     string.Equals(p.Vendor, vendor, StringComparison.OrdinalIgnoreCase) &&
                     string.Equals(p.Model, model, StringComparison.OrdinalIgnoreCase));
@@ -850,7 +861,6 @@ namespace Oscilloscope_Network_Capture
                     ScpiProfileRegistry.SetTimeDivTextOverride(vendor, model, prof.TimeDivValues);
                 }
 
-                // Display raw tokens (as-is)
                 var tokens = ScpiProfileRegistry.GetTimeDivTextValues(vendor, model);
                 tb.Text = string.Join(", ", tokens ?? Array.Empty<string>());
             }
@@ -888,14 +898,17 @@ namespace Oscilloscope_Network_Capture
         {
             try
             {
-                var vendor = cboVendor.SelectedItem as string ?? (_config?.Vendor ?? string.Empty);
-                var modelDisplay = cboModel.SelectedItem as string ?? ToDisplayModel(_config?.Model ?? "*");
+                var vendor = cboVendor.SelectedItem as string;
+                var modelDisplay = cboModel.SelectedItem as string;
                 var model = ToModelPattern(modelDisplay);
 
-                // Apply runtime override (immediately affects navigation and SetTimeDiv)
+                if (string.IsNullOrWhiteSpace(vendor) || string.IsNullOrWhiteSpace(model))
+                    return;
+
+                // Apply runtime override
                 ScpiProfileRegistry.SetTimeDivTextOverride(vendor, model, text);
 
-                // Persist in config override for this profile
+                // Persist to config
                 var prof = _config?.ScpiProfiles?.FirstOrDefault(p =>
                     string.Equals(p.Vendor, vendor, StringComparison.OrdinalIgnoreCase) &&
                     string.Equals(p.Model, model, StringComparison.OrdinalIgnoreCase));
@@ -922,26 +935,58 @@ namespace Oscilloscope_Network_Capture
         private void UpdateModelsForVendor()
         {
             var vendor = cboVendor.SelectedItem as string;
-            var driverModels = ScopeFactory.GetAvailableScopes().Where(d => d.Vendor.Equals(vendor ?? string.Empty, StringComparison.OrdinalIgnoreCase)).Select(d => d.Model);
-            var profileModels = ScpiProfileRegistry.Profiles.Where(p => p.Vendor.Equals(vendor ?? string.Empty, StringComparison.OrdinalIgnoreCase)).Select(p => p.ModelPattern);
+
+            // Collect model series from drivers and profiles (filter out "*" generics)
+            var driverModels = ScopeFactory.GetAvailableScopes()
+                .Where(d => d.Vendor.Equals(vendor ?? string.Empty, StringComparison.OrdinalIgnoreCase))
+                .Select(d => d.Model);
+
+            var profileModels = ScpiProfileRegistry.Profiles
+                .Where(p => p.Vendor.Equals(vendor ?? string.Empty, StringComparison.OrdinalIgnoreCase))
+                .Select(p => p.ModelPattern);
 
             var models = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var m in driverModels) models.Add(ToDisplayModel(m));
-            foreach (var m in profileModels) models.Add(ToDisplayModel(m));
+
+            foreach (var m in driverModels)
+                if (!string.IsNullOrWhiteSpace(m) && m.Trim() != "*")
+                    models.Add(m.Trim());
+
+            foreach (var m in profileModels)
+                if (!string.IsNullOrWhiteSpace(m) && m.Trim() != "*")
+                    models.Add(m.Trim());
 
             var ordered = models
-                .OrderBy(m => string.Equals(m, "Generic", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
-                .ThenBy(m => m, StringComparer.OrdinalIgnoreCase)
+                .OrderBy(m => m, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
             cboModel.Items.Clear();
             cboModel.Items.AddRange(ordered.Cast<object>().ToArray());
 
-            var lastModelDisplay = ToDisplayModel(_config?.Model ?? string.Empty);
-            if (!string.IsNullOrEmpty(lastModelDisplay) && ordered.Any(x => string.Equals(x, lastModelDisplay, StringComparison.OrdinalIgnoreCase)))
-                cboModel.SelectedItem = ordered.First(x => string.Equals(x, lastModelDisplay, StringComparison.OrdinalIgnoreCase));
-            else if (ordered.Count > 0)
-                cboModel.SelectedIndex = 0;
+            // Try to restore the previously saved series for this vendor
+            var savedModelDisplay = (_config?.Model ?? string.Empty);
+            // If older configs stored "*", that won’t match any series; we’ll fall back to first item.
+            int idx = (!string.IsNullOrWhiteSpace(savedModelDisplay))
+                ? ordered.FindIndex(x => string.Equals(x, savedModelDisplay, StringComparison.OrdinalIgnoreCase))
+                : -1;
+
+            if (idx < 0 && ordered.Count > 0) idx = 0;
+
+            if (idx >= 0)
+            {
+                // Update selection (this will also raise SelectedIndexChanged)
+                cboModel.SelectedIndex = idx;
+
+                // Persist immediately as well (in case the event does not fire in some scenarios)
+                var selected = cboModel.SelectedItem as string ?? string.Empty;
+                _config.Model = selected;
+                Oscilloscope_Network_Capture.Core.Configuration.ConfigurationService.Save(_config);
+            }
+            else
+            {
+                // No model available for this vendor; clear persisted model
+                _config.Model = string.Empty;
+                Oscilloscope_Network_Capture.Core.Configuration.ConfigurationService.Save(_config);
+            }
         }
 
         private int GetDefaultPortForVendor(string vendor)
@@ -951,9 +996,9 @@ namespace Oscilloscope_Network_Capture
             {
                 case "Rigol": return 5555;
                 case "Siglent": return 5025;
-                case "Keysight": return 5025;
-                case "Agilent": return 5025;
-                case "Rohde & Schwarz": return 5025;
+//                case "Keysight": return 5025;
+//                case "Agilent": return 5025;
+//                case "Rohde & Schwarz": return 5025;
                 default: return 5025;
             }
         }
@@ -1422,12 +1467,12 @@ namespace Oscilloscope_Network_Capture
                 // Build payloads
                 var cfgXml = Oscilloscope_Network_Capture.Core.Online.Online.SerializeConfig(_config);
                 var debug = Oscilloscope_Network_Capture.Core.Online.Online.ReadDebugLog();
-                var version = Oscilloscope_Network_Capture.Core.Online.Online.CurrentVersion;
+//                var version = Oscilloscope_Network_Capture.Core.Online.Online.CurrentVersion;
 
                 Logger.Instance.Info("Sending feedback to developer...");
                 using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(35)))
                 {
-                    var resp = await Oscilloscope_Network_Capture.Core.Online.Online.SendFeedbackAsync(cfgXml, debug, email, version, cts.Token).ConfigureAwait(true);
+                    var resp = await Oscilloscope_Network_Capture.Core.Online.Online.SendFeedbackAsync(cfgXml, debug, email, versionThis, cts.Token).ConfigureAwait(true);
 
                     if (string.Equals(resp, "Success", StringComparison.OrdinalIgnoreCase))
                     {
@@ -1880,7 +1925,11 @@ namespace Oscilloscope_Network_Capture
         // Update the capture-mode key handler to enforce the allowed tabs
         private void Form1_Capture_KeyDown(object sender, KeyEventArgs e)
         {
+            // Only process keys while capture mode is active
             if (!_captureMode) return;
+
+            // Only allow hotkeys when on Capturing or Debug tabs
+            if (!IsKeyboardContextAllowed()) return;
 
             if (e.KeyCode == Keys.Enter)
             {
@@ -1890,8 +1939,10 @@ namespace Oscilloscope_Network_Capture
                 {
                     await CaptureAndSaveAsync();
                 });
+                return;
             }
-            else if (e.KeyCode == Keys.Delete)
+
+            if (e.KeyCode == Keys.Delete)
             {
                 if (checkBoxEnableDelete.Checked)
                 {
@@ -1899,20 +1950,25 @@ namespace Oscilloscope_Network_Capture
                     e.SuppressKeyPress = true;
                     DeleteLastSavedFile();
                 }
+                return;
             }
+
             // * => SINGLE (Numpad * or Shift+8)
-            else if (e.KeyCode == Keys.Multiply || (e.KeyCode == Keys.D8 && e.Shift))
+            if (e.KeyCode == Keys.Multiply || (e.KeyCode == Keys.D8 && e.Shift))
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
                 _ = ExecuteCaptureKeyAsync(async () => { await RunSuiteHeadlessAsync(ScopeTestSuite.Single); });
+                return;
             }
+
             // / => RUN (Numpad / or / key)
-            else if (e.KeyCode == Keys.Divide || e.KeyCode == Keys.OemQuestion)
+            if (e.KeyCode == Keys.Divide || e.KeyCode == Keys.OemQuestion)
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
                 _ = ExecuteCaptureKeyAsync(async () => { await RunSuiteHeadlessAsync(ScopeTestSuite.Run); });
+                return;
             }
 
             // UP => adjust trigger up
@@ -1931,9 +1987,11 @@ namespace Oscilloscope_Network_Capture
                     KeyActionType.AdjustTrigger,
                     coalesceIfBusy: () => AdjustTriggerLevelAsync(+1)
                 );
+                return;
             }
+
             // DOWN => adjust trigger down
-            else if (e.KeyCode == Keys.Down)
+            if (e.KeyCode == Keys.Down)
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
@@ -1948,23 +2006,29 @@ namespace Oscilloscope_Network_Capture
                     KeyActionType.AdjustTrigger,
                     coalesceIfBusy: () => AdjustTriggerLevelAsync(-1)
                 );
+                return;
             }
+
             // PLUS => zoom-in (smaller TIME/DIV)
-            else if (e.KeyCode == Keys.Add || e.KeyCode == Keys.Oemplus)
+            if (e.KeyCode == Keys.Add || e.KeyCode == Keys.Oemplus)
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
                 _ = ExecuteCaptureKeyAsync(async () => { await AdjustTimeDivAsync(+1); });
+                return;
             }
+
             // MINUS => zoom-out (larger TIME/DIV)
-            else if (e.KeyCode == Keys.Subtract || e.KeyCode == Keys.OemMinus)
+            if (e.KeyCode == Keys.Subtract || e.KeyCode == Keys.OemMinus)
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
                 _ = ExecuteCaptureKeyAsync(async () => { await AdjustTimeDivAsync(-1); });
+                return;
             }
+
             // Numpad Decimal => ClearStatistics
-            else if (e.KeyCode == Keys.Decimal)
+            if (e.KeyCode == Keys.Decimal)
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
@@ -1972,6 +2036,7 @@ namespace Oscilloscope_Network_Capture
                 {
                     await RunSuiteHeadlessAsync(ScopeTestSuite.ClearStatistics);
                 });
+                return;
             }
         }
 
@@ -3562,8 +3627,9 @@ namespace Oscilloscope_Network_Capture
                     rev = string.Empty;
                 }
 
-                    // Set the application version
-                    versionThis = (date + " " + rev).Trim();
+                // Set the application version
+                versionThis = (date + " " + rev).Trim();
+                labelVersion.Text = "Version: " + versionThis;
 
                 Logger.Instance.Info("Application version is "+ versionThis);
             }
@@ -3744,6 +3810,40 @@ namespace Oscilloscope_Network_Capture
             return sb.ToString();
         }
 
+        private static string BuildAboutRtf()
+        {
+            var sb = new StringBuilder();
+
+            // RTF header with font table (same style as BuildHelpRtf)
+            sb.Append(@"{\rtf1\ansi\deff0");
+            sb.Append(@"{\fonttbl{\f0 Segoe UI;}{\f1 Consolas;}}");
+            sb.Append(@"{\colortbl ;\red0\green0\blue0;}");
+            sb.Append(@"\fs22 "); // 11pt base size
+
+            sb.Append(@"""ONC"" is a simple application, which has been originally designed for one purpose only:\line ");
+            sb.Append(@"\line ");
+
+            sb.Append(@"{""\i Make it easier and faster for me to capture oscilloscope measurements, when creating oscilloscope baseline images for my other project; Commodore Repair Toolbox.}{\i0}""\line ");
+            sb.Append(@"\line ");
+
+            sb.Append(@"It has been designed to work specifically with my Rigol DS2202A oscilloscope, but as it uses the SCPI socket protocol, then it should also work for other oscilloscopes also, if the configured SCPI commands are correct.\line ");
+            sb.Append(@"\line ");
+
+            sb.Append(@"The goal is not to make this a full-blown ""Swiss army knife"" that suits everyones need, but if can help someone other than myself, then I am happy to make this available. For sure I have made it much more robust and user-friendly than my first rough PoC :-)\line ");
+            sb.Append(@"\line ");
+
+            sb.Append(@"You can check for a newer version on the GitHub project page, https://github.com/HovKlan-DH/Oscilloscope-Network-Capture\line ");
+            sb.Append(@"\line ");
+
+            sb.Append(@"Kind regards,\line ");
+            sb.Append(@"\line ");
+
+            sb.Append(@"Dennis Helligsø, dennis@commodore-repair-toolbox.dk\line ");
+
+            sb.Append("}");
+            return sb.ToString();
+        }
+
         private static string KeycapRtf(string text)
         {
             // base font for keys a tad smaller than body
@@ -3757,6 +3857,68 @@ namespace Oscilloscope_Network_Capture
             return s.Replace("\\", "\\\\").Replace("{", "\\{").Replace("}", "\\}");
         }
 
-        
+        private void PopulateAboutTabRtf()
+        {
+            try
+            {
+                // Prefer an explicit about RichTextBox name, else find one on the About tab, else any that looks like "about".
+                var rtb = this.Controls.Find("richTextBoxAbout", true).FirstOrDefault() as RichTextBox;
+
+                if (rtb == null)
+                {
+                    var tabAbout = this.Controls.Find("tabAbout", true).FirstOrDefault() as TabPage;
+                    if (tabAbout != null)
+                        rtb = tabAbout.Controls.OfType<RichTextBox>().FirstOrDefault();
+
+                    if (rtb == null)
+                        rtb = this.Controls.OfType<RichTextBox>()
+                                .FirstOrDefault(x => (x.Name ?? string.Empty).IndexOf("about", StringComparison.OrdinalIgnoreCase) >= 0);
+                }
+
+                if (rtb != null)
+                {
+                    rtb.Rtf = BuildAboutRtf();
+                }
+            }
+            catch { /* best-effort */ }
+        }
+
+        // Add near other private helpers
+        private void WireRichTextBoxHyperlinks(params string[] names)
+        {
+            foreach (var n in names ?? Array.Empty<string>())
+            {
+                var rtb = this.Controls.Find(n, true).FirstOrDefault() as RichTextBox;
+                if (rtb == null) continue;
+
+                // Ensure auto-link detection and hook handler
+                rtb.DetectUrls = true;
+
+                // Avoid multiple subscriptions
+                rtb.LinkClicked -= RichTextBox_LinkClicked;
+                rtb.LinkClicked += RichTextBox_LinkClicked;
+
+                // Re-trigger URL auto-detection after assigning RTF
+                // (RichTextBox sometimes needs a toggle to detect links in RTF)
+                rtb.DetectUrls = false;
+                rtb.DetectUrls = true;
+            }
+        }
+
+        private void RichTextBox_LinkClicked(object sender, LinkClickedEventArgs e)
+        {
+            try
+            {
+                // UseShellExecute ensures default browser is used
+                Process.Start(new ProcessStartInfo(e.LinkText) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.Error("Failed to open link: " + InnermostMessage(ex));
+                try { MessageBox.Show("Unable to open link:\r\n" + e.LinkText, "Open Link", MessageBoxButtons.OK, MessageBoxIcon.Error); } catch { }
+            }
+        }
+
+
     }
 }

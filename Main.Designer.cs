@@ -133,8 +133,11 @@
             this.richTextBoxHelp = new System.Windows.Forms.RichTextBox();
             this.labelNewVersion4 = new System.Windows.Forms.Label();
             this.tabAbout = new System.Windows.Forms.TabPage();
-            this.richTextBox1 = new System.Windows.Forms.RichTextBox();
+            this.richTextBoxAbout = new System.Windows.Forms.RichTextBox();
             this.labelNewVersion5 = new System.Windows.Forms.Label();
+            this.pictureBox1 = new System.Windows.Forms.PictureBox();
+            this.label16 = new System.Windows.Forms.Label();
+            this.labelVersion = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.numPort)).BeginInit();
             this.tabMain.SuspendLayout();
             this.tabConfiguration.SuspendLayout();
@@ -147,6 +150,7 @@
             this.tabDebug.SuspendLayout();
             this.tabHelp.SuspendLayout();
             this.tabAbout.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
             // cboVendor
@@ -1449,7 +1453,7 @@
             this.richTextBoxHelp.ReadOnly = true;
             this.richTextBoxHelp.Size = new System.Drawing.Size(1048, 614);
             this.richTextBoxHelp.TabIndex = 61;
-            this.richTextBoxHelp.Text = "";
+            this.richTextBoxHelp.Text = "Text built dynamically ...";
             // 
             // labelNewVersion4
             // 
@@ -1466,30 +1470,33 @@
             // 
             // tabAbout
             // 
-            this.tabAbout.Controls.Add(this.richTextBox1);
+            this.tabAbout.Controls.Add(this.labelVersion);
+            this.tabAbout.Controls.Add(this.label16);
+            this.tabAbout.Controls.Add(this.pictureBox1);
+            this.tabAbout.Controls.Add(this.richTextBoxAbout);
             this.tabAbout.Controls.Add(this.labelNewVersion5);
             this.tabAbout.Location = new System.Drawing.Point(4, 29);
             this.tabAbout.Margin = new System.Windows.Forms.Padding(4);
             this.tabAbout.Name = "tabAbout";
             this.tabAbout.Padding = new System.Windows.Forms.Padding(4);
-            this.tabAbout.Size = new System.Drawing.Size(1057, 688);
+            this.tabAbout.Size = new System.Drawing.Size(1057, 644);
             this.tabAbout.TabIndex = 4;
             this.tabAbout.Text = "About";
             this.tabAbout.UseVisualStyleBackColor = true;
             // 
-            // richTextBox1
+            // richTextBoxAbout
             // 
-            this.richTextBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            this.richTextBoxAbout.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.richTextBox1.BackColor = System.Drawing.Color.White;
-            this.richTextBox1.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.richTextBox1.Location = new System.Drawing.Point(8, 104);
-            this.richTextBox1.Name = "richTextBox1";
-            this.richTextBox1.ReadOnly = true;
-            this.richTextBox1.Size = new System.Drawing.Size(1044, 506);
-            this.richTextBox1.TabIndex = 1;
-            this.richTextBox1.Text = "https://github.com/HovKlan-DH/Oscilloscope-Network-Capture/releases";
+            this.richTextBoxAbout.BackColor = System.Drawing.Color.White;
+            this.richTextBoxAbout.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.richTextBoxAbout.Location = new System.Drawing.Point(7, 172);
+            this.richTextBoxAbout.Name = "richTextBoxAbout";
+            this.richTextBoxAbout.ReadOnly = true;
+            this.richTextBoxAbout.Size = new System.Drawing.Size(1044, 469);
+            this.richTextBoxAbout.TabIndex = 1;
+            this.richTextBoxAbout.Text = "Text built dynamically ...";
             // 
             // labelNewVersion5
             // 
@@ -1497,12 +1504,42 @@
             this.labelNewVersion5.AutoSize = true;
             this.labelNewVersion5.BackColor = System.Drawing.Color.IndianRed;
             this.labelNewVersion5.ForeColor = System.Drawing.Color.White;
-            this.labelNewVersion5.Location = new System.Drawing.Point(866, 35);
+            this.labelNewVersion5.Location = new System.Drawing.Point(892, 4);
             this.labelNewVersion5.Name = "labelNewVersion5";
             this.labelNewVersion5.Size = new System.Drawing.Size(158, 20);
             this.labelNewVersion5.TabIndex = 0;
             this.labelNewVersion5.Text = "New version available ";
             this.labelNewVersion5.Visible = false;
+            // 
+            // pictureBox1
+            // 
+            this.pictureBox1.Image = ((System.Drawing.Image)(resources.GetObject("pictureBox1.Image")));
+            this.pictureBox1.Location = new System.Drawing.Point(16, 18);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(128, 128);
+            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.pictureBox1.TabIndex = 2;
+            this.pictureBox1.TabStop = false;
+            // 
+            // label16
+            // 
+            this.label16.AutoSize = true;
+            this.label16.Font = new System.Drawing.Font("Segoe UI", 22.2F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label16.Location = new System.Drawing.Point(156, 44);
+            this.label16.Name = "label16";
+            this.label16.Size = new System.Drawing.Size(549, 50);
+            this.label16.TabIndex = 3;
+            this.label16.Text = "Oscilloscope Network Capture";
+            // 
+            // labelVersion
+            // 
+            this.labelVersion.AutoSize = true;
+            this.labelVersion.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelVersion.Location = new System.Drawing.Point(160, 84);
+            this.labelVersion.Name = "labelVersion";
+            this.labelVersion.Size = new System.Drawing.Size(224, 28);
+            this.labelVersion.TabIndex = 4;
+            this.labelVersion.Text = "Version 2025-October-2";
             // 
             // Main
             // 
@@ -1535,6 +1572,7 @@
             this.tabHelp.PerformLayout();
             this.tabAbout.ResumeLayout(false);
             this.tabAbout.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -1581,7 +1619,7 @@
         private System.Windows.Forms.Label labelNewVersion3;
         private System.Windows.Forms.Label labelNewVersion4;
         private System.Windows.Forms.Label labelNewVersion5;
-        private System.Windows.Forms.RichTextBox richTextBox1;
+        private System.Windows.Forms.RichTextBox richTextBoxAbout;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.NumericUpDown numericUpDown1;
         private System.Windows.Forms.TextBox textBoxCaptureOutputFolder;
@@ -1616,6 +1654,9 @@
         private System.Windows.Forms.RichTextBox richTextBoxHelp;
         private System.Windows.Forms.TextBox txtTimeDivValues;
         private System.Windows.Forms.Label label13;
+        private System.Windows.Forms.PictureBox pictureBox1;
+        private System.Windows.Forms.Label labelVersion;
+        private System.Windows.Forms.Label label16;
     }
 }
 

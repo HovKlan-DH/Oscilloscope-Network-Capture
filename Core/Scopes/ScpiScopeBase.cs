@@ -41,12 +41,9 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
             var profileSpecific = ScpiProfileRegistry.Find(Vendor, Model);
             if (profileSpecific != null && profileSpecific.TryGet(cmd, out var scpi))
             {
-                return args == null || args.Length == 0 ? scpi : string.Format(CultureInfo.InvariantCulture, scpi, args);
-            }
-            var profileDefault = ScpiProfileRegistry.Find(Vendor, "*");
-            if (profileDefault != null && profileDefault.TryGet(cmd, out scpi))
-            {
-                return args == null || args.Length == 0 ? scpi : string.Format(CultureInfo.InvariantCulture, scpi, args);
+                return args == null || args.Length == 0
+                    ? scpi
+                    : string.Format(CultureInfo.InvariantCulture, scpi, args);
             }
             throw new NotSupportedException($"SCPI command '{cmd}' not defined for {Vendor} {Model}.");
         }
