@@ -16,6 +16,8 @@ You can easily grab images from the scope, and save them as specifically named f
 - **Debug**
   - Check the _Debug_ tab for exact SCPI commands sent to the scope or errors.
 
+View _Help_ tab for more help.
+
 
 # Variables
 _Variables_ are something that can be used for the filename. E.g. the `{NUMBER}` is a sequential number for every capture you do, or it could be the `{DATE}` and `{TIME}`.
