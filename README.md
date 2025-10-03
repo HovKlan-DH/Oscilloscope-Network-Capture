@@ -35,7 +35,7 @@ The important thing when measuring on an oscilloscope is to focus on getting the
 - `ARROW UP` to raise trigger level
 - `ARROW DOWN` to lower trigger level
 
-The keyboard actions were implemented to support using an external numpad (or keyboard) placed near your measurement bench - maybe with somethiung like this, which I find works like dream for me:
+The keyboard actions were implemented to support using an external numpad (or keyboard) placed near your measurement bench - maybe with something like this, which I find works like a dream for me:
 
 <img width="502" height="425" alt="image" src="https://github.com/user-attachments/assets/03fbb77f-1e3b-404e-914b-6f39d02e0f03" />
 
