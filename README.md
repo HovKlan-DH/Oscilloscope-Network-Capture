@@ -2,6 +2,8 @@
 
 _ONC_ is a simple oscilloscope network capture application, which can communicate with your oscilloscope over the network (not via USB) and standard SCPI commands. It uses the SCPI socket protocol.
 
+You can easily grab images from the scope, and save them as specifically named files on your local computer.
+
 
 # First basic usage
 
