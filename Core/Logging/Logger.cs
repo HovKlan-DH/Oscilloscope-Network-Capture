@@ -24,7 +24,7 @@ namespace Oscilloscope_Network_Capture.Core.Logging
             var baseDir = AppDomain.CurrentDomain.BaseDirectory;
             _logDirectory = baseDir;
             Directory.CreateDirectory(_logDirectory);
-            var fileName = "Oscilloscope Network Capture.log";
+            var fileName = "Oscilloscope-Network-Capture.log";
             _logFilePath = Path.Combine(_logDirectory, fileName);
 
             // Truncate/overwrite on startup

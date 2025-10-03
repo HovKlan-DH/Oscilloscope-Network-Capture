@@ -16,10 +16,10 @@ namespace Oscilloscope_Network_Capture.Core.Online
     {
         private const string FeedbackUrl = "https://commodore-repair-toolbox.dk/feedback-app/";
         private const string UpdateUrl = "https://commodore-repair-toolbox.dk/auto-update/";
-        private const string UserAgent = "ONC 2025-September-14"; // version static text currently: 2025-September-27
 
         // Current running app version string
-        public const string CurrentVersion = "2025-September-27";
+        public static string CurrentVersion = "";
+        private static string UserAgent = "";
 
         public static bool IsValidEmail(string email)
         {
@@ -59,7 +59,7 @@ namespace Oscilloscope_Network_Capture.Core.Online
         {
             try
             {
-                var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Oscilloscope Network Capture.log");
+                var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Oscilloscope-Network-Capture.log");
                 if (!File.Exists(path)) return string.Empty;
                 return File.ReadAllText(path, Encoding.UTF8);
             }
@@ -78,6 +78,8 @@ namespace Oscilloscope_Network_Capture.Core.Online
 
             using (var client = new HttpClient(handler, disposeHandler: true))
             {
+                UserAgent = "ONC " + Main.versionThis;
+
                 client.Timeout = TimeSpan.FromSeconds(30);
                 client.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
 
@@ -104,6 +106,8 @@ namespace Oscilloscope_Network_Capture.Core.Online
             var handler = new HttpClientHandler { AllowAutoRedirect = false };
             using (var client = new HttpClient(handler, disposeHandler: true))
             {
+                UserAgent = "ONC "+ Main.versionThis;
+
                 client.Timeout = TimeSpan.FromSeconds(15);
                 client.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
 

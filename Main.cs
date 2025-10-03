@@ -32,7 +32,7 @@ namespace Oscilloscope_Network_Capture
         private KeyActionType _activeKeyAction = KeyActionType.None;
         private int _keyActionBusy; // 0 = idle, 1 = a capture-mode key action is running
 
-        private string versionThis = "";
+        public static string versionThis = "";
         private string versionOnline = "";
 
         private int _timeDivAdjustBusy;
@@ -1467,7 +1467,6 @@ namespace Oscilloscope_Network_Capture
                 // Build payloads
                 var cfgXml = Oscilloscope_Network_Capture.Core.Online.Online.SerializeConfig(_config);
                 var debug = Oscilloscope_Network_Capture.Core.Online.Online.ReadDebugLog();
-//                var version = Oscilloscope_Network_Capture.Core.Online.Online.CurrentVersion;
 
                 Logger.Instance.Info("Sending feedback to developer...");
                 using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(35)))

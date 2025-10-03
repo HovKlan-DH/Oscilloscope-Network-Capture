@@ -20,7 +20,7 @@ namespace Oscilloscope_Network_Capture.Core.Configuration
             var baseDir = AppDomain.CurrentDomain.BaseDirectory;
             ConfigDirectory = baseDir;
             Directory.CreateDirectory(ConfigDirectory);
-            ConfigPath = Path.Combine(ConfigDirectory, "config.xml");
+            ConfigPath = Path.Combine(ConfigDirectory, "Oscilloscope-Network-Capture.cfg");
             Dirty = false;
         }
 
