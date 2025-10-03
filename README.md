@@ -48,18 +48,19 @@ The keyboard actions were implemented to support using an external numpad (or ke
 
 # Supported scopes
 
-- Keysight/Agilent
+- **Keysight/Agilent**
   - InfiniiVision 2000 X-Series
-- Rigol
+- **Rigol**
   - DS1000Z/MSO1000Z Series
   - DS2000A/MSO2000A Series
-- Rohde & Schwarz
+- **Rohde & Schwarz**
   - MXO 4 Series
-- Siglent
+- **Siglent**
   - SDS1000/1000X Series
   - SDS2000/2000X Series
  
-If you can help me getting support for other scopes, I would be grateful. If so, then please follow this checklist:
+If you can help me getting support for other scopes, I would be grateful.
+If so, then please follow this checklist:
 
 - Launch application and make sure you can connect to the scope
 - Check which are the required SCPI commands to use
