@@ -1,6 +1,6 @@
 # Oscilloscope Network Capture
 
-"_ONC_" is a simple oscilloscope network capture application, which can communicate with your oscilloscope over the network (not via USB). The tool has been developed for own usage, but as it uses a standard SCPI socket protocol, then it it _should_ work on other oscilloscopes also, but I would be happy to know if people with either confirm "_this is working on my scope model XYZ_" or ideally help me reporting this as an error to me.
+_ONC_ is a simple oscilloscope network capture application, which can communicate with your oscilloscope over the network (not via USB). The tool has been developed for own usage, but as it uses a standard SCPI socket protocol, then it it _should_ work on other oscilloscopes also, but I would be happy to know if people with either confirm "_this is working on my scope model XYZ_" or ideally help me reporting this as an error to me.
 
 My use-case is that I need to do quite a few oscilloscope baseline measurements for my other project, [Commodore Repair Toolbox](https://github.com/HovKlan-DH/Commodore-Retro-Toolbox), which is a tool used for troubleshooting retro/vintage Commodore 64 and 128 etc. Then I will capture one IC at a time, and using _ONC_ is considerable faster than capturing this to a USB-pen, transfer it to local PC and rename files (have tried that - no fun in that).
 
