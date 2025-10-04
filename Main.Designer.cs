@@ -165,7 +165,7 @@
             // 
             this.cboVendor.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cboVendor.FormattingEnabled = true;
-            this.cboVendor.Location = new System.Drawing.Point(87, 47);
+            this.cboVendor.Location = new System.Drawing.Point(107, 47);
             this.cboVendor.Margin = new System.Windows.Forms.Padding(4);
             this.cboVendor.Name = "cboVendor";
             this.cboVendor.Size = new System.Drawing.Size(239, 28);
@@ -175,7 +175,7 @@
             // 
             this.cboModel.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cboModel.FormattingEnabled = true;
-            this.cboModel.Location = new System.Drawing.Point(87, 81);
+            this.cboModel.Location = new System.Drawing.Point(107, 81);
             this.cboModel.Margin = new System.Windows.Forms.Padding(4);
             this.cboModel.Name = "cboModel";
             this.cboModel.Size = new System.Drawing.Size(239, 28);
@@ -183,7 +183,7 @@
             // 
             // btnConnect
             // 
-            this.btnConnect.Location = new System.Drawing.Point(351, 47);
+            this.btnConnect.Location = new System.Drawing.Point(371, 47);
             this.btnConnect.Margin = new System.Windows.Forms.Padding(4);
             this.btnConnect.Name = "btnConnect";
             this.btnConnect.Size = new System.Drawing.Size(203, 57);
@@ -208,9 +208,9 @@
             this.lblModel.Location = new System.Drawing.Point(4, 84);
             this.lblModel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblModel.Name = "lblModel";
-            this.lblModel.Size = new System.Drawing.Size(52, 20);
+            this.lblModel.Size = new System.Drawing.Size(93, 20);
             this.lblModel.TabIndex = 1000;
-            this.lblModel.Text = "Model";
+            this.lblModel.Text = "Model series";
             // 
             // lblIp
             // 
@@ -234,7 +234,7 @@
             // 
             // txtIp
             // 
-            this.txtIp.Location = new System.Drawing.Point(87, 115);
+            this.txtIp.Location = new System.Drawing.Point(107, 115);
             this.txtIp.Margin = new System.Windows.Forms.Padding(4);
             this.txtIp.Name = "txtIp";
             this.txtIp.Size = new System.Drawing.Size(239, 27);
@@ -242,7 +242,7 @@
             // 
             // numPort
             // 
-            this.numPort.Location = new System.Drawing.Point(87, 148);
+            this.numPort.Location = new System.Drawing.Point(107, 148);
             this.numPort.Margin = new System.Windows.Forms.Padding(4);
             this.numPort.Maximum = new decimal(new int[] {
             65535,
@@ -419,7 +419,7 @@
             // 
             this.lblStatus.AutoSize = true;
             this.lblStatus.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatus.Location = new System.Drawing.Point(351, 109);
+            this.lblStatus.Location = new System.Drawing.Point(371, 109);
             this.lblStatus.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatus.Name = "lblStatus";
             this.lblStatus.Size = new System.Drawing.Size(232, 20);

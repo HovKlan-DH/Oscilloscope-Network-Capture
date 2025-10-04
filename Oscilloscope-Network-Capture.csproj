@@ -93,18 +93,22 @@
     <Compile Include="Core\Logging\LogLevel.cs" />
     <Compile Include="Core\Online\Online.cs" />
     <Compile Include="Core\Scopes\Attributes\ScopeDriverAttribute.cs" />
-    <Compile Include="Core\Scopes\Implementations\KeysightScope.cs" />
-    <Compile Include="Core\Scopes\Implementations\RigolScope.cs" />
-    <Compile Include="Core\Scopes\Implementations\RohdeSchwarzScope.cs" />
-    <Compile Include="Core\Scopes\Implementations\SiglentScope.cs" />
-    <Compile Include="Core\Scopes\IScope.cs" />
-    <Compile Include="Core\Scopes\ScopeCommand.cs" />
-    <Compile Include="Core\Scopes\ScopeDescriptor.cs" />
-    <Compile Include="Core\Scopes\ScopeFactory.cs" />
-    <Compile Include="Core\Scopes\ScopeScpiProfile.cs" />
-    <Compile Include="Core\Scopes\ScopeTestSuite.cs" />
-    <Compile Include="Core\Scopes\ScpiProfileRegistry.cs" />
-    <Compile Include="Core\Scopes\ScpiScopeBase.cs" />
+    <Compile Include="Core\Scopes\Driver\Keysight.cs" />
+    <Compile Include="Core\Scopes\ScpiProfileRegistry\Keysight.cs" />
+    <Compile Include="Core\Scopes\Driver\Rigol.cs" />
+    <Compile Include="Core\Scopes\ScpiProfileRegistry\Rigol.cs" />
+    <Compile Include="Core\Scopes\Driver\RohdeSchwarz.cs" />
+    <Compile Include="Core\Scopes\ScpiProfileRegistry\RohdeSchwarz.cs" />
+    <Compile Include="Core\Scopes\Driver\Siglent.cs" />
+    <Compile Include="Core\Scopes\ScpiProfileRegistry\Siglent.cs" />
+    <Compile Include="Core\Scopes\Attributes\IScope.cs" />
+    <Compile Include="Core\Scopes\Attributes\ScopeCommand.cs" />
+    <Compile Include="Core\Scopes\Attributes\ScopeDescriptor.cs" />
+    <Compile Include="Core\Scopes\Attributes\ScopeFactory.cs" />
+    <Compile Include="Core\Scopes\Attributes\ScopeScpiProfile.cs" />
+    <Compile Include="Core\Scopes\Attributes\ScopeTestSuite.cs" />
+    <Compile Include="Core\Scopes\Attributes\ScpiProfileRegistry.cs" />
+    <Compile Include="Core\Scopes\Attributes\ScpiScopeBase.cs" />
     <Compile Include="Core\Transport\IInstrumentTransport.cs" />
     <Compile Include="Core\Transport\SocketInstrumentTransport.cs" />
     <Compile Include="Main.cs">
@@ -148,6 +152,7 @@
   <ItemGroup>
     <Content Include="ONC.ico" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

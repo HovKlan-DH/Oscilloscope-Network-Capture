@@ -3,12 +3,12 @@ using Oscilloscope_Network_Capture.Core.Transport;
 
 namespace Oscilloscope_Network_Capture.Core.Scopes.Implementations
 {
-    [ScopeDriver("Rohde & Schwarz", "*")]
-    public sealed class RohdeSchwarzScope : ScpiScopeBase
+    [ScopeDriver("Siglent", "*")]
+    public sealed class Siglent : ScpiScopeBase
     {
-        public RohdeSchwarzScope() : base(new SocketInstrumentTransport())
+        public Siglent() : base(new SocketInstrumentTransport())
         {
-            Vendor = "Rohde & Schwarz";
+            Vendor = "Siglent";
             Model = "*";
         }
     }

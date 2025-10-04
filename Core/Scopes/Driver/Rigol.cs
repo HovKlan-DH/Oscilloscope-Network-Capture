@@ -3,12 +3,12 @@ using Oscilloscope_Network_Capture.Core.Transport;
 
 namespace Oscilloscope_Network_Capture.Core.Scopes.Implementations
 {
-    [ScopeDriver("Siglent", "*")]
-    public sealed class SiglentScope : ScpiScopeBase
+    [ScopeDriver("Rigol", "*")]
+    public sealed class Rigol : ScpiScopeBase
     {
-        public SiglentScope() : base(new SocketInstrumentTransport())
+        public Rigol() : base(new SocketInstrumentTransport())
         {
-            Vendor = "Siglent";
+            Vendor = "Rigol";
             Model = "*";
         }
     }

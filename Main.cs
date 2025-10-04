@@ -1392,9 +1392,11 @@ namespace Oscilloscope_Network_Capture
                         if (string.IsNullOrWhiteSpace(cmd))
                             throw new InvalidOperationException("DumpImage command is empty.");
 
+                        // Raw SCPI definite-length block from the scope
                         var raw = await _scope.SendRawDumpAndReadAsync(cmd, _cts?.Token ?? System.Threading.CancellationToken.None);
-                        var payload = StripIeee4882Block(raw);
 
+                        // Strip SCPI header to feed the decoder (UI preview)
+                        var payload = StripIeee4882Block(raw);
                         if (payload == null || payload.Length == 0)
                             throw new InvalidOperationException("No image data received.");
 
@@ -1414,7 +1416,10 @@ namespace Oscilloscope_Network_Capture
                             Logger.Instance.Error("Image decode failed: " + InnermostMessage(ex));
                         }
 
-                        Logger.Instance.Info("Dumped image.");
+                        // Detailed info based on the SCPI block (handles BMP header and size)
+                        var info = Oscilloscope_Network_Capture.Core.Scopes.ScopeTestSuiteRegistry.FormatDumpImageInfo(raw);
+                        Logger.Instance.Info(info);
+
                         lblStatusDumpImage.Text = "OK";
                         lblStatusDumpImage.ForeColor = System.Drawing.Color.Green;
                     }
@@ -1518,7 +1523,7 @@ namespace Oscilloscope_Network_Capture
                     ? Oscilloscope_Network_Capture.Core.Online.Online.ReadDebugLog()
                     : "(chose not to send debug log)";
 
-                Logger.Instance.Info("Sending feedback to developer...");
+                Logger.Instance.Info("Sending feedback to developer.");
                 using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(35)))
                 {
                     var resp = await Oscilloscope_Network_Capture.Core.Online.Online
@@ -2902,7 +2907,23 @@ namespace Oscilloscope_Network_Capture
                     }
                     catch { }
 
-                    Logger.Instance.Info("Saved capture: " + path);
+                    // Detailed saved-file info (dimensions, bpp, on-disk size)
+                    try
+                    {
+                        long bytes = 0;
+                        try { bytes = new FileInfo(path).Length; } catch { }
+                        var kib = bytes / 1024.0;
+                        int bpp = Image.GetPixelFormatSize(img.PixelFormat);
+                        Logger.Instance.Info(string.Format(
+                            CultureInfo.InvariantCulture,
+                            "Saved capture to {0} ({1}x{2}px, {3}bpp PNG, {4:F1} KB)",
+                            path, img.Width, img.Height, bpp, kib));
+                    }
+                    catch
+                    {
+                        Logger.Instance.Info("Saved capture to " + path);
+                    }
+
                     _savedFileHistory.Add(fileName);
                     savedOk = true;
                 }
@@ -3142,9 +3163,13 @@ namespace Oscilloscope_Network_Capture
             }
 
             if (drained == 0)
-                Logger.Instance.Info("No system errors.");
+            {
+//                Logger.Instance.Info("No system errors.");
+            }
             else
+            {
                 Logger.Instance.Info("Drained " + drained.ToString(CultureInfo.InvariantCulture) + " system error(s).");
+            }
         }
 
         private static string MaskIdnSerialToken(string token)

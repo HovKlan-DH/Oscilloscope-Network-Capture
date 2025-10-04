@@ -6,12 +6,12 @@ using System.Text.RegularExpressions;
 
 namespace Oscilloscope_Network_Capture.Core.Scopes
 {
-    public static class ScpiProfileRegistry
+    public static partial class ScpiProfileRegistry
     {
         private static readonly List<ScopeScpiProfile> _profiles = new List<ScopeScpiProfile>();
         private static readonly List<TimeDivEntry> _timeDivs = new List<TimeDivEntry>();
         private static bool _initialized;
-        private static readonly object _sync = new object();      
+        private static readonly object _sync = new object();
 
         private static void Ensure()
         {
@@ -20,313 +20,11 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
             {
                 if (_initialized) return;
 
-                // ######################################################################
-                // SCPI COMMANDS
-                // ######################################################################
-
-                // Keysight/Agilent
-                // ----------------
-                // InfiniiVision 2000 X-Series
-                //      AGILENT TECHNOLOGIES DSO-X 2004A
-                // ---
-                // https://www.keysight.com/us/en/assets/9018-06893/programming-guides/9018-06893.pdf
-                // ---
-                AddSeriesProfiles(
-                    "Keysight",
-                    p => p
-                        .Map(ScopeCommand.Identify, "*IDN?")
-                        .Map(ScopeCommand.ClearStatistics, "*CLS")
-                        .Map(ScopeCommand.QueryActiveTrigger, ":TRIGGER:STATUS?")
-                        .Map(ScopeCommand.Stop, ":STOP")
-                        .Map(ScopeCommand.Run, ":RUN")
-                        .Map(ScopeCommand.Single, ":SINGLE")
-                        .Map(ScopeCommand.QueryTriggerMode, ":TRIGGER:MODE?") // EDGE,GLIT,PATT,TV,DEL,EBUR,OR,RUNT,SHOL,TRAN,SBUS1,USB
-                        .Map(ScopeCommand.QueryTriggerLevel, ":TRIGGER:LEVEL?")
-                        .Map(ScopeCommand.SetTriggerLevel, ":TRIGGER:LEVEL {0}")
-                        .Map(ScopeCommand.QueryTimeDiv, ":TIMEBASE:SCALE?")
-                        .Map(ScopeCommand.SetTimeDiv, ":TIMEBASE:SCALE {0}")
-                        .Map(ScopeCommand.DumpImage, ":DISPLAY:DATA?")
-                        .Map(ScopeCommand.PopLastSystemError, ":SYSTEM:ERROR?")
-                        .Map(ScopeCommand.OperationComplete, "*OPC?"),
-                "InfiniiVision 2000 X-Series"
-                );
-
-                // Keysight/Agilent
-                // ----------------
-                // InfiniiVision 6000 X-Series
-                //      AGILENT TECHNOLOGIES DSO6104L
-                // ---
-                // https://www.keysight.com/hk/en/assets/9018-07124/programming-guides/9018-07124.pdf
-                // ---
-                AddSeriesProfiles(
-                    "Keysight",
-                    p => p
-                        .Map(ScopeCommand.Identify, "*IDN?")
-                        .Map(ScopeCommand.ClearStatistics, "*CLS")
-                        .Map(ScopeCommand.QueryActiveTrigger, ":TRIGGER:SWEEP?")
-                        .Map(ScopeCommand.Stop, ":STOP")
-                        .Map(ScopeCommand.Run, ":RUN")
-                        .Map(ScopeCommand.Single, ":SINGLE")
-                        .Map(ScopeCommand.QueryTriggerMode, ":TRIGGER:MODE?")
-                        .Map(ScopeCommand.QueryTriggerLevel, ":TRIGGER:EDGE:LEVEL?")
-                        .Map(ScopeCommand.SetTriggerLevel, ":TRIGGER:EDGE:LEVEL {0}")
-                        .Map(ScopeCommand.QueryTimeDiv, ":TIMEBASE:SCALE?")
-                        .Map(ScopeCommand.SetTimeDiv, ":TIMEBASE:SCALE {0}")
-                        .Map(ScopeCommand.DumpImage, ":DISPLAY:DATA? PNG")
-                        .Map(ScopeCommand.PopLastSystemError, ":SYSTEM:ERROR?")
-                        .Map(ScopeCommand.OperationComplete, "*OPC?"),
-                "InfiniiVision 6000 X-Series"
-                );
-
-                // Rigol
-                // -----
-                // DHO1000 Series
-                //      DHO1074
-                // DHO4000 Series
-                // DS1000Z/MSO1000Z Series
-                //      DS1054Z
-                // DS2000A/MSO2000A Series
-                //      DS2202A
-                // ---
-                // https://www.batronix.com/files/Rigol/Oszilloskope/_DS&MSO1000Z/MSO_DS1000Z_ProgrammingGuide_EN.pdf
-                // https://www.batronix.com/files/Rigol/Oszilloskope/_DS&MSO2000A/MSO2000A_DS2000A_ProgrammingGuide_EN.pdf
-                // https://tw.rigol.com/tw/Images/DHO10004000_ProgrammingGuide_EN_tcm17-5395.pdf
-                // ---
-                AddSeriesProfiles(
-                    "Rigol",
-                    p => p
-                        .Map(ScopeCommand.Identify, "*IDN?")
-                        .Map(ScopeCommand.ClearStatistics, ":CLEAR") // :MEASURE:STATISTIC:RESET
-                        .Map(ScopeCommand.QueryActiveTrigger, ":TRIGGER:STATUS?")
-                        .Map(ScopeCommand.Stop, ":STOP")
-                        .Map(ScopeCommand.Run, ":RUN")
-                        .Map(ScopeCommand.Single, ":SINGLE")
-                        .Map(ScopeCommand.QueryTriggerMode, ":TRIGGER:MODE?")
-                        .Map(ScopeCommand.QueryTriggerLevel, ":TRIGGER:EDGE:LEVEL?")
-                        .Map(ScopeCommand.SetTriggerLevel, ":TRIGGER:EDGE:LEVEL {0}")
-                        .Map(ScopeCommand.QueryTimeDiv, ":TIMEBASE:SCALE?")
-                        .Map(ScopeCommand.SetTimeDiv, ":TIMEBASE:SCALE {0}")
-                        .Map(ScopeCommand.DumpImage, ":DISPLAY:DATA?")
-                        .Map(ScopeCommand.PopLastSystemError, ":SYSTEM:ERROR?")
-                        .Map(ScopeCommand.OperationComplete, "*OPC?"),
-                    "DHO1000 Series",
-                    "DHO4000 Series",
-                    "DS1000Z/MSO1000Z Series",
-                    "DS2000A/MSO2000A Series"
-                );
-
-                // Rohde & Schwarz
-                // ---------------
-                // MXO 4 Series
-                //      MXO44
-                // ---
-                // https://www.rohde-schwarz.com/webhelp/MXO4_HTML_UserManual_en/Content/6c816e488c7b4546.htm
-                // https://www.rohde-schwarz.com/cz/driver-pages/remote-control/instrument-error-checking_231244.html
-                // ---
-                AddSeriesProfiles(
-                    "Rohde & Schwarz",
-                    p => p
-                        .Map(ScopeCommand.Identify, "*IDN?")
-                        .Map(ScopeCommand.ClearStatistics, "MEASUREMENT:STATISTICS:RESET")
-                        .Map(ScopeCommand.QueryActiveTrigger, ":TRIGGER:STATUS?")
-                        .Map(ScopeCommand.Stop, ":STOP")
-                        .Map(ScopeCommand.Run, ":RUN")
-                        .Map(ScopeCommand.Single, ":SINGLE")
-                        .Map(ScopeCommand.QueryTriggerMode, "TRIGGER:MODE?") // AUTO,NORMal,FREerun
-                        .Map(ScopeCommand.QueryTriggerLevel, "TRIGGER:LEVEL?")
-                        .Map(ScopeCommand.SetTriggerLevel, "TRIGGER:LEVEL {0}")
-                        .Map(ScopeCommand.QueryTimeDiv, "TIMEBASE:SCALE?")
-                        .Map(ScopeCommand.SetTimeDiv, "TIMEBASE:SCALE {0}")
-                        .Map(ScopeCommand.DumpImage, "HCOPY:DATA?")
-                        .Map(ScopeCommand.PopLastSystemError, "SYSTEM:ERROR?")
-                        .Map(ScopeCommand.OperationComplete, "*OPC?"),
-                    "MXO 4 Series"
-                );
-
-                // Rohde & Schwarz
-                // ---------------
-                // RTA4000 Series
-                //      RTA4004
-                // ---
-                AddSeriesProfiles(
-                    "Rohde & Schwarz",
-                    p => p
-                        .Map(ScopeCommand.Identify, "*IDN?")
-                        .Map(ScopeCommand.ClearStatistics, "MEASUREMENT:STATISTICS:RESET")
-                        .Map(ScopeCommand.QueryActiveTrigger, ":ACQUIRE:STATE?")
-                        .Map(ScopeCommand.Stop, "STOP")
-                        .Map(ScopeCommand.Run, "RUN")
-                        .Map(ScopeCommand.Single, "SINGLE")
-                        .Map(ScopeCommand.QueryTriggerMode, "TRIGGER:A:MODE?")
-                        .Map(ScopeCommand.QueryTriggerLevel, "TRIGGER:A:LEVEL?")
-                        .Map(ScopeCommand.SetTriggerLevel, "TRIGGER:A:LEVEL {0}")
-                        .Map(ScopeCommand.QueryTimeDiv, "TIMEBASE:SCALE?")
-                        .Map(ScopeCommand.SetTimeDiv, "TIMEBASE:SCALE {0}")
-                        .Map(ScopeCommand.DumpImage, "HCOPY:DATA?")
-                        .Map(ScopeCommand.PopLastSystemError, "SYSTEM:ERROR?")
-                        .Map(ScopeCommand.OperationComplete, "*OPC?"),
-                    "RTA4000 Series"
-                );
-
-                // Siglent
-                // -------
-                // SDS1000DL+ Series
-                // SDS1000CML+ Series
-                // SDS1000CNL+ Series
-                // SDS1000X/X+ Series
-                // SDS1000X-E Series
-                //      SDS1104X-E
-                // SDS2000X Series
-                // --------------------
-                // Documented from:
-                //      https://siglentna.com/wp-content/uploads/dlm_uploads/2017/10/ProgrammingGuide_forSDS-1-1.pdf
-                // Backup:
-                //      https://www.siglenteu.com/resources/documents/digital-oscilloscopes/
-                //      https://www.siglenteu.com/download/9103/?tmstv=1759564212
-                // ---
-                AddSeriesProfiles(
-                    "Siglent",
-                    p => p
-                        .Map(ScopeCommand.Identify, "*IDN?")
-                        .Map(ScopeCommand.ClearStatistics, "*CLS")
-                        .Map(ScopeCommand.QueryActiveTrigger, "TRIG_MODE?")
-                        .Map(ScopeCommand.Stop, "STOP")
-                        .Map(ScopeCommand.Run, "TRIG_MODE AUTO")
-                        .Map(ScopeCommand.Single, "TRIG_MODE SINGLE")
-                        .Map(ScopeCommand.QueryTriggerMode, "TRIG_SELECT?")
-                        .Map(ScopeCommand.QueryTriggerLevel, "TRIG_LEVEL?")
-                        .Map(ScopeCommand.SetTriggerLevel, "TRIG_LEVEL {0}")
-                        .Map(ScopeCommand.QueryTimeDiv, "TIME_DIV?")
-                        .Map(ScopeCommand.SetTimeDiv, "TIME_DIV {0}")
-                        .Map(ScopeCommand.DumpImage, "SCREEN_DUMP")
-                        .Map(ScopeCommand.PopLastSystemError, ":SYST:ERR?")
-                        .Map(ScopeCommand.OperationComplete, "*OPC?"),
-                    "SDS1000DL+ Series",
-                    "SDS1000CML+ Series",
-                    "SDS1000CNL+ Series",
-                    "SDS1000X/X+ Series",
-                    "SDS1000X-E Series",
-                    "SDS2000X Series"
-                );
-
-                // Siglent
-                // -------
-                // SDS3000X HD Series
-                //      SDS3104X HD
-                // --------------------
-                // https://www.siglenteu.com/resources/documents/digital-oscilloscopes/
-                // https://www.siglenteu.com/wp-content/uploads/dlm_uploads/2024/02/SDS3000X-HD_ProgrammingGuide_EN11F.pdf
-                // ---
-                AddSeriesProfiles(
-                    "Siglent",
-                    p => p
-                        .Map(ScopeCommand.Identify, "*IDN?")
-                        .Map(ScopeCommand.ClearStatistics, "*CLS")
-                        .Map(ScopeCommand.QueryActiveTrigger, "TRIG_MODE?")
-                        .Map(ScopeCommand.Stop, "STOP")
-                        .Map(ScopeCommand.Run, "TRIG_MODE AUTO")
-                        .Map(ScopeCommand.Single, "TRIG_MODE SINGLE")
-                        .Map(ScopeCommand.QueryTriggerMode, "TRIG_SELECT?")
-                        .Map(ScopeCommand.QueryTriggerLevel, ":TRIGGER:EDGE:LEVEL?")
-                        .Map(ScopeCommand.SetTriggerLevel, ":TRIGGER:EDGE:LEVEL {0}")
-                        .Map(ScopeCommand.QueryTimeDiv, "TIME_DIV?")
-                        .Map(ScopeCommand.SetTimeDiv, "TIME_DIV {0}")
-                        .Map(ScopeCommand.DumpImage, ":PRINT? PNG")
-                        .Map(ScopeCommand.PopLastSystemError, ":SYST:ERR?")
-                        .Map(ScopeCommand.OperationComplete, "*OPC?"),
-                    "SDS3000X HD Series"
-                );
-
-                // ######################################################################
-                // TIME/DIV VALUES
-                // ######################################################################
-
-                // Keysight/Agilent
-                // ----------------
-                // InfiniiVision 2000 X-Series
-                // ---
-                AddTimeDivTokens(
-                    "Keysight",
-                    new[]
-                    {
-                        "5ns","10ns","20ns","50ns","100ns","200ns","500ns",
-                        "1us","2us","5us","10us","20us","50us","100us","200us","500us",
-                        "1ms","2ms","5ms","10ms","20ms","50ms","100ms","200ms","500ms",
-                        "1s","2s","5s","10s","20s","50s"
-                    },
-                    "InfiniiVision 2000 X-Series",
-                    "InfiniiVision 6000 X-Series"
-                );
-
-                // Rigol
-                // -----
-                // DHO1000 Series
-                // DHO4000 Series
-                // DS1000Z/MSO1000Z Series
-                // DS2000A/MSO2000A Series
-                // ---
-                AddTimeDivTokens(
-                    "Rigol",
-                    new[]
-                    {
-                        "2nS", "5nS", "10nS", "20nS", "50nS", "100nS", "200nS", "500nS",
-                        "1uS", "2uS", "5uS", "10uS", "20uS", "50uS", "100uS", "200uS", "500uS",
-                        "1mS", "2mS", "5mS", "10mS", "20mS", "50mS", "100mS", "200mS", "500mS",
-                        "1S", "2S", "5S", "10S", "20S", "50S", "100S", "200S", "500S", "1000S"
-                    },
-                    "DHO1000 Series",
-                    "DHO4000 Series",
-                    "DS1000Z/MSO1000Z Series",
-                    "DS2000A/MSO2000A Series"
-                );
-
-                // Rohde & Schwarz
-                // ---------------
-                // MXO 4 Series
-                // RTA4000 Series
-                // ---
-                AddTimeDivTokens(
-                    "Rohde & Schwarz",
-                    new[]
-                    {
-                        "2nS", "5nS", "10nS", "20nS", "50nS", "100nS", "200nS", "500nS",
-                        "1uS", "2uS", "5uS", "10uS", "20uS", "50uS", "100uS", "200uS", "500uS",
-                        "1mS", "2mS", "5mS", "10mS", "20mS", "50mS", "100mS", "200mS", "500mS",
-                        "1S", "2S", "5S", "10S", "20S", "50S", "100S", "200S", "500S", "1000S"
-                    },
-                    "MXO 4 Series",
-                    "RTA4000 Series"
-                );
-
-                // Siglent
-                // -------
-                // SDS1000DL+ Series
-                // SDS1000CML+ Series
-                // SDS1000CNL+ Series
-                // SDS1000X/X+ Series
-                // SDS1000X-E Series
-                // SDS2000X Series
-                // SDS3000X HD Series
-                // ---
-                AddTimeDivTokens(
-                    "Siglent",
-                    new[]
-                    {
-                        "1nS", "2nS", "5nS", "10nS", "20nS", "50nS", "100nS", "200nS", "500nS",
-                        "1uS", "2uS", "5uS", "10uS", "20uS", "50uS", "100uS", "200uS", "500uS",
-                        "1mS", "2mS", "5mS", "10mS", "20mS", "50mS", "100mS", "200mS", "500mS",
-                        "1S", "2S", "5S", "10S", "20S", "50S"
-                    },
-                    "SDS1000DL+ Series",
-                    "SDS1000CML+ Series",
-                    "SDS1000CNL+ Series",
-                    "SDS1000X/X+ Series",
-                    "SDS1000X-E Series",
-                    "SDS2000X Series",
-                    "SDS3000X HD Series"
-                );
-
-                // ######################################################################
+                // Delegate all vendor/series registration to partial methods
+                RegisterKeysightData();
+                RegisterRigolData();
+                RegisterRohdeSchwarzData();
+                RegisterSiglentData();
 
                 _initialized = true;
             }
@@ -606,7 +304,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
             while (decade * mantissas[mantissas.Length - 1] < minSeconds)
                 decade *= 10;
 
-            for (;;)
+            for (; ; )
             {
                 foreach (var m in mantissas)
                 {
@@ -713,5 +411,11 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                 _values = parsed.OrderBy(v => v).ToList();
             }
         }
+
+        // Vendor data registration hooks (implemented in partials)
+        static partial void RegisterKeysightData();
+        static partial void RegisterRigolData();
+        static partial void RegisterRohdeSchwarzData();
+        static partial void RegisterSiglentData();
     }
 }

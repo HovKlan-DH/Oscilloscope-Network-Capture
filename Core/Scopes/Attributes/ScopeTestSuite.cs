@@ -132,6 +132,118 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
 
         // ---------------- Concurrency helpers: run one suite at a time ----------------
 
+        // ---------------- Image helpers for DumpImage ----------------
+
+        public static bool TryGetImageInfoFromScpiBlock(byte[] scpiBlock, out int width, out int height, out int bitsPerPixel, out int fileSizeBytes)
+        {
+            width = 0;
+            height = 0;
+            bitsPerPixel = 0;
+            fileSizeBytes = 0;
+
+            if (scpiBlock == null || scpiBlock.Length == 0)
+                return false;
+
+            int payloadStart;
+            int payloadLen;
+            if (!TrySliceScpiPayload(scpiBlock, out payloadStart, out payloadLen))
+                return false;
+
+            fileSizeBytes = payloadLen;
+
+            // Basic BMP validation
+            if (payloadLen < 54) return false;
+            if (scpiBlock[payloadStart + 0] != (byte)'B' || scpiBlock[payloadStart + 1] != (byte)'M')
+                return false;
+
+            int dibSize = BitConverter.ToInt32(scpiBlock, payloadStart + 14);
+            if (dibSize < 40) return false; // Expect BITMAPINFOHEADER or larger
+
+            short planes = BitConverter.ToInt16(scpiBlock, payloadStart + 26);
+            if (planes != 1) return false;
+
+            short bpp = BitConverter.ToInt16(scpiBlock, payloadStart + 28);
+            bitsPerPixel = bpp;
+
+            int w = BitConverter.ToInt32(scpiBlock, payloadStart + 18);
+            int h = BitConverter.ToInt32(scpiBlock, payloadStart + 22);
+            // Height can be negative (top-down). Report absolute value.
+            width = w < 0 ? -w : w;
+            height = h < 0 ? -h : h;
+
+            return width > 0 && height > 0 && bitsPerPixel > 0;
+        }
+
+        // Returns: "Dumped image (800x480px, 24bpp BMP, 1125.1 KB)" or a size-only fallback.
+        public static string FormatDumpImageInfo(byte[] scpiBlock)
+        {
+            int payloadStart, payloadLen;
+            if (!TrySliceScpiPayload(scpiBlock, out payloadStart, out payloadLen))
+                return "Dumped image.";
+
+            // Detect container by signature
+            string container = "binary";
+            if (payloadLen >= 2 && scpiBlock[payloadStart + 0] == (byte)'B' && scpiBlock[payloadStart + 1] == (byte)'M') container = "BMP";
+            else if (payloadLen >= 8 && scpiBlock[payloadStart + 0] == 0x89 && scpiBlock[payloadStart + 1] == 0x50 && scpiBlock[payloadStart + 2] == 0x4E && scpiBlock[payloadStart + 3] == 0x47) container = "PNG";
+            else if (payloadLen >= 2 && scpiBlock[payloadStart + 0] == 0xFF && scpiBlock[payloadStart + 1] == 0xD8) container = "JPEG";
+            else if (payloadLen >= 4 && scpiBlock[payloadStart + 0] == (byte)'G' && scpiBlock[payloadStart + 1] == (byte)'I' && scpiBlock[payloadStart + 2] == (byte)'F' && scpiBlock[payloadStart + 3] == (byte)'8') container = "GIF";
+            else if (payloadLen >= 12 &&
+                     scpiBlock[payloadStart + 0] == (byte)'R' && scpiBlock[payloadStart + 1] == (byte)'I' &&
+                     scpiBlock[payloadStart + 2] == (byte)'F' && scpiBlock[payloadStart + 3] == (byte)'F' &&
+                     scpiBlock[payloadStart + 8] == (byte)'W' && scpiBlock[payloadStart + 9] == (byte)'E' &&
+                     scpiBlock[payloadStart + 10] == (byte)'B' && scpiBlock[payloadStart + 11] == (byte)'P')
+                container = "WEBP";
+
+            // Try BMP header to extract w/h/bpp (payload size is the bytes saved)
+            int w, h, bpp, fileSizeBytes;
+            if (TryGetImageInfoFromScpiBlock(scpiBlock, out w, out h, out bpp, out fileSizeBytes))
+            {
+                double kib = fileSizeBytes / 1024.0;
+                return string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                    "Dumped image ({0}x{1}px, {2}bpp {3}, {4:F1} KB)", w, h, bpp, container, kib);
+            }
+
+            // Fallback: report size only
+            double sizeOnlyKiB = payloadLen / 1024.0;
+            return string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                "Dumped image ({0:F1} KB)", sizeOnlyKiB);
+        }
+
+        // Parses SCPI definite-length binary block framing. If no SCPI header, returns the whole buffer.
+        private static bool TrySliceScpiPayload(byte[] buffer, out int payloadStart, out int payloadLen)
+        {
+            payloadStart = 0;
+            payloadLen = 0;
+
+            if (buffer == null) return false;
+            if (buffer.Length >= 3 && buffer[0] == (byte)'#')
+            {
+                int ndigits = buffer[1] - (int)'0';
+                if (ndigits < 1 || ndigits > 9) return false;
+                if (buffer.Length < 2 + ndigits) return false;
+
+                int len = 0;
+                for (int i = 0; i < ndigits; i++)
+                {
+                    int d = buffer[2 + i] - (int)'0';
+                    if (d < 0 || d > 9) return false;
+                    len = len * 10 + d;
+                }
+
+                int start = 2 + ndigits;
+                if (start + len > buffer.Length) return false;
+
+                payloadStart = start;
+                payloadLen = len;
+                return true;
+            }
+
+            // No SCPI framing; treat entire buffer as payload
+            payloadStart = 0;
+            payloadLen = buffer.Length;
+            return true;
+        }
+
         // Global gate to serialize suite execution
         private static readonly SemaphoreSlim SuiteGate = new SemaphoreSlim(1, 1);
 
