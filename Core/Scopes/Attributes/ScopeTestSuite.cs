@@ -10,19 +10,19 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
     public enum ScopeTestSuite
     {
         QueryIdentify,
+        PopLastSystemError,
+        OperationComplete,
         ClearStatistics,
         QueryActiveTrigger,
         Stop,
-        Run,
         Single,
+        Run,
         QueryTriggerMode,
         QueryTriggerLevel,
         SetTriggerLevel,
         QueryTimeDiv,
         SetTimeDiv,
-        DumpImage,
-        PopLastSystemError,
-        OperationComplete
+        DumpImage
     }
 
     public static class ScopeTestSuiteRegistry
@@ -46,70 +46,67 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
             { ScopeTestSuite.OperationComplete, "Query \"Operation Complete\"" },
         };
 
-        public static string GetDisplayName(ScopeTestSuite suite)
-            => Names.TryGetValue(suite, out var n) ? n : suite.ToString();
-
         // Built-in defaults mapping suite id -> ordered ScopeCommand steps
         private static readonly Dictionary<ScopeTestSuite, ScopeCommand[]> Defaults = new Dictionary<ScopeTestSuite, ScopeCommand[]>
         {
             { ScopeTestSuite.QueryIdentify, new[]{
                 ScopeCommand.Identify
-            } },
+            }},
+            { ScopeTestSuite.PopLastSystemError, new[]{
+                ScopeCommand.PopLastSystemError
+            }},
+            { ScopeTestSuite.OperationComplete, new[]{
+                ScopeCommand.OperationComplete
+            }},
             { ScopeTestSuite.ClearStatistics, new[]{
                 ScopeCommand.ClearStatistics,
                 ScopeCommand.OperationComplete,
                 ScopeCommand.PopLastSystemError
-            } },
+            }},
             { ScopeTestSuite.QueryActiveTrigger, new[]{
                 ScopeCommand.QueryActiveTrigger
-            } },
+            }},
             { ScopeTestSuite.Stop, new[]{
                 ScopeCommand.Stop,
                 ScopeCommand.OperationComplete,
                 ScopeCommand.PopLastSystemError
-            } },
-            { ScopeTestSuite.Run, new[]{
-                ScopeCommand.Run,
-                ScopeCommand.OperationComplete,
-                ScopeCommand.PopLastSystemError
-            } },
+            }},
             { ScopeTestSuite.Single, new[]{
                 ScopeCommand.Single,
                 ScopeCommand.OperationComplete,
                 ScopeCommand.PopLastSystemError
-            } },
+            }},
+            { ScopeTestSuite.Run, new[]{
+                ScopeCommand.Run,
+                ScopeCommand.OperationComplete,
+                ScopeCommand.PopLastSystemError
+            }},
             { ScopeTestSuite.QueryTriggerMode, new[]{
                 ScopeCommand.QueryTriggerMode
-            } },
+            }},
             { ScopeTestSuite.QueryTriggerLevel, new[]{
                 ScopeCommand.QueryTriggerLevel
-            } },
+            }},
             { ScopeTestSuite.SetTriggerLevel, new[]{
                 ScopeCommand.SetTriggerLevel,
                 ScopeCommand.OperationComplete,
                 ScopeCommand.PopLastSystemError
-            } },
+            }},
             { ScopeTestSuite.QueryTimeDiv, new[]{
                 ScopeCommand.QueryTimeDiv
-            } },
+            }},
             { ScopeTestSuite.SetTimeDiv, new[]{
                 ScopeCommand.SetTimeDiv,
                 ScopeCommand.OperationComplete,
                 ScopeCommand.PopLastSystemError
-            } },
+            }},
             { ScopeTestSuite.DumpImage, new[]{
-//                ScopeCommand.Stop,
-//                ScopeCommand.OperationComplete,
-//                ScopeCommand.PopLastSystemError,
                 ScopeCommand.DumpImage
-            } },
-            { ScopeTestSuite.PopLastSystemError, new[]{
-                ScopeCommand.PopLastSystemError
-            } },
-            { ScopeTestSuite.OperationComplete, new[]{
-                ScopeCommand.OperationComplete
-            } },
+            }},
         };
+
+        public static string GetDisplayName(ScopeTestSuite suite)
+            => Names.TryGetValue(suite, out var n) ? n : suite.ToString();
 
         // Resolve a suite to an ordered command list, allowing overrides from AppConfiguration
         public static IReadOnlyList<ScopeCommand> Resolve(Oscilloscope_Network_Capture.Core.Configuration.AppConfiguration config, ScopeTestSuite suite)

@@ -1013,7 +1013,7 @@ namespace Oscilloscope_Network_Capture
             switch (vendor.Trim())
             {
                 case "Rigol": return 5555;
-                case "Siglent": return 5025;
+//                case "Siglent": return 5025;
 //                case "Keysight": return 5025;
 //                case "Agilent": return 5025;
 //                case "Rohde & Schwarz": return 5025;

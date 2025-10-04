@@ -94,8 +94,10 @@
     <Compile Include="Core\Online\Online.cs" />
     <Compile Include="Core\Scopes\Attributes\ScopeDriverAttribute.cs" />
     <Compile Include="Core\Scopes\Driver\Keysight.cs" />
+    <Compile Include="Core\Scopes\Driver\Micsig.cs" />
     <Compile Include="Core\Scopes\ScpiProfileRegistry\Keysight.cs" />
     <Compile Include="Core\Scopes\Driver\Rigol.cs" />
+    <Compile Include="Core\Scopes\ScpiProfileRegistry\Micsig.cs" />
     <Compile Include="Core\Scopes\ScpiProfileRegistry\Rigol.cs" />
     <Compile Include="Core\Scopes\Driver\RohdeSchwarz.cs" />
     <Compile Include="Core\Scopes\ScpiProfileRegistry\RohdeSchwarz.cs" />

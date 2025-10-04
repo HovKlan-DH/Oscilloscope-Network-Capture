@@ -4,42 +4,39 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
 {
     public static partial class ScpiProfileRegistry
     {
-        static partial void RegisterRigolData()
+        static partial void RegisterMicsigData()
         {
             // ######################################################################
             // SCPI COMMANDS
             // ######################################################################
 
-            // https://www.batronix.com/files/Rigol/Oszilloskope/_DS&MSO1000Z/MSO_DS1000Z_ProgrammingGuide_EN.pdf
-            // https://www.batronix.com/files/Rigol/Oszilloskope/_DS&MSO2000A/MSO2000A_DS2000A_ProgrammingGuide_EN.pdf
-            // https://tw.rigol.com/tw/Images/DHO10004000_ProgrammingGuide_EN_tcm17-5395.pdf
-            // ---
             AddSeriesProfiles(
-                "Rigol",
+                "Micsig",
                 new[]
                 {
-                    "DHO1000",
-                    "DHO4000",
-                    "DS1000Z",
-                    "DS2000A",
-                    "MSO1000Z",
-                    "MSO2000A"
+                    "ATO",
+                    "ETO",
+                    "MDO",
+                    "MHO3",
+                    "SATO",
+                    "STO",
+                    "TO"
                 },
                 p => p
                     .Map(ScopeCommand.Identify, "*IDN?")
-                    .Map(ScopeCommand.PopLastSystemError, ":SYSTEM:ERROR?")
+                    .Map(ScopeCommand.PopLastSystemError, ":SYST:ERR?")
                     .Map(ScopeCommand.OperationComplete, "*OPC?")
-                    .Map(ScopeCommand.ClearStatistics, ":CLEAR")
-                    .Map(ScopeCommand.QueryActiveTrigger, ":TRIGGER:STATUS?")
-                    .Map(ScopeCommand.Stop, ":STOP")
-                    .Map(ScopeCommand.Single, ":SINGLE")
-                    .Map(ScopeCommand.Run, ":RUN")
-                    .Map(ScopeCommand.QueryTriggerMode, ":TRIGGER:MODE?")
+                    .Map(ScopeCommand.ClearStatistics, ":MEASURE:STATISTIC:RESET")
+                    .Map(ScopeCommand.QueryActiveTrigger, ":TRIGGER:STATUS?") 
+                    .Map(ScopeCommand.Stop, ":MENU:STOP")
+                    .Map(ScopeCommand.Single, ":MENU:SINGlE")
+                    .Map(ScopeCommand.Run, ":MENU:RUN")
+                    .Map(ScopeCommand.QueryTriggerMode, ":TRIGGER:TYPE?")
                     .Map(ScopeCommand.QueryTriggerLevel, ":TRIGGER:EDGE:LEVEL?")
                     .Map(ScopeCommand.SetTriggerLevel, ":TRIGGER:EDGE:LEVEL {0}")
-                    .Map(ScopeCommand.QueryTimeDiv, ":TIMEBASE:SCALE?")
-                    .Map(ScopeCommand.SetTimeDiv, ":TIMEBASE:SCALE {0}")
-                    .Map(ScopeCommand.DumpImage, ":DISPLAY:DATA?")
+                    .Map(ScopeCommand.QueryTimeDiv, ":TIMEBASE:ZOOM:SCALE?")
+                    .Map(ScopeCommand.SetTimeDiv, ":TIMEBASE:ZOOM:SCAlE {0}")
+                    .Map(ScopeCommand.DumpImage, ":WAV:DATA?")
             );
 
             // ######################################################################
@@ -47,15 +44,16 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
             // ######################################################################
 
             AddTimeDivTokens(
-                "Rigol",
+                "Micsig",
                 new[]
                 {
-                    "DHO1000",
-                    "DHO4000",
-                    "DS1000Z",
-                    "DS2000A",
-                    "MSO1000Z",
-                    "MSO2000A"
+                    "ATO",
+                    "ETO",
+                    "MDO",
+                    "MHO3",
+                    "SATO",
+                    "STO",
+                    "TO"
                 },
                 new[]
                 {

@@ -22,6 +22,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
 
                 // Delegate all vendor/series registration to partial methods
                 RegisterKeysightData();
+                RegisterMicsigData();
                 RegisterRigolData();
                 RegisterRohdeSchwarzData();
                 RegisterSiglentData();
@@ -334,7 +335,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
         }
 
         // Create identical SCPI profiles for multiple series in one go
-        private static void AddSeriesProfiles(string vendor, Action<ScopeScpiProfile> map, params string[] modelSeries)
+        private static void AddSeriesProfiles(string vendor, IEnumerable<string> modelSeries, Action<ScopeScpiProfile> map)
         {
             if (modelSeries == null || map == null) return;
             foreach (var series in modelSeries)
@@ -347,7 +348,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
         }
 
         // Duplicate the same TIME/DIV token list across multiple series
-        private static void AddTimeDivTokens(string vendor, IEnumerable<string> tokens, params string[] modelSeries)
+        private static void AddTimeDivTokens(string vendor, IEnumerable<string> modelSeries, IEnumerable<string> tokens)
         {
             if (modelSeries == null) return;
             var tokList = (tokens ?? Enumerable.Empty<string>()).ToArray();
@@ -414,6 +415,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
 
         // Vendor data registration hooks (implemented in partials)
         static partial void RegisterKeysightData();
+        static partial void RegisterMicsigData();
         static partial void RegisterRigolData();
         static partial void RegisterRohdeSchwarzData();
         static partial void RegisterSiglentData();
