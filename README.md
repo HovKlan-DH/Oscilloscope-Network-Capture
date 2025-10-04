@@ -11,7 +11,7 @@ You can easily grab images from the scope, and save them as specifically named f
   - Make sure you can connect to the IP address and port defined. Your port settings could be different, if not using standard port.
   - Run all tests to validate your scope can accept the commands given.
 - **Capturing**
-  - When you can connect to the scope, you can start capturing.
+  - When you can connect to the scope, you can start capturing with `ENTER`.
     - Capturing will only work in the two tabs _Capturing_ and _Debug_.
 - **Debug**
   - Check the _Debug_ tab for exact SCPI commands sent to the scope or errors.
@@ -49,15 +49,38 @@ The keyboard actions were implemented to support using an external numpad (or ke
 # Supported scopes
 
 - **Keysight/Agilent**
-  - InfiniiVision 2000 X-Series
+  - InfiniiVision 2000 X 
+  - InfiniiVision 6000 X
 - **Rigol**
-  - DS1000Z/MSO1000Z Series
-  - DS2000A/MSO2000A Series
+  - DHO1000
+  - DHO4000
+  - DS1000Z
+  - DS2000A
+  - MSO1000Z
+  - MSO2000A
 - **Rohde & Schwarz**
-  - MXO 4 Series
+  - MXO 4
+  - RTA4000
 - **Siglent**
-  - SDS1000/1000X Series
-  - SDS2000/2000X Series
+  - SDS800X HD
+  - SDS1000DL+
+  - SDS1000CML+
+  - SDS1000CNL+
+  - SDS1000X
+  - SDS1000X+
+  - SDS1000X-E
+  - SDS1000X HD
+  - SDS2000X
+  - SDS2000X HD
+  - SDS2000X Plus
+  - SDS3000X HD
+  - SDS5000X
+  - SDS6000 Pro
+  - SDS6000A
+  - SDS6000L
+  - SDS7000A
+  - SHS800X
+  - SHS1000X
  
 If you can help me getting support for other scopes, I would be grateful.
 If so, then please follow this checklist:
@@ -70,14 +93,23 @@ If so, then please follow this checklist:
 
 # Screenshots
 
-<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/b32ab37b-8253-4e77-93a9-15df490b8720" />
 
-<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/d0775c06-84e9-4aa1-81d7-2aa4721694bd" />
+<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/6955586a-8e9a-4291-bddd-4a380eacddd9" />
 
-<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/f141f912-9bf3-4905-ac5b-b5375aaac5b9" />
 
-<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/07146834-9646-426b-94e5-081207c9a42f" />
+<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/ff684323-9427-4fde-92c7-81b92098757b" />
 
-<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/88254776-1931-432a-8fba-f5a656d7eea4" />
 
-<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/d436658b-eca2-4c95-911f-8be240dfa705" />
+<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/2c062af0-63f9-4b6b-86e7-1434132c9711" />
+
+
+<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/d18d213e-e5bd-4ff7-b68e-b2d251349aeb" />
+
+
+<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/1c4dd614-2260-4c15-9033-697567122789" />
+
+
+<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/f68bb338-1567-4e71-9448-9d7f612e6fb0" />
+
+
+<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/57710b2c-e685-43b4-96b0-a13b1ea6aa01" />
