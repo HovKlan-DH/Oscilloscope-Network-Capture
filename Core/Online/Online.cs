@@ -69,7 +69,7 @@ namespace Oscilloscope_Network_Capture.Core.Online
             }
         }
 
-        public static async Task<string> SendFeedbackAsync(string configXml, string debugText, string email, string version, CancellationToken token)
+        public static async Task<string> SendFeedbackAsync(string configXml, string debugText, string email, string version, string feedback, CancellationToken token)
         {
             var handler = new HttpClientHandler
             {
@@ -84,12 +84,13 @@ namespace Oscilloscope_Network_Capture.Core.Online
                 client.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
 
                 var pairs = new List<KeyValuePair<string, string>>
-                {
-                    new KeyValuePair<string, string>("config", configXml ?? string.Empty),
-                    new KeyValuePair<string, string>("debug", debugText ?? string.Empty),
-                    new KeyValuePair<string, string>("version", version ?? string.Empty),
-                    new KeyValuePair<string, string>("email", email ?? string.Empty),
-                };
+        {
+            new KeyValuePair<string, string>("config", configXml ?? string.Empty),
+            new KeyValuePair<string, string>("debug", debugText ?? string.Empty),
+            new KeyValuePair<string, string>("version", version ?? string.Empty),
+            new KeyValuePair<string, string>("email", email ?? string.Empty),
+            new KeyValuePair<string, string>("feedback", feedback ?? string.Empty),
+        };
                 var content = new FormUrlEncodedContent(pairs);
 
                 using (var resp = await client.PostAsync(FeedbackUrl, content, token).ConfigureAwait(false))

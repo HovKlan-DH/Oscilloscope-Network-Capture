@@ -16,11 +16,12 @@ namespace Oscilloscope_Network_Capture.Core.Configuration
         public string Email { get; set; } = string.Empty;
 
         public bool EnableBeep { get; set; } = true;
-        public bool ForceAcquisition { get; set; } = false;
+        public bool ForceAcquisition { get; set; } = true;
         public bool ForceClear { get; set; } = false;
         public bool DeleteDoubleUnderscore { get; set; } = true;
         public bool TrimUnderscore { get; set; } = true;
         public int DelayMs { get; set; } = -1;
+        public bool MaskSerial { get; set; } = true;
 
         public bool WindowMaximized { get; set; } = false;
         public int WindowWidth { get; set; } = 0;

@@ -163,7 +163,7 @@
 REM --------------------------
 REM Pack EXE with ILRepack
 REM --------------------------
-"D:\Data\Development\Visual Studio\Oscilloscope-Network-Capture\packages\ILRepack.2.0.44\tools\ILRepack.exe" /out:"$(TargetPath)" "$(TargetPath)" "(TargetDir)*.dll"
+"D:\Data\Development\Visual Studio\Oscilloscope-Network-Capture\packages\ILRepack.2.0.44\tools\ILRepack.exe" /out:"$(TargetPath)" "$(TargetPath)" "$(TargetPath)" "$(TargetDir)Microsoft.Bcl.HashCode.dll" "$(TargetDir)Ookii.Dialogs.WinForms.dll" "$(TargetPath)" "$(TargetDir)System.Buffers.dll" "$(TargetPath)" "$(TargetDir)System.Collections.Immutable.dll" "$(TargetPath)" "$(TargetDir)System.Formats.Nrbf.dll" "$(TargetPath)" "$(TargetDir)System.Memory.dll" "$(TargetPath)" "$(TargetDir)System.Numerics.Vectors.dll" "$(TargetPath)" "$(TargetDir)System.Reflection.Metadata.dll" "$(TargetPath)" "$(TargetDir)System.Resources.Extensions.dll" "$(TargetPath)" "$(TargetDir)System.Runtime.CompilerServices.Unsafe.dll" "$(TargetPath)" "$(TargetDir)System.ValueTuple.dll"
 
 REM --------------------------------
 REM Digitally sign the application

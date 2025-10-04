@@ -130,6 +130,11 @@ namespace Oscilloscope_Network_Capture
             if (rtbLog.IsDisposed) return;
             // Show exactly the same line as written to logfile
             string line = e.ToString();
+
+            // Mask serial in IDN responses for Debug tab if enabled
+            if (_config != null && _config.MaskSerial)
+                line = MaskSerialInIdnDebugLine(line);
+
             rtbLog.SelectionColor = GetLogColor(e.Level);
             rtbLog.AppendText(line + Environment.NewLine);
             rtbLog.SelectionColor = rtbLog.ForeColor; // restore default
@@ -180,6 +185,8 @@ namespace Oscilloscope_Network_Capture
                 // Default capture folder to executable directory
                 _config.CaptureFolder = Application.StartupPath;
                 _config.EnableDelete = false; // or true, your choice
+//                var chkMaskSerialAtLoad = this.Controls.Find("checkBoxMaskSerial", true).FirstOrDefault() as CheckBox;
+//                _config.MaskSerial = chkMaskSerialAtLoad?.Checked ?? true;
                 ConfigurationService.Save(_config);
             }
 
@@ -379,6 +386,14 @@ namespace Oscilloscope_Network_Capture
                 };
             }
 
+            // Newly added: Mask Serial option
+            checkBoxMaskSerial.Checked = _config.MaskSerial;
+            checkBoxMaskSerial.CheckedChanged += (s, a) =>
+            {
+                _config.MaskSerial = checkBoxMaskSerial.Checked;
+                ConfigurationService.Save(_config);
+            };
+
             if (chkBeep != null)
             {
                 chkBeep.Checked = _config.EnableBeep;
@@ -445,19 +460,22 @@ namespace Oscilloscope_Network_Capture
                 _tbCaptureFolder.Cursor = Cursors.Hand;
                 _tbCaptureFolder.Click += (s, a) => SelectCaptureFolder(_tbCaptureFolder);
             }
-            if (this.Controls.Find("button2", true).FirstOrDefault() is Button btnOpenCapture)
+
+            buttonOpenFolder.Click += (s, a) =>
             {
-                btnOpenCapture.Click += (s, a) => OpenCaptureFolder();
-            }
+                OpenCaptureFolder();
+                textBoxFilenameFormat.Focus();
+                textBoxFilenameFormat.Select(0, 0);
+            };
 
             // Wire capture start button (prefer new name, fallback to legacy button1)
-            _btnCaptureStart = this.Controls.Find("buttonCaptureStart", true).FirstOrDefault() as Button
-                               ?? this.Controls.Find("button1", true).FirstOrDefault() as Button;
-            if (_btnCaptureStart != null)
+            buttonCaptureStart.Click -= async (s, a) => await StartCaptureModeAsync();
+            buttonCaptureStart.Click += async (s, a) =>
             {
-                _btnCaptureStart.Click -= async (s, a) => await StartCaptureModeAsync();
-                _btnCaptureStart.Click += async (s, a) => await RunConnectivityCheckAsync(_btnCaptureStart);
-            }
+                await RunConnectivityCheckAsync(_btnCaptureStart);
+                textBoxFilenameFormat.Focus();
+                textBoxFilenameFormat.Select(0, 0);
+            };
 
             // Enable layout persistence after initial show
             _suppressLayoutSave = false;
@@ -1311,7 +1329,15 @@ namespace Oscilloscope_Network_Capture
             {
                 await WithOtherTestButtonsDisabledAsync((Button)sender, async () =>
                 {
-                    await RunSuiteAsync(ScopeTestSuite.PopLastSystemError, txtCmdSysErr.Text, lblStatusSysErr);
+                    if ((ModifierKeys & Keys.Control) == Keys.Control)
+                    {
+                        await DrainSystemErrorQueueAsync();
+                        if (lblStatusSysErr != null) { lblStatusSysErr.Text = "OK"; lblStatusSysErr.ForeColor = Color.Green; }
+                    }
+                    else
+                    {
+                        await RunSuiteAsync(ScopeTestSuite.PopLastSystemError, txtCmdSysErr.Text, lblStatusSysErr);
+                    }
                 });
             });
         }
@@ -1442,6 +1468,7 @@ namespace Oscilloscope_Network_Capture
             }
             return data ?? new byte[0];
         }
+
         private async void buttonSendToDeveloper_Click(object sender, EventArgs e)
         {
             // Optional: ensure modern TLS
@@ -1451,6 +1478,18 @@ namespace Oscilloscope_Network_Capture
             try
             {
                 if (btn != null) btn.Enabled = false;
+
+                // Require non-empty feedback text
+                string feedback = string.Empty;
+                if (this.Controls.Find("textBoxFeedback", true).FirstOrDefault() is TextBox tbFeedback)
+                    feedback = tbFeedback.Text?.Trim() ?? string.Empty;
+
+                if (string.IsNullOrWhiteSpace(feedback))
+                {
+                    MessageBox.Show("Please provide some information in the feedback field before sending.", "Feedback",
+                        MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
 
                 // Gather email (prefer current textbox value; fallback to config)
                 string email = _config?.Email ?? string.Empty;
@@ -1464,14 +1503,27 @@ namespace Oscilloscope_Network_Capture
                     return;
                 }
 
-                // Build payloads
-                var cfgXml = Oscilloscope_Network_Capture.Core.Online.Online.SerializeConfig(_config);
-                var debug = Oscilloscope_Network_Capture.Core.Online.Online.ReadDebugLog();
+                // Determine attachments via checkboxes (default: include if checkbox missing)
+                var cbDebug = this.Controls.Find("checkBoxFeedbackAttachDebug", true).FirstOrDefault() as CheckBox;
+                var cbConfig = this.Controls.Find("checkBoxFeedbackAttachConfig", true).FirstOrDefault() as CheckBox;
+                bool attachDebug = (cbDebug == null) ? true : cbDebug.Checked;
+                bool attachConfig = (cbConfig == null) ? true : cbConfig.Checked;
+
+                // Build payloads based on checkbox state
+                var cfgXml = attachConfig
+                    ? Oscilloscope_Network_Capture.Core.Online.Online.SerializeConfig(_config)
+                    : "(chose not to send configuration file)";
+
+                var debug = attachDebug
+                    ? Oscilloscope_Network_Capture.Core.Online.Online.ReadDebugLog()
+                    : "(chose not to send debug log)";
 
                 Logger.Instance.Info("Sending feedback to developer...");
                 using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(35)))
                 {
-                    var resp = await Oscilloscope_Network_Capture.Core.Online.Online.SendFeedbackAsync(cfgXml, debug, email, versionThis, cts.Token).ConfigureAwait(true);
+                    var resp = await Oscilloscope_Network_Capture.Core.Online.Online
+                        .SendFeedbackAsync(cfgXml, debug, email, versionThis, feedback, cts.Token)
+                        .ConfigureAwait(true);
 
                     if (string.Equals(resp, "Success", StringComparison.OrdinalIgnoreCase))
                     {
@@ -1520,6 +1572,14 @@ namespace Oscilloscope_Network_Capture
 
                 foreach (var step in steps)
                 {
+                    // Drain the entire system error queue when this step is reached (avoid extra query)
+                    if (step == ScopeCommand.PopLastSystemError)
+                    {
+                        await DrainSystemErrorQueueAsync().ConfigureAwait(true);
+                        lastQueryResponse = "0"; // treat as no error after full drain
+                        continue;
+                    }
+
                     // For the first step we use the textbox content (primaryScpi) to honor overrides; subsequent steps use profile commands
                     if (step == steps.First())
                     {
@@ -1544,28 +1604,6 @@ namespace Oscilloscope_Network_Capture
                         {
                             var scpi = GetDefaultScpiForCurrentProfile(step);
                             await _scope.SendRawWriteAsync(scpi, _cts?.Token ?? CancellationToken.None);
-                        }
-                    }
-
-                    // Evaluate system error responses and mark failure if non-zero
-                    if (step == ScopeCommand.PopLastSystemError)
-                    {
-                        if (TryParseSystemErrorCode(lastQueryResponse, out var code))
-                        {
-                            if (code != 0)
-                            {
-                                suiteFailed = true;
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            var s = (lastQueryResponse ?? string.Empty).Trim();
-                            if (!string.IsNullOrEmpty(s) && s.IndexOf("no error", StringComparison.OrdinalIgnoreCase) < 0)
-                            {
-                                suiteFailed = true;
-                                break;
-                            }
                         }
                     }
                 }
@@ -1614,9 +1652,8 @@ namespace Oscilloscope_Network_Capture
                             Logger.Instance.Info("Dumped image from raw network stream.");
                             break;
 
-                        // NEW: final Debug lines
                         case ScopeTestSuite.PopLastSystemError:
-                            Logger.Instance.Info("Popped last system error.");
+                            Logger.Instance.Info("System error queue drained.");
                             break;
 
                         case ScopeTestSuite.OperationComplete:
@@ -2144,10 +2181,16 @@ namespace Oscilloscope_Network_Capture
             }
 
             bool first = true;
-            string lastQueryResponse = null;
 
             foreach (var step in steps)
             {
+                // Drain the entire system error queue when this step is reached (avoid extra query)
+                if (step == ScopeCommand.PopLastSystemError)
+                {
+                    await DrainSystemErrorQueueAsync().ConfigureAwait(true);
+                    continue;
+                }
+
                 if (first)
                 {
                     await _scope.SendRawWriteAsync(primaryScpi, ct).ConfigureAwait(true);
@@ -2164,23 +2207,8 @@ namespace Oscilloscope_Network_Capture
 
                 if (IsQuery(step))
                 {
-                    lastQueryResponse = await _scope.SendRawQueryAsync(scpi, ct).ConfigureAwait(true);
-
-                    // Evaluate SYSERR immediately when present
-                    if (step == ScopeCommand.PopLastSystemError)
-                    {
-                        if (TryParseSystemErrorCode(lastQueryResponse, out var code))
-                        {
-                            if (code != 0)
-                                throw new InvalidOperationException("Instrument error: " + (lastQueryResponse ?? string.Empty));
-                        }
-                        else
-                        {
-                            var s = (lastQueryResponse ?? string.Empty).Trim();
-                            if (!string.IsNullOrEmpty(s) && s.IndexOf("no error", StringComparison.OrdinalIgnoreCase) < 0)
-                                throw new InvalidOperationException("Instrument error: " + s);
-                        }
-                    }
+                    // normal query (non-error step)
+                    await _scope.SendRawQueryAsync(scpi, ct).ConfigureAwait(true);
                 }
                 else
                 {
@@ -2583,10 +2611,16 @@ namespace Oscilloscope_Network_Capture
             }
 
             bool first = true;
-            string lastQueryResponse = null;
 
             foreach (var step in steps)
             {
+                // Drain the entire system error queue when this step is reached (avoid extra query)
+                if (step == ScopeCommand.PopLastSystemError)
+                {
+                    await DrainSystemErrorQueueAsync().ConfigureAwait(true);
+                    continue;
+                }
+
                 if (first)
                 {
                     if (!string.IsNullOrWhiteSpace(primaryScpi))
@@ -2607,23 +2641,8 @@ namespace Oscilloscope_Network_Capture
 
                 if (IsQuery(step))
                 {
-                    lastQueryResponse = await _scope.SendRawQueryAsync(scpi, ct).ConfigureAwait(true);
-
-                    // Evaluate SYSERR immediately when present
-                    if (step == ScopeCommand.PopLastSystemError)
-                    {
-                        if (TryParseSystemErrorCode(lastQueryResponse, out var code))
-                        {
-                            if (code != 0)
-                                throw new InvalidOperationException("Instrument error: " + (lastQueryResponse ?? string.Empty));
-                        }
-                        else
-                        {
-                            var s = (lastQueryResponse ?? string.Empty).Trim();
-                            if (!string.IsNullOrEmpty(s) && s.IndexOf("no error", StringComparison.OrdinalIgnoreCase) < 0)
-                                throw new InvalidOperationException("Instrument error: " + s);
-                        }
-                    }
+                    // normal query (non-error step)
+                    await _scope.SendRawQueryAsync(scpi, ct).ConfigureAwait(true);
                 }
                 else
                 {
@@ -2693,6 +2712,14 @@ namespace Oscilloscope_Network_Capture
 
             foreach (var step in steps)
             {
+                // Drain the entire system error queue when this step is reached
+                if (step == ScopeCommand.PopLastSystemError)
+                {
+                    await DrainSystemErrorQueueAsync().ConfigureAwait(true);
+                    lastQueryResponse = "0";
+                    continue;
+                }
+
                 if (step == steps.First())
                 {
                     if (IsQuery(step))
@@ -2766,7 +2793,6 @@ namespace Oscilloscope_Network_Capture
                     Logger.Instance.Info("Dumped image from raw network stream.");
                     break;
 
-                // NEW: final Debug lines
                 case ScopeTestSuite.PopLastSystemError:
                     Logger.Instance.Info("Popped last system error.");
                     break;
@@ -3072,6 +3098,96 @@ namespace Oscilloscope_Network_Capture
             return false;
         }
 
+        private async Task DrainSystemErrorQueueAsync()
+        {
+            await EnsureConnectedAsync();
+            var ct = _cts?.Token ?? CancellationToken.None;
+
+            // Prefer profile SCPI; fallback to textbox override
+            var scpi = GetDefaultScpiForCurrentProfile(ScopeCommand.PopLastSystemError);
+            if (string.IsNullOrWhiteSpace(scpi))
+                scpi = txtCmdSysErr?.Text;
+
+            if (string.IsNullOrWhiteSpace(scpi))
+            {
+                Logger.Instance.Error("Cannot drain system error queue: SCPI command is empty.");
+                return;
+            }
+
+            int drained = 0;
+            while (true)
+            {
+                string resp;
+                try
+                {
+                    resp = await _scope.SendRawQueryAsync(scpi, ct).ConfigureAwait(true);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Instance.Error("System error query failed: " + InnermostMessage(ex));
+                    break;
+                }
+
+                // Log each read
+                Logger.Instance.Debug("System error: " + (resp ?? string.Empty));
+
+                int code;
+                if (!TryParseSystemErrorCode(resp, out code))
+                    break; // unparsed -> stop
+
+                if (code == 0)
+                    break; // "no error" -> drained
+
+                drained++;
+            }
+
+            if (drained == 0)
+                Logger.Instance.Info("No system errors.");
+            else
+                Logger.Instance.Info("Drained " + drained.ToString(CultureInfo.InvariantCulture) + " system error(s).");
+        }
+
+        private static string MaskIdnSerialToken(string token)
+        {
+            if (string.IsNullOrEmpty(token)) return token;
+            var inner = TrimQuotes(token).Trim();
+            if (inner.Length == 0) return token;
+            var masked = new string('*', inner.Length);
+            if ((token.StartsWith("\"") && token.EndsWith("\"")) || (token.StartsWith("'") && token.EndsWith("'")))
+                return token.Substring(0, 1) + masked + token.Substring(token.Length - 1, 1);
+            return masked;
+        }
+
+        private string MaskSerialInIdnDebugLine(string line)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(line)) return line;
+                const string marker = "SCPI <<";
+                var idx = line.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+                if (idx < 0) return line;
+
+                var after = idx + marker.Length;
+                while (after < line.Length && char.IsWhiteSpace(line[after])) after++;
+
+                var payload = line.Substring(after);
+                var parts = payload.Split(new[] { ',' }, StringSplitOptions.None);
+                if (parts.Length < 4) return line;
+
+                // Heuristic: mask 3rd CSV token (serial) if it looks like a serial
+                var inner = TrimQuotes(parts[2]).Trim();
+                if (inner.Length < 6) return line; // avoid masking unrelated short tokens
+
+                parts[2] = MaskIdnSerialToken(parts[2]);
+                var rebuilt = string.Join(",", parts);
+                return line.Substring(0, after) + rebuilt;
+            }
+            catch
+            {
+                return line; // best-effort
+            }
+        }
+
         private static string TrimQuotes(string s)
         {
             if (string.IsNullOrEmpty(s)) return s;
@@ -3081,14 +3197,23 @@ namespace Oscilloscope_Network_Capture
             return s;
         }
 
-        private static (string Vendor, string Model, string Firmware) ParseIdn(string idn)
+        private static (string Vendor, string Model, string Serial, string Firmware) ParseIdn(string idn)
         {
-            if (string.IsNullOrWhiteSpace(idn)) return ("", "", "");
-            var parts = idn.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(p => TrimQuotes(p).Trim()).ToArray();
+            if (string.IsNullOrWhiteSpace(idn)) return ("", "", "", "");
+            var parts = idn
+                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => TrimQuotes(p).Trim())
+                .ToArray();
+
             string vendor = parts.Length > 0 ? parts[0] : "";
             string model = parts.Length > 1 ? parts[1] : "";
-            string firmware = parts.Length > 3 ? parts[3] : (parts.Length > 2 ? parts[2] : "");
-            return (vendor, model, firmware);
+
+            // Standard SCPI *IDN? format: VENDOR,MODEL,SERIAL,FIRMWARE
+            // If only 3 fields are present, treat the 3rd as Firmware and leave Serial empty.
+            string serial = parts.Length >= 4 ? parts[2] : "";
+            string firmware = parts.Length >= 4 ? parts[3] : (parts.Length == 3 ? parts[2] : "");
+
+            return (vendor, model, serial, firmware);
         }
 
         private void RestoreWindowLayout()
@@ -3431,18 +3556,18 @@ namespace Oscilloscope_Network_Capture
         }
         */
 
-        private void button1_Click_1(object sender, EventArgs e)
+        private void buttonDebugClear_Click(object sender, EventArgs e)
         {
             try
             {
                 rtbLog.Clear();
+                rtbLog.Focus();
                 Logger.Instance.ClearLog();
                 Logger.Instance.Info("Log cleared by user.");
             }
             catch { }
         }
 
-        // MODIFIED: use QueryIdentify suite and suppress the "ID: ..." Info line
         private async Task ConnectAndRefreshAsync()
         {
             Logger.Instance.Debug("---");
@@ -3492,6 +3617,8 @@ namespace Oscilloscope_Network_Capture
                 Logger.Instance.Info("Oscilloscope identified as:");
                 Logger.Instance.Info("Vendor: " + parsed.Vendor);
                 Logger.Instance.Info("Model: " + parsed.Model);
+                if (!string.IsNullOrWhiteSpace(parsed.Serial))
+                    Logger.Instance.Info("Serial: " + (_config != null && _config.MaskSerial ? new string('*', (parsed.Serial ?? string.Empty).Length) : parsed.Serial));
                 Logger.Instance.Info("Firmware: " + parsed.Firmware);
 
                 SetConnectivityStatus("Success - oscilloscope is connectable via network, and capture mode has now been enabled", Color.Green);
@@ -3518,6 +3645,7 @@ namespace Oscilloscope_Network_Capture
                 var parsed = ParseIdn(idn);
                 if (!string.IsNullOrWhiteSpace(parsed.Vendor)) Logger.Instance.Info("Vendor: " + parsed.Vendor);
                 if (!string.IsNullOrWhiteSpace(parsed.Model)) Logger.Instance.Info("Model: " + parsed.Model);
+                if (!string.IsNullOrWhiteSpace(parsed.Serial)) Logger.Instance.Info("Serial: " + (_config != null && _config.MaskSerial ? new string('*', parsed.Serial.Length) : parsed.Serial));
                 if (!string.IsNullOrWhiteSpace(parsed.Firmware)) Logger.Instance.Info("Firmware: " + parsed.Firmware);
             }
             catch { /* ignore parse/log failures */ }
@@ -3819,7 +3947,7 @@ namespace Oscilloscope_Network_Capture
             sb.Append(@"{\colortbl ;\red0\green0\blue0;}");
             sb.Append(@"\fs22 "); // 11pt base size
 
-            sb.Append(@"""ONC"" is a simple application, which has been originally designed for one purpose only:\line ");
+            sb.Append(@"{\i ONC}{\i0} is a simple application, which has been originally designed for one purpose only:\line ");
             sb.Append(@"\line ");
 
             sb.Append(@"{""\i Make it easier and faster for me to capture oscilloscope measurements, when creating oscilloscope baseline images for my other project; Commodore Repair Toolbox.}{\i0}""\line ");
@@ -3831,7 +3959,7 @@ namespace Oscilloscope_Network_Capture
             sb.Append(@"The goal is not to make this a full-blown ""Swiss army knife"" that suits everyones need, but if can help someone other than myself, then I am happy to make this available. For sure I have made it much more robust and user-friendly than my first rough PoC :-)\line ");
             sb.Append(@"\line ");
 
-            sb.Append(@"You can check for a newer version on the GitHub project page, https://github.com/HovKlan-DH/Oscilloscope-Network-Capture\line ");
+            sb.Append(@"You can check for a newer version on its official GitHub project page, https://github.com/HovKlan-DH/Oscilloscope-Network-Capture\line ");
             sb.Append(@"\line ");
 
             sb.Append(@"Kind regards,\line ");
@@ -3917,7 +4045,5 @@ namespace Oscilloscope_Network_Capture
                 try { MessageBox.Show("Unable to open link:\r\n" + e.LinkText, "Open Link", MessageBoxButtons.OK, MessageBoxIcon.Error); } catch { }
             }
         }
-
-
     }
 }

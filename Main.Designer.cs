@@ -92,6 +92,7 @@
             this.txtCmdIdentify = new System.Windows.Forms.TextBox();
             this.lblCmdIdentify = new System.Windows.Forms.Label();
             this.tabSettings = new System.Windows.Forms.TabPage();
+            this.checkBoxMaskSerial = new System.Windows.Forms.CheckBox();
             this.checkBoxEnableDelete = new System.Windows.Forms.CheckBox();
             this.label14 = new System.Windows.Forms.Label();
             this.comboBoxAdjustToGrid = new System.Windows.Forms.ComboBox();
@@ -112,7 +113,7 @@
             this.label3 = new System.Windows.Forms.Label();
             this.label12 = new System.Windows.Forms.Label();
             this.label10 = new System.Windows.Forms.Label();
-            this.button2 = new System.Windows.Forms.Button();
+            this.buttonOpenFolder = new System.Windows.Forms.Button();
             this.buttonCaptureStart = new System.Windows.Forms.Button();
             this.label5 = new System.Windows.Forms.Label();
             this.richTextBoxAction = new System.Windows.Forms.RichTextBox();
@@ -123,21 +124,27 @@
             this.labelNewVersion2 = new System.Windows.Forms.Label();
             this.picScreen = new System.Windows.Forms.PictureBox();
             this.tabDebug = new System.Windows.Forms.TabPage();
-            this.button1 = new System.Windows.Forms.Button();
+            this.buttonDebugClear = new System.Windows.Forms.Button();
             this.labelNewVersion3 = new System.Windows.Forms.Label();
+            this.rtbLog = new System.Windows.Forms.RichTextBox();
+            this.tabFeedback = new System.Windows.Forms.TabPage();
+            this.checkBoxFeedbackAttachConfig = new System.Windows.Forms.CheckBox();
+            this.checkBoxFeedbackAttachDebug = new System.Windows.Forms.CheckBox();
+            this.label18 = new System.Windows.Forms.Label();
+            this.label17 = new System.Windows.Forms.Label();
+            this.textBoxFeedback = new System.Windows.Forms.TextBox();
             this.buttonSendToDeveloper = new System.Windows.Forms.Button();
             this.label1 = new System.Windows.Forms.Label();
             this.textBoxEmail = new System.Windows.Forms.TextBox();
-            this.rtbLog = new System.Windows.Forms.RichTextBox();
             this.tabHelp = new System.Windows.Forms.TabPage();
             this.richTextBoxHelp = new System.Windows.Forms.RichTextBox();
             this.labelNewVersion4 = new System.Windows.Forms.Label();
             this.tabAbout = new System.Windows.Forms.TabPage();
+            this.labelVersion = new System.Windows.Forms.Label();
+            this.label16 = new System.Windows.Forms.Label();
+            this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.richTextBoxAbout = new System.Windows.Forms.RichTextBox();
             this.labelNewVersion5 = new System.Windows.Forms.Label();
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
-            this.label16 = new System.Windows.Forms.Label();
-            this.labelVersion = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.numPort)).BeginInit();
             this.tabMain.SuspendLayout();
             this.tabConfiguration.SuspendLayout();
@@ -148,6 +155,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.picScreen)).BeginInit();
             this.tabDebug.SuspendLayout();
+            this.tabFeedback.SuspendLayout();
             this.tabHelp.SuspendLayout();
             this.tabAbout.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
@@ -264,6 +272,7 @@
             this.tabMain.Controls.Add(this.tabSettings);
             this.tabMain.Controls.Add(this.tabCapturing);
             this.tabMain.Controls.Add(this.tabDebug);
+            this.tabMain.Controls.Add(this.tabFeedback);
             this.tabMain.Controls.Add(this.tabHelp);
             this.tabMain.Controls.Add(this.tabAbout);
             this.tabMain.Location = new System.Drawing.Point(3, 5);
@@ -979,6 +988,7 @@
             // 
             // tabSettings
             // 
+            this.tabSettings.Controls.Add(this.checkBoxMaskSerial);
             this.tabSettings.Controls.Add(this.checkBoxEnableDelete);
             this.tabSettings.Controls.Add(this.label14);
             this.tabSettings.Controls.Add(this.comboBoxAdjustToGrid);
@@ -1000,10 +1010,22 @@
             this.tabSettings.Text = "Settings";
             this.tabSettings.UseVisualStyleBackColor = true;
             // 
+            // checkBoxMaskSerial
+            // 
+            this.checkBoxMaskSerial.AutoSize = true;
+            this.checkBoxMaskSerial.Checked = true;
+            this.checkBoxMaskSerial.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.checkBoxMaskSerial.Location = new System.Drawing.Point(13, 221);
+            this.checkBoxMaskSerial.Name = "checkBoxMaskSerial";
+            this.checkBoxMaskSerial.Size = new System.Drawing.Size(348, 24);
+            this.checkBoxMaskSerial.TabIndex = 63;
+            this.checkBoxMaskSerial.Text = "Mask oscilloscope serial number in \"Debug\" tab";
+            this.checkBoxMaskSerial.UseVisualStyleBackColor = true;
+            // 
             // checkBoxEnableDelete
             // 
             this.checkBoxEnableDelete.AutoSize = true;
-            this.checkBoxEnableDelete.Location = new System.Drawing.Point(13, 207);
+            this.checkBoxEnableDelete.Location = new System.Drawing.Point(13, 195);
             this.checkBoxEnableDelete.Name = "checkBoxEnableDelete";
             this.checkBoxEnableDelete.Size = new System.Drawing.Size(326, 24);
             this.checkBoxEnableDelete.TabIndex = 6;
@@ -1013,7 +1035,7 @@
             // label14
             // 
             this.label14.AutoSize = true;
-            this.label14.Location = new System.Drawing.Point(80, 176);
+            this.label14.Location = new System.Drawing.Point(80, 168);
             this.label14.Name = "label14";
             this.label14.Size = new System.Drawing.Size(198, 20);
             this.label14.TabIndex = 62;
@@ -1027,7 +1049,7 @@
             "0.25V",
             "0.5V",
             "1V"});
-            this.comboBoxAdjustToGrid.Location = new System.Drawing.Point(13, 173);
+            this.comboBoxAdjustToGrid.Location = new System.Drawing.Point(13, 165);
             this.comboBoxAdjustToGrid.Name = "comboBoxAdjustToGrid";
             this.comboBoxAdjustToGrid.Size = new System.Drawing.Size(61, 28);
             this.comboBoxAdjustToGrid.TabIndex = 5;
@@ -1051,7 +1073,7 @@
             this.checkBoxTrimUnderscore.AutoSize = true;
             this.checkBoxTrimUnderscore.Checked = true;
             this.checkBoxTrimUnderscore.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBoxTrimUnderscore.Location = new System.Drawing.Point(13, 354);
+            this.checkBoxTrimUnderscore.Location = new System.Drawing.Point(13, 371);
             this.checkBoxTrimUnderscore.Name = "checkBoxTrimUnderscore";
             this.checkBoxTrimUnderscore.Size = new System.Drawing.Size(504, 24);
             this.checkBoxTrimUnderscore.TabIndex = 21;
@@ -1073,7 +1095,7 @@
             this.checkBoxDeleteDoubleUnderscore.AutoSize = true;
             this.checkBoxDeleteDoubleUnderscore.Checked = true;
             this.checkBoxDeleteDoubleUnderscore.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBoxDeleteDoubleUnderscore.Location = new System.Drawing.Point(13, 324);
+            this.checkBoxDeleteDoubleUnderscore.Location = new System.Drawing.Point(13, 341);
             this.checkBoxDeleteDoubleUnderscore.Name = "checkBoxDeleteDoubleUnderscore";
             this.checkBoxDeleteDoubleUnderscore.Size = new System.Drawing.Size(475, 24);
             this.checkBoxDeleteDoubleUnderscore.TabIndex = 20;
@@ -1083,7 +1105,7 @@
             // label7
             // 
             this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(80, 142);
+            this.label7.Location = new System.Drawing.Point(80, 134);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(379, 20);
             this.label7.TabIndex = 6;
@@ -1091,7 +1113,7 @@
             // 
             // numericUpDownDelayMs
             // 
-            this.numericUpDownDelayMs.Location = new System.Drawing.Point(13, 140);
+            this.numericUpDownDelayMs.Location = new System.Drawing.Point(13, 132);
             this.numericUpDownDelayMs.Maximum = new decimal(new int[] {
             5000,
             0,
@@ -1109,7 +1131,7 @@
             // label6
             // 
             this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(9, 250);
+            this.label6.Location = new System.Drawing.Point(9, 267);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(244, 20);
             this.label6.TabIndex = 4;
@@ -1117,7 +1139,7 @@
             // 
             // numericUpDownVariables
             // 
-            this.numericUpDownVariables.Location = new System.Drawing.Point(13, 273);
+            this.numericUpDownVariables.Location = new System.Drawing.Point(13, 290);
             this.numericUpDownVariables.Maximum = new decimal(new int[] {
             5,
             0,
@@ -1130,7 +1152,7 @@
             // checkBoxForceClear
             // 
             this.checkBoxForceClear.AutoSize = true;
-            this.checkBoxForceClear.Location = new System.Drawing.Point(13, 110);
+            this.checkBoxForceClear.Location = new System.Drawing.Point(13, 102);
             this.checkBoxForceClear.Name = "checkBoxForceClear";
             this.checkBoxForceClear.Size = new System.Drawing.Size(281, 24);
             this.checkBoxForceClear.TabIndex = 3;
@@ -1142,7 +1164,7 @@
             this.checkBoxForceAcquisition.AutoSize = true;
             this.checkBoxForceAcquisition.Checked = true;
             this.checkBoxForceAcquisition.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBoxForceAcquisition.Location = new System.Drawing.Point(13, 80);
+            this.checkBoxForceAcquisition.Location = new System.Drawing.Point(13, 76);
             this.checkBoxForceAcquisition.Name = "checkBoxForceAcquisition";
             this.checkBoxForceAcquisition.Size = new System.Drawing.Size(232, 24);
             this.checkBoxForceAcquisition.TabIndex = 2;
@@ -1168,7 +1190,7 @@
             this.tabCapturing.Controls.Add(this.label3);
             this.tabCapturing.Controls.Add(this.label12);
             this.tabCapturing.Controls.Add(this.label10);
-            this.tabCapturing.Controls.Add(this.button2);
+            this.tabCapturing.Controls.Add(this.buttonOpenFolder);
             this.tabCapturing.Controls.Add(this.buttonCaptureStart);
             this.tabCapturing.Controls.Add(this.label5);
             this.tabCapturing.Controls.Add(this.richTextBoxAction);
@@ -1233,14 +1255,14 @@
             this.label10.TabIndex = 12;
             this.label10.Text = "Variables";
             // 
-            // button2
+            // buttonOpenFolder
             // 
-            this.button2.Location = new System.Drawing.Point(8, 100);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(284, 28);
-            this.button2.TabIndex = 2;
-            this.button2.Text = "Open capture folder";
-            this.button2.UseVisualStyleBackColor = true;
+            this.buttonOpenFolder.Location = new System.Drawing.Point(8, 100);
+            this.buttonOpenFolder.Name = "buttonOpenFolder";
+            this.buttonOpenFolder.Size = new System.Drawing.Size(284, 28);
+            this.buttonOpenFolder.TabIndex = 2;
+            this.buttonOpenFolder.Text = "Open capture folder";
+            this.buttonOpenFolder.UseVisualStyleBackColor = true;
             // 
             // buttonCaptureStart
             // 
@@ -1344,11 +1366,8 @@
             // 
             // tabDebug
             // 
-            this.tabDebug.Controls.Add(this.button1);
+            this.tabDebug.Controls.Add(this.buttonDebugClear);
             this.tabDebug.Controls.Add(this.labelNewVersion3);
-            this.tabDebug.Controls.Add(this.buttonSendToDeveloper);
-            this.tabDebug.Controls.Add(this.label1);
-            this.tabDebug.Controls.Add(this.textBoxEmail);
             this.tabDebug.Controls.Add(this.rtbLog);
             this.tabDebug.Location = new System.Drawing.Point(4, 29);
             this.tabDebug.Margin = new System.Windows.Forms.Padding(4);
@@ -1359,16 +1378,16 @@
             this.tabDebug.Text = "Debug";
             this.tabDebug.UseVisualStyleBackColor = true;
             // 
-            // button1
+            // buttonDebugClear
             // 
-            this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.button1.Location = new System.Drawing.Point(973, 605);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 27);
-            this.button1.TabIndex = 5;
-            this.button1.Text = "Clear";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Click += new System.EventHandler(this.button1_Click_1);
+            this.buttonDebugClear.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonDebugClear.Location = new System.Drawing.Point(957, 603);
+            this.buttonDebugClear.Name = "buttonDebugClear";
+            this.buttonDebugClear.Size = new System.Drawing.Size(75, 27);
+            this.buttonDebugClear.TabIndex = 5;
+            this.buttonDebugClear.Text = "Clear";
+            this.buttonDebugClear.UseVisualStyleBackColor = true;
+            this.buttonDebugClear.Click += new System.EventHandler(this.buttonDebugClear_Click);
             // 
             // labelNewVersion3
             // 
@@ -1383,35 +1402,6 @@
             this.labelNewVersion3.Text = "New version available - view \"About\" tab";
             this.labelNewVersion3.Visible = false;
             // 
-            // buttonSendToDeveloper
-            // 
-            this.buttonSendToDeveloper.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.buttonSendToDeveloper.Location = new System.Drawing.Point(420, 605);
-            this.buttonSendToDeveloper.Name = "buttonSendToDeveloper";
-            this.buttonSendToDeveloper.Size = new System.Drawing.Size(328, 27);
-            this.buttonSendToDeveloper.TabIndex = 3;
-            this.buttonSendToDeveloper.Text = "Send debug info and configuration file to developer";
-            this.buttonSendToDeveloper.UseVisualStyleBackColor = true;
-            this.buttonSendToDeveloper.Click += new System.EventHandler(this.buttonSendToDeveloper_Click);
-            // 
-            // label1
-            // 
-            this.label1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(7, 584);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(454, 20);
-            this.label1.TabIndex = 2;
-            this.label1.Text = "Your email address (optional, but needed if you want any response)";
-            // 
-            // textBoxEmail
-            // 
-            this.textBoxEmail.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.textBoxEmail.Location = new System.Drawing.Point(11, 607);
-            this.textBoxEmail.Name = "textBoxEmail";
-            this.textBoxEmail.Size = new System.Drawing.Size(403, 27);
-            this.textBoxEmail.TabIndex = 1;
-            // 
             // rtbLog
             // 
             this.rtbLog.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -1424,9 +1414,107 @@
             this.rtbLog.Margin = new System.Windows.Forms.Padding(4);
             this.rtbLog.Name = "rtbLog";
             this.rtbLog.ReadOnly = true;
-            this.rtbLog.Size = new System.Drawing.Size(1065, 580);
+            this.rtbLog.Size = new System.Drawing.Size(1065, 640);
             this.rtbLog.TabIndex = 0;
             this.rtbLog.Text = "";
+            // 
+            // tabFeedback
+            // 
+            this.tabFeedback.Controls.Add(this.checkBoxFeedbackAttachConfig);
+            this.tabFeedback.Controls.Add(this.checkBoxFeedbackAttachDebug);
+            this.tabFeedback.Controls.Add(this.label18);
+            this.tabFeedback.Controls.Add(this.label17);
+            this.tabFeedback.Controls.Add(this.textBoxFeedback);
+            this.tabFeedback.Controls.Add(this.buttonSendToDeveloper);
+            this.tabFeedback.Controls.Add(this.label1);
+            this.tabFeedback.Controls.Add(this.textBoxEmail);
+            this.tabFeedback.Location = new System.Drawing.Point(4, 29);
+            this.tabFeedback.Name = "tabFeedback";
+            this.tabFeedback.Size = new System.Drawing.Size(1057, 644);
+            this.tabFeedback.TabIndex = 6;
+            this.tabFeedback.Text = "Feedback";
+            this.tabFeedback.UseVisualStyleBackColor = true;
+            // 
+            // checkBoxFeedbackAttachConfig
+            // 
+            this.checkBoxFeedbackAttachConfig.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.checkBoxFeedbackAttachConfig.AutoSize = true;
+            this.checkBoxFeedbackAttachConfig.Location = new System.Drawing.Point(24, 421);
+            this.checkBoxFeedbackAttachConfig.Name = "checkBoxFeedbackAttachConfig";
+            this.checkBoxFeedbackAttachConfig.Size = new System.Drawing.Size(192, 24);
+            this.checkBoxFeedbackAttachConfig.TabIndex = 62;
+            this.checkBoxFeedbackAttachConfig.Text = "Attach configuration file";
+            this.checkBoxFeedbackAttachConfig.UseVisualStyleBackColor = true;
+            // 
+            // checkBoxFeedbackAttachDebug
+            // 
+            this.checkBoxFeedbackAttachDebug.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.checkBoxFeedbackAttachDebug.AutoSize = true;
+            this.checkBoxFeedbackAttachDebug.Checked = true;
+            this.checkBoxFeedbackAttachDebug.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.checkBoxFeedbackAttachDebug.Location = new System.Drawing.Point(23, 391);
+            this.checkBoxFeedbackAttachDebug.Name = "checkBoxFeedbackAttachDebug";
+            this.checkBoxFeedbackAttachDebug.Size = new System.Drawing.Size(147, 24);
+            this.checkBoxFeedbackAttachDebug.TabIndex = 61;
+            this.checkBoxFeedbackAttachDebug.Text = "Attach debug log";
+            this.checkBoxFeedbackAttachDebug.UseVisualStyleBackColor = true;
+            // 
+            // label18
+            // 
+            this.label18.AutoSize = true;
+            this.label18.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label18.Location = new System.Drawing.Point(3, 5);
+            this.label18.Name = "label18";
+            this.label18.Size = new System.Drawing.Size(226, 28);
+            this.label18.TabIndex = 60;
+            this.label18.Text = "Feedback to developer";
+            // 
+            // label17
+            // 
+            this.label17.AutoSize = true;
+            this.label17.Location = new System.Drawing.Point(19, 134);
+            this.label17.Name = "label17";
+            this.label17.Size = new System.Drawing.Size(527, 20);
+            this.label17.TabIndex = 12;
+            this.label17.Text = "Your feedback to developer (please explain debug or provide your comments)";
+            // 
+            // textBoxFeedback
+            // 
+            this.textBoxFeedback.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.textBoxFeedback.Location = new System.Drawing.Point(24, 157);
+            this.textBoxFeedback.Multiline = true;
+            this.textBoxFeedback.Name = "textBoxFeedback";
+            this.textBoxFeedback.Size = new System.Drawing.Size(1002, 222);
+            this.textBoxFeedback.TabIndex = 11;
+            // 
+            // buttonSendToDeveloper
+            // 
+            this.buttonSendToDeveloper.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.buttonSendToDeveloper.Location = new System.Drawing.Point(23, 465);
+            this.buttonSendToDeveloper.Name = "buttonSendToDeveloper";
+            this.buttonSendToDeveloper.Size = new System.Drawing.Size(259, 27);
+            this.buttonSendToDeveloper.TabIndex = 10;
+            this.buttonSendToDeveloper.Text = "Send feedback to developer";
+            this.buttonSendToDeveloper.UseVisualStyleBackColor = true;
+            this.buttonSendToDeveloper.Click += new System.EventHandler(this.buttonSendToDeveloper_Click);
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(20, 70);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(454, 20);
+            this.label1.TabIndex = 9;
+            this.label1.Text = "Your email address (optional, but needed if you want any response)";
+            // 
+            // textBoxEmail
+            // 
+            this.textBoxEmail.Location = new System.Drawing.Point(24, 93);
+            this.textBoxEmail.Name = "textBoxEmail";
+            this.textBoxEmail.Size = new System.Drawing.Size(1002, 27);
+            this.textBoxEmail.TabIndex = 8;
             // 
             // tabHelp
             // 
@@ -1484,6 +1572,36 @@
             this.tabAbout.Text = "About";
             this.tabAbout.UseVisualStyleBackColor = true;
             // 
+            // labelVersion
+            // 
+            this.labelVersion.AutoSize = true;
+            this.labelVersion.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelVersion.Location = new System.Drawing.Point(160, 84);
+            this.labelVersion.Name = "labelVersion";
+            this.labelVersion.Size = new System.Drawing.Size(224, 28);
+            this.labelVersion.TabIndex = 4;
+            this.labelVersion.Text = "Version 2025-October-2";
+            // 
+            // label16
+            // 
+            this.label16.AutoSize = true;
+            this.label16.Font = new System.Drawing.Font("Segoe UI", 22.2F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label16.Location = new System.Drawing.Point(156, 44);
+            this.label16.Name = "label16";
+            this.label16.Size = new System.Drawing.Size(549, 50);
+            this.label16.TabIndex = 3;
+            this.label16.Text = "Oscilloscope Network Capture";
+            // 
+            // pictureBox1
+            // 
+            this.pictureBox1.Image = ((System.Drawing.Image)(resources.GetObject("pictureBox1.Image")));
+            this.pictureBox1.Location = new System.Drawing.Point(16, 18);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(128, 128);
+            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.pictureBox1.TabIndex = 2;
+            this.pictureBox1.TabStop = false;
+            // 
             // richTextBoxAbout
             // 
             this.richTextBoxAbout.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -1510,36 +1628,6 @@
             this.labelNewVersion5.TabIndex = 0;
             this.labelNewVersion5.Text = "New version available ";
             this.labelNewVersion5.Visible = false;
-            // 
-            // pictureBox1
-            // 
-            this.pictureBox1.Image = ((System.Drawing.Image)(resources.GetObject("pictureBox1.Image")));
-            this.pictureBox1.Location = new System.Drawing.Point(16, 18);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(128, 128);
-            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.pictureBox1.TabIndex = 2;
-            this.pictureBox1.TabStop = false;
-            // 
-            // label16
-            // 
-            this.label16.AutoSize = true;
-            this.label16.Font = new System.Drawing.Font("Segoe UI", 22.2F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label16.Location = new System.Drawing.Point(156, 44);
-            this.label16.Name = "label16";
-            this.label16.Size = new System.Drawing.Size(549, 50);
-            this.label16.TabIndex = 3;
-            this.label16.Text = "Oscilloscope Network Capture";
-            // 
-            // labelVersion
-            // 
-            this.labelVersion.AutoSize = true;
-            this.labelVersion.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.labelVersion.Location = new System.Drawing.Point(160, 84);
-            this.labelVersion.Name = "labelVersion";
-            this.labelVersion.Size = new System.Drawing.Size(224, 28);
-            this.labelVersion.TabIndex = 4;
-            this.labelVersion.Text = "Version 2025-October-2";
             // 
             // Main
             // 
@@ -1568,6 +1656,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.picScreen)).EndInit();
             this.tabDebug.ResumeLayout(false);
             this.tabDebug.PerformLayout();
+            this.tabFeedback.ResumeLayout(false);
+            this.tabFeedback.PerformLayout();
             this.tabHelp.ResumeLayout(false);
             this.tabHelp.PerformLayout();
             this.tabAbout.ResumeLayout(false);
@@ -1611,9 +1701,6 @@
         private System.Windows.Forms.Label lblCmdDumpImage; private System.Windows.Forms.TextBox txtCmdDumpImage; private System.Windows.Forms.Button btnTestDumpImage; private System.Windows.Forms.Label lblStatusDumpImage;
         private System.Windows.Forms.Label lblCmdSysErr; private System.Windows.Forms.TextBox txtCmdSysErr; private System.Windows.Forms.Button btnTestSysErr; private System.Windows.Forms.Label lblStatusSysErr;
         private System.Windows.Forms.Label lblCmdOpc; private System.Windows.Forms.TextBox txtCmdOpc; private System.Windows.Forms.Button btnTestOpc; private System.Windows.Forms.Label lblStatusOpc;
-        private System.Windows.Forms.Button buttonSendToDeveloper;
-        private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.TextBox textBoxEmail;
         private System.Windows.Forms.Label labelNewVersion1;
         private System.Windows.Forms.Label labelNewVersion2;
         private System.Windows.Forms.Label labelNewVersion3;
@@ -1633,7 +1720,7 @@
         private System.Windows.Forms.CheckBox checkBoxForceAcquisition;
         private System.Windows.Forms.CheckBox checkBoxEnableBeep;
         private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.Button button2;
+        private System.Windows.Forms.Button buttonOpenFolder;
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.NumericUpDown numericUpDownDelayMs;
         private System.Windows.Forms.CheckBox checkBoxDeleteDoubleUnderscore;
@@ -1646,7 +1733,7 @@
         private System.Windows.Forms.TextBox textBoxFilenameFormat;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label labelNewVersion6;
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button buttonDebugClear;
         private System.Windows.Forms.ComboBox comboBoxAdjustToGrid;
         private System.Windows.Forms.Label label14;
         private System.Windows.Forms.CheckBox checkBoxEnableDelete;
@@ -1657,6 +1744,16 @@
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.Label labelVersion;
         private System.Windows.Forms.Label label16;
+        private System.Windows.Forms.CheckBox checkBoxMaskSerial;
+        private System.Windows.Forms.TabPage tabFeedback;
+        private System.Windows.Forms.Label label17;
+        private System.Windows.Forms.TextBox textBoxFeedback;
+        private System.Windows.Forms.Button buttonSendToDeveloper;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.TextBox textBoxEmail;
+        private System.Windows.Forms.CheckBox checkBoxFeedbackAttachConfig;
+        private System.Windows.Forms.CheckBox checkBoxFeedbackAttachDebug;
+        private System.Windows.Forms.Label label18;
     }
 }
 
