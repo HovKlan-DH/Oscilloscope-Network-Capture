@@ -3,18 +3,18 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
     public enum ScopeCommand
     {
         Identify,
+        DrainSystemErrorQueue,
+        OperationComplete,
         ClearStatistics,
         QueryActiveTrigger,
         Stop,
-        Run,
         Single,
+        Run,
         QueryTriggerMode,
         QueryTriggerLevel,
         SetTriggerLevel,
         QueryTimeDiv,
         SetTimeDiv,
-        DumpImage,
-        PopLastSystemError,
-        OperationComplete
+        DumpImage
     }
 }

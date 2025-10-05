@@ -39,7 +39,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
         Task<byte[]> CaptureScreenAsync(CancellationToken ct = default(CancellationToken));
 
         // System
-        Task<string> PopLastSystemErrorAsync(CancellationToken ct = default(CancellationToken));
+        Task<string> DrainSystemErrorQueueAsync(CancellationToken ct = default(CancellationToken));
         Task<bool> QueryOperationCompleteAsync(CancellationToken ct = default(CancellationToken));
 
         // Raw

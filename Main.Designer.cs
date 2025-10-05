@@ -366,7 +366,7 @@
             // 
             // txtTimeDivValues
             // 
-            this.txtTimeDivValues.Location = new System.Drawing.Point(223, 607);
+            this.txtTimeDivValues.Location = new System.Drawing.Point(232, 607);
             this.txtTimeDivValues.Margin = new System.Windows.Forms.Padding(4);
             this.txtTimeDivValues.Name = "txtTimeDivValues";
             this.txtTimeDivValues.Size = new System.Drawing.Size(302, 27);
@@ -430,7 +430,7 @@
             // 
             this.lblStatusOpc.AutoSize = true;
             this.lblStatusOpc.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusOpc.Location = new System.Drawing.Point(625, 285);
+            this.lblStatusOpc.Location = new System.Drawing.Point(634, 285);
             this.lblStatusOpc.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusOpc.Name = "lblStatusOpc";
             this.lblStatusOpc.Size = new System.Drawing.Size(79, 20);
@@ -439,7 +439,7 @@
             // 
             // btnTestOpc
             // 
-            this.btnTestOpc.Location = new System.Drawing.Point(537, 281);
+            this.btnTestOpc.Location = new System.Drawing.Point(546, 281);
             this.btnTestOpc.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestOpc.Name = "btnTestOpc";
             this.btnTestOpc.Size = new System.Drawing.Size(80, 22);
@@ -450,7 +450,7 @@
             // 
             // txtCmdOpc
             // 
-            this.txtCmdOpc.Location = new System.Drawing.Point(223, 281);
+            this.txtCmdOpc.Location = new System.Drawing.Point(232, 281);
             this.txtCmdOpc.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdOpc.Name = "txtCmdOpc";
             this.txtCmdOpc.Size = new System.Drawing.Size(302, 27);
@@ -470,7 +470,7 @@
             // 
             this.lblStatusSysErr.AutoSize = true;
             this.lblStatusSysErr.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusSysErr.Location = new System.Drawing.Point(625, 256);
+            this.lblStatusSysErr.Location = new System.Drawing.Point(634, 256);
             this.lblStatusSysErr.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusSysErr.Name = "lblStatusSysErr";
             this.lblStatusSysErr.Size = new System.Drawing.Size(79, 20);
@@ -479,7 +479,7 @@
             // 
             // btnTestSysErr
             // 
-            this.btnTestSysErr.Location = new System.Drawing.Point(537, 253);
+            this.btnTestSysErr.Location = new System.Drawing.Point(546, 253);
             this.btnTestSysErr.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestSysErr.Name = "btnTestSysErr";
             this.btnTestSysErr.Size = new System.Drawing.Size(80, 22);
@@ -490,7 +490,7 @@
             // 
             // txtCmdSysErr
             // 
-            this.txtCmdSysErr.Location = new System.Drawing.Point(223, 253);
+            this.txtCmdSysErr.Location = new System.Drawing.Point(232, 253);
             this.txtCmdSysErr.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdSysErr.Name = "txtCmdSysErr";
             this.txtCmdSysErr.Size = new System.Drawing.Size(302, 27);
@@ -502,15 +502,15 @@
             this.lblCmdSysErr.Location = new System.Drawing.Point(16, 257);
             this.lblCmdSysErr.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCmdSysErr.Name = "lblCmdSysErr";
-            this.lblCmdSysErr.Size = new System.Drawing.Size(160, 20);
+            this.lblCmdSysErr.Size = new System.Drawing.Size(245, 20);
             this.lblCmdSysErr.TabIndex = 7;
-            this.lblCmdSysErr.Text = "Query last system error";
+            this.lblCmdSysErr.Text = "Query and drain system error queue";
             // 
             // lblStatusDumpImage
             // 
             this.lblStatusDumpImage.AutoSize = true;
             this.lblStatusDumpImage.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusDumpImage.Location = new System.Drawing.Point(625, 583);
+            this.lblStatusDumpImage.Location = new System.Drawing.Point(634, 583);
             this.lblStatusDumpImage.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusDumpImage.Name = "lblStatusDumpImage";
             this.lblStatusDumpImage.Size = new System.Drawing.Size(79, 20);
@@ -519,7 +519,7 @@
             // 
             // btnTestDumpImage
             // 
-            this.btnTestDumpImage.Location = new System.Drawing.Point(537, 580);
+            this.btnTestDumpImage.Location = new System.Drawing.Point(546, 580);
             this.btnTestDumpImage.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestDumpImage.Name = "btnTestDumpImage";
             this.btnTestDumpImage.Size = new System.Drawing.Size(80, 22);
@@ -530,7 +530,7 @@
             // 
             // txtCmdDumpImage
             // 
-            this.txtCmdDumpImage.Location = new System.Drawing.Point(223, 580);
+            this.txtCmdDumpImage.Location = new System.Drawing.Point(232, 580);
             this.txtCmdDumpImage.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdDumpImage.Name = "txtCmdDumpImage";
             this.txtCmdDumpImage.Size = new System.Drawing.Size(302, 27);
@@ -550,7 +550,7 @@
             // 
             this.lblStatusTimeDivSet.AutoSize = true;
             this.lblStatusTimeDivSet.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusTimeDivSet.Location = new System.Drawing.Point(625, 557);
+            this.lblStatusTimeDivSet.Location = new System.Drawing.Point(634, 557);
             this.lblStatusTimeDivSet.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusTimeDivSet.Name = "lblStatusTimeDivSet";
             this.lblStatusTimeDivSet.Size = new System.Drawing.Size(265, 20);
@@ -559,7 +559,7 @@
             // 
             // btnTestTimeDivSet
             // 
-            this.btnTestTimeDivSet.Location = new System.Drawing.Point(537, 553);
+            this.btnTestTimeDivSet.Location = new System.Drawing.Point(546, 553);
             this.btnTestTimeDivSet.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestTimeDivSet.Name = "btnTestTimeDivSet";
             this.btnTestTimeDivSet.Size = new System.Drawing.Size(80, 22);
@@ -570,7 +570,7 @@
             // 
             // txtCmdTimeDivSet
             // 
-            this.txtCmdTimeDivSet.Location = new System.Drawing.Point(223, 553);
+            this.txtCmdTimeDivSet.Location = new System.Drawing.Point(232, 553);
             this.txtCmdTimeDivSet.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdTimeDivSet.Name = "txtCmdTimeDivSet";
             this.txtCmdTimeDivSet.Size = new System.Drawing.Size(302, 27);
@@ -590,7 +590,7 @@
             // 
             this.lblStatusTimeDivQ.AutoSize = true;
             this.lblStatusTimeDivQ.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusTimeDivQ.Location = new System.Drawing.Point(625, 529);
+            this.lblStatusTimeDivQ.Location = new System.Drawing.Point(634, 529);
             this.lblStatusTimeDivQ.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusTimeDivQ.Name = "lblStatusTimeDivQ";
             this.lblStatusTimeDivQ.Size = new System.Drawing.Size(79, 20);
@@ -599,7 +599,7 @@
             // 
             // btnTestTimeDivQ
             // 
-            this.btnTestTimeDivQ.Location = new System.Drawing.Point(537, 526);
+            this.btnTestTimeDivQ.Location = new System.Drawing.Point(546, 526);
             this.btnTestTimeDivQ.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestTimeDivQ.Name = "btnTestTimeDivQ";
             this.btnTestTimeDivQ.Size = new System.Drawing.Size(80, 22);
@@ -610,7 +610,7 @@
             // 
             // txtCmdTimeDivQ
             // 
-            this.txtCmdTimeDivQ.Location = new System.Drawing.Point(223, 526);
+            this.txtCmdTimeDivQ.Location = new System.Drawing.Point(232, 526);
             this.txtCmdTimeDivQ.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdTimeDivQ.Name = "txtCmdTimeDivQ";
             this.txtCmdTimeDivQ.Size = new System.Drawing.Size(302, 27);
@@ -630,7 +630,7 @@
             // 
             this.lblStatusTrigLevelSet.AutoSize = true;
             this.lblStatusTrigLevelSet.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusTrigLevelSet.Location = new System.Drawing.Point(625, 502);
+            this.lblStatusTrigLevelSet.Location = new System.Drawing.Point(634, 502);
             this.lblStatusTrigLevelSet.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusTrigLevelSet.Name = "lblStatusTrigLevelSet";
             this.lblStatusTrigLevelSet.Size = new System.Drawing.Size(282, 20);
@@ -639,7 +639,7 @@
             // 
             // btnTestTrigLevelSet
             // 
-            this.btnTestTrigLevelSet.Location = new System.Drawing.Point(537, 499);
+            this.btnTestTrigLevelSet.Location = new System.Drawing.Point(546, 499);
             this.btnTestTrigLevelSet.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestTrigLevelSet.Name = "btnTestTrigLevelSet";
             this.btnTestTrigLevelSet.Size = new System.Drawing.Size(80, 22);
@@ -650,7 +650,7 @@
             // 
             // txtCmdTrigLevelSet
             // 
-            this.txtCmdTrigLevelSet.Location = new System.Drawing.Point(223, 499);
+            this.txtCmdTrigLevelSet.Location = new System.Drawing.Point(232, 499);
             this.txtCmdTrigLevelSet.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdTrigLevelSet.Name = "txtCmdTrigLevelSet";
             this.txtCmdTrigLevelSet.Size = new System.Drawing.Size(302, 27);
@@ -670,7 +670,7 @@
             // 
             this.lblStatusTrigLevelQ.AutoSize = true;
             this.lblStatusTrigLevelQ.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusTrigLevelQ.Location = new System.Drawing.Point(625, 476);
+            this.lblStatusTrigLevelQ.Location = new System.Drawing.Point(634, 476);
             this.lblStatusTrigLevelQ.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusTrigLevelQ.Name = "lblStatusTrigLevelQ";
             this.lblStatusTrigLevelQ.Size = new System.Drawing.Size(79, 20);
@@ -679,7 +679,7 @@
             // 
             // btnTestTrigLevelQ
             // 
-            this.btnTestTrigLevelQ.Location = new System.Drawing.Point(537, 472);
+            this.btnTestTrigLevelQ.Location = new System.Drawing.Point(546, 472);
             this.btnTestTrigLevelQ.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestTrigLevelQ.Name = "btnTestTrigLevelQ";
             this.btnTestTrigLevelQ.Size = new System.Drawing.Size(80, 22);
@@ -690,7 +690,7 @@
             // 
             // txtCmdTrigLevelQ
             // 
-            this.txtCmdTrigLevelQ.Location = new System.Drawing.Point(223, 472);
+            this.txtCmdTrigLevelQ.Location = new System.Drawing.Point(232, 472);
             this.txtCmdTrigLevelQ.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdTrigLevelQ.Name = "txtCmdTrigLevelQ";
             this.txtCmdTrigLevelQ.Size = new System.Drawing.Size(302, 27);
@@ -710,7 +710,7 @@
             // 
             this.lblStatusTrigMode.AutoSize = true;
             this.lblStatusTrigMode.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusTrigMode.Location = new System.Drawing.Point(625, 448);
+            this.lblStatusTrigMode.Location = new System.Drawing.Point(634, 448);
             this.lblStatusTrigMode.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusTrigMode.Name = "lblStatusTrigMode";
             this.lblStatusTrigMode.Size = new System.Drawing.Size(79, 20);
@@ -719,7 +719,7 @@
             // 
             // btnTestTrigMode
             // 
-            this.btnTestTrigMode.Location = new System.Drawing.Point(537, 445);
+            this.btnTestTrigMode.Location = new System.Drawing.Point(546, 445);
             this.btnTestTrigMode.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestTrigMode.Name = "btnTestTrigMode";
             this.btnTestTrigMode.Size = new System.Drawing.Size(80, 22);
@@ -730,7 +730,7 @@
             // 
             // txtCmdTrigMode
             // 
-            this.txtCmdTrigMode.Location = new System.Drawing.Point(223, 445);
+            this.txtCmdTrigMode.Location = new System.Drawing.Point(232, 445);
             this.txtCmdTrigMode.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdTrigMode.Name = "txtCmdTrigMode";
             this.txtCmdTrigMode.Size = new System.Drawing.Size(302, 27);
@@ -750,7 +750,7 @@
             // 
             this.lblStatusSingle.AutoSize = true;
             this.lblStatusSingle.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusSingle.Location = new System.Drawing.Point(625, 394);
+            this.lblStatusSingle.Location = new System.Drawing.Point(634, 394);
             this.lblStatusSingle.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusSingle.Name = "lblStatusSingle";
             this.lblStatusSingle.Size = new System.Drawing.Size(79, 20);
@@ -759,7 +759,7 @@
             // 
             // btnTestSingle
             // 
-            this.btnTestSingle.Location = new System.Drawing.Point(537, 391);
+            this.btnTestSingle.Location = new System.Drawing.Point(546, 391);
             this.btnTestSingle.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestSingle.Name = "btnTestSingle";
             this.btnTestSingle.Size = new System.Drawing.Size(80, 22);
@@ -770,7 +770,7 @@
             // 
             // txtCmdSingle
             // 
-            this.txtCmdSingle.Location = new System.Drawing.Point(223, 391);
+            this.txtCmdSingle.Location = new System.Drawing.Point(232, 391);
             this.txtCmdSingle.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdSingle.Name = "txtCmdSingle";
             this.txtCmdSingle.Size = new System.Drawing.Size(302, 27);
@@ -790,7 +790,7 @@
             // 
             this.lblStatusRun.AutoSize = true;
             this.lblStatusRun.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusRun.Location = new System.Drawing.Point(625, 421);
+            this.lblStatusRun.Location = new System.Drawing.Point(634, 421);
             this.lblStatusRun.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusRun.Name = "lblStatusRun";
             this.lblStatusRun.Size = new System.Drawing.Size(79, 20);
@@ -799,7 +799,7 @@
             // 
             // btnTestRun
             // 
-            this.btnTestRun.Location = new System.Drawing.Point(537, 418);
+            this.btnTestRun.Location = new System.Drawing.Point(546, 418);
             this.btnTestRun.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestRun.Name = "btnTestRun";
             this.btnTestRun.Size = new System.Drawing.Size(80, 22);
@@ -810,7 +810,7 @@
             // 
             // txtCmdRun
             // 
-            this.txtCmdRun.Location = new System.Drawing.Point(223, 418);
+            this.txtCmdRun.Location = new System.Drawing.Point(232, 418);
             this.txtCmdRun.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdRun.Name = "txtCmdRun";
             this.txtCmdRun.Size = new System.Drawing.Size(302, 27);
@@ -830,7 +830,7 @@
             // 
             this.lblStatusStop.AutoSize = true;
             this.lblStatusStop.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusStop.Location = new System.Drawing.Point(625, 367);
+            this.lblStatusStop.Location = new System.Drawing.Point(634, 367);
             this.lblStatusStop.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusStop.Name = "lblStatusStop";
             this.lblStatusStop.Size = new System.Drawing.Size(79, 20);
@@ -839,7 +839,7 @@
             // 
             // btnTestStop
             // 
-            this.btnTestStop.Location = new System.Drawing.Point(537, 364);
+            this.btnTestStop.Location = new System.Drawing.Point(546, 364);
             this.btnTestStop.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestStop.Name = "btnTestStop";
             this.btnTestStop.Size = new System.Drawing.Size(80, 22);
@@ -850,7 +850,7 @@
             // 
             // txtCmdStop
             // 
-            this.txtCmdStop.Location = new System.Drawing.Point(223, 364);
+            this.txtCmdStop.Location = new System.Drawing.Point(232, 364);
             this.txtCmdStop.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdStop.Name = "txtCmdStop";
             this.txtCmdStop.Size = new System.Drawing.Size(302, 27);
@@ -870,7 +870,7 @@
             // 
             this.lblStatusActiveTrig.AutoSize = true;
             this.lblStatusActiveTrig.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusActiveTrig.Location = new System.Drawing.Point(625, 340);
+            this.lblStatusActiveTrig.Location = new System.Drawing.Point(634, 340);
             this.lblStatusActiveTrig.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusActiveTrig.Name = "lblStatusActiveTrig";
             this.lblStatusActiveTrig.Size = new System.Drawing.Size(79, 20);
@@ -879,7 +879,7 @@
             // 
             // btnTestActiveTrig
             // 
-            this.btnTestActiveTrig.Location = new System.Drawing.Point(537, 337);
+            this.btnTestActiveTrig.Location = new System.Drawing.Point(546, 337);
             this.btnTestActiveTrig.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestActiveTrig.Name = "btnTestActiveTrig";
             this.btnTestActiveTrig.Size = new System.Drawing.Size(80, 22);
@@ -890,7 +890,7 @@
             // 
             // txtCmdActiveTrig
             // 
-            this.txtCmdActiveTrig.Location = new System.Drawing.Point(223, 337);
+            this.txtCmdActiveTrig.Location = new System.Drawing.Point(232, 337);
             this.txtCmdActiveTrig.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdActiveTrig.Name = "txtCmdActiveTrig";
             this.txtCmdActiveTrig.Size = new System.Drawing.Size(302, 27);
@@ -910,7 +910,7 @@
             // 
             this.lblStatusClearStats.AutoSize = true;
             this.lblStatusClearStats.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusClearStats.Location = new System.Drawing.Point(625, 312);
+            this.lblStatusClearStats.Location = new System.Drawing.Point(634, 312);
             this.lblStatusClearStats.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusClearStats.Name = "lblStatusClearStats";
             this.lblStatusClearStats.Size = new System.Drawing.Size(79, 20);
@@ -919,7 +919,7 @@
             // 
             // btnTestClearStats
             // 
-            this.btnTestClearStats.Location = new System.Drawing.Point(537, 309);
+            this.btnTestClearStats.Location = new System.Drawing.Point(546, 309);
             this.btnTestClearStats.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestClearStats.Name = "btnTestClearStats";
             this.btnTestClearStats.Size = new System.Drawing.Size(80, 22);
@@ -930,7 +930,7 @@
             // 
             // txtCmdClearStats
             // 
-            this.txtCmdClearStats.Location = new System.Drawing.Point(223, 309);
+            this.txtCmdClearStats.Location = new System.Drawing.Point(232, 309);
             this.txtCmdClearStats.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdClearStats.Name = "txtCmdClearStats";
             this.txtCmdClearStats.Size = new System.Drawing.Size(302, 27);
@@ -950,7 +950,7 @@
             // 
             this.lblStatusIdentify.AutoSize = true;
             this.lblStatusIdentify.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusIdentify.Location = new System.Drawing.Point(625, 229);
+            this.lblStatusIdentify.Location = new System.Drawing.Point(634, 229);
             this.lblStatusIdentify.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusIdentify.Name = "lblStatusIdentify";
             this.lblStatusIdentify.Size = new System.Drawing.Size(79, 20);
@@ -959,7 +959,7 @@
             // 
             // btnTestIdentify
             // 
-            this.btnTestIdentify.Location = new System.Drawing.Point(537, 225);
+            this.btnTestIdentify.Location = new System.Drawing.Point(546, 225);
             this.btnTestIdentify.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestIdentify.Name = "btnTestIdentify";
             this.btnTestIdentify.Size = new System.Drawing.Size(80, 22);
@@ -970,7 +970,7 @@
             // 
             // txtCmdIdentify
             // 
-            this.txtCmdIdentify.Location = new System.Drawing.Point(223, 225);
+            this.txtCmdIdentify.Location = new System.Drawing.Point(232, 225);
             this.txtCmdIdentify.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdIdentify.Name = "txtCmdIdentify";
             this.txtCmdIdentify.Size = new System.Drawing.Size(302, 27);
@@ -982,9 +982,9 @@
             this.lblCmdIdentify.Location = new System.Drawing.Point(16, 229);
             this.lblCmdIdentify.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCmdIdentify.Name = "lblCmdIdentify";
-            this.lblCmdIdentify.Size = new System.Drawing.Size(176, 20);
+            this.lblCmdIdentify.Size = new System.Drawing.Size(217, 20);
             this.lblCmdIdentify.TabIndex = 55;
-            this.lblCmdIdentify.Text = "Query identify instrument";
+            this.lblCmdIdentify.Text = "Query and identify oscilloscope";
             // 
             // tabSettings
             // 

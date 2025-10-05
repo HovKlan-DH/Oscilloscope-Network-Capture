@@ -33,7 +33,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                 },
                 p => p
                     .Map(ScopeCommand.Identify, "*IDN?")
-                    .Map(ScopeCommand.PopLastSystemError, ":SYST:ERR?")
+                    .Map(ScopeCommand.DrainSystemErrorQueue, ":SYST:ERR?")
                     .Map(ScopeCommand.OperationComplete, "*OPC?")
                     .Map(ScopeCommand.ClearStatistics, "*CLS")
                     .Map(ScopeCommand.QueryActiveTrigger, "TRIG_MODE?")
@@ -73,7 +73,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                 },
                 p => p
                     .Map(ScopeCommand.Identify, "*IDN?")
-                    .Map(ScopeCommand.PopLastSystemError, ":SYST:ERR?")
+                    .Map(ScopeCommand.DrainSystemErrorQueue, ":SYST:ERR?")
                     .Map(ScopeCommand.OperationComplete, "*OPC?")
                     .Map(ScopeCommand.ClearStatistics, "*CLS")
                     .Map(ScopeCommand.QueryActiveTrigger, "TRIG_MODE?")

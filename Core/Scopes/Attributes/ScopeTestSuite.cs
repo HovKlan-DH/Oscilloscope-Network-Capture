@@ -10,7 +10,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
     public enum ScopeTestSuite
     {
         QueryIdentify,
-        PopLastSystemError,
+        DrainSystemErrorQueue,
         OperationComplete,
         ClearStatistics,
         QueryActiveTrigger,
@@ -42,7 +42,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
             { ScopeTestSuite.QueryTimeDiv, "Query TIME/DIV" },
             { ScopeTestSuite.SetTimeDiv, "Set TIME/DIV" },
             { ScopeTestSuite.DumpImage, "Query dump image" },
-            { ScopeTestSuite.PopLastSystemError, "Query last system error" },
+            { ScopeTestSuite.DrainSystemErrorQueue, "Query last system error" },
             { ScopeTestSuite.OperationComplete, "Query \"Operation Complete\"" },
         };
 
@@ -52,8 +52,8 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
             { ScopeTestSuite.QueryIdentify, new[]{
                 ScopeCommand.Identify
             }},
-            { ScopeTestSuite.PopLastSystemError, new[]{
-                ScopeCommand.PopLastSystemError
+            { ScopeTestSuite.DrainSystemErrorQueue, new[]{
+                ScopeCommand.DrainSystemErrorQueue
             }},
             { ScopeTestSuite.OperationComplete, new[]{
                 ScopeCommand.OperationComplete
@@ -61,7 +61,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
             { ScopeTestSuite.ClearStatistics, new[]{
                 ScopeCommand.ClearStatistics,
                 ScopeCommand.OperationComplete,
-                ScopeCommand.PopLastSystemError
+                ScopeCommand.DrainSystemErrorQueue
             }},
             { ScopeTestSuite.QueryActiveTrigger, new[]{
                 ScopeCommand.QueryActiveTrigger
@@ -69,17 +69,17 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
             { ScopeTestSuite.Stop, new[]{
                 ScopeCommand.Stop,
                 ScopeCommand.OperationComplete,
-                ScopeCommand.PopLastSystemError
+                ScopeCommand.DrainSystemErrorQueue
             }},
             { ScopeTestSuite.Single, new[]{
                 ScopeCommand.Single,
                 ScopeCommand.OperationComplete,
-                ScopeCommand.PopLastSystemError
+                ScopeCommand.DrainSystemErrorQueue
             }},
             { ScopeTestSuite.Run, new[]{
                 ScopeCommand.Run,
                 ScopeCommand.OperationComplete,
-                ScopeCommand.PopLastSystemError
+                ScopeCommand.DrainSystemErrorQueue
             }},
             { ScopeTestSuite.QueryTriggerMode, new[]{
                 ScopeCommand.QueryTriggerMode
@@ -90,7 +90,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
             { ScopeTestSuite.SetTriggerLevel, new[]{
                 ScopeCommand.SetTriggerLevel,
                 ScopeCommand.OperationComplete,
-                ScopeCommand.PopLastSystemError
+                ScopeCommand.DrainSystemErrorQueue
             }},
             { ScopeTestSuite.QueryTimeDiv, new[]{
                 ScopeCommand.QueryTimeDiv
@@ -98,7 +98,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
             { ScopeTestSuite.SetTimeDiv, new[]{
                 ScopeCommand.SetTimeDiv,
                 ScopeCommand.OperationComplete,
-                ScopeCommand.PopLastSystemError
+                ScopeCommand.DrainSystemErrorQueue
             }},
             { ScopeTestSuite.DumpImage, new[]{
                 ScopeCommand.DumpImage

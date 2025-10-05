@@ -73,7 +73,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                 case ScopeCommand.QueryTriggerMode:
                 case ScopeCommand.QueryTriggerLevel:
                 case ScopeCommand.QueryTimeDiv:
-                case ScopeCommand.PopLastSystemError:
+                case ScopeCommand.DrainSystemErrorQueue:
                 case ScopeCommand.OperationComplete:
                     return true;
                 default:
@@ -340,9 +340,9 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
             return await ExecuteSuiteForDumpAsync(ScopeTestSuite.DumpImage, ct).ConfigureAwait(false);
         }
 
-        public virtual async Task<string> PopLastSystemErrorAsync(CancellationToken ct = default(CancellationToken))
+        public virtual async Task<string> DrainSystemErrorQueueAsync(CancellationToken ct = default(CancellationToken))
         {
-            var scpi = Cmd(ScopeCommand.PopLastSystemError);
+            var scpi = Cmd(ScopeCommand.DrainSystemErrorQueue);
             Logger.Instance.Debug($"SCPI >> {scpi}");
             var resp = await Transport.QueryAsync(scpi, 5000, ct).ConfigureAwait(false);
             Logger.Instance.Debug($"SCPI << {Trunc(resp)}");

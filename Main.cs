@@ -738,8 +738,46 @@ namespace Oscilloscope_Network_Capture
                                                          && string.Equals(p.Model, model, StringComparison.OrdinalIgnoreCase));
         }
 
+        private string ResolveUiScpiFor(ScopeCommand cmd)
+        {
+            switch (cmd)
+            {
+                case ScopeCommand.Identify: return (txtCmdIdentify?.Text ?? string.Empty).Trim();
+                case ScopeCommand.DrainSystemErrorQueue: return (txtCmdSysErr?.Text ?? string.Empty).Trim();
+                case ScopeCommand.OperationComplete: return (txtCmdOpc?.Text ?? string.Empty).Trim();
+                case ScopeCommand.ClearStatistics: return (txtCmdClearStats?.Text ?? string.Empty).Trim();
+                case ScopeCommand.QueryActiveTrigger: return (txtCmdActiveTrig?.Text ?? string.Empty).Trim();
+                case ScopeCommand.Stop: return (txtCmdStop?.Text ?? string.Empty).Trim();
+                case ScopeCommand.Single: return (txtCmdSingle?.Text ?? string.Empty).Trim();
+                case ScopeCommand.Run: return (txtCmdRun?.Text ?? string.Empty).Trim();
+                case ScopeCommand.QueryTriggerMode: return (txtCmdTrigMode?.Text ?? string.Empty).Trim();
+                case ScopeCommand.QueryTriggerLevel: return (txtCmdTrigLevelQ?.Text ?? string.Empty).Trim();
+                case ScopeCommand.SetTriggerLevel: return (txtCmdTrigLevelSet?.Text ?? string.Empty).Trim();
+                case ScopeCommand.QueryTimeDiv: return (txtCmdTimeDivQ?.Text ?? string.Empty).Trim();
+                case ScopeCommand.SetTimeDiv: return (txtCmdTimeDivSet?.Text ?? string.Empty).Trim();
+                case ScopeCommand.DumpImage: return (txtCmdDumpImage?.Text ?? string.Empty).Trim();
+                default: return string.Empty;
+            }
+        }
+
         private string GetDefaultScpiForCurrentProfile(ScopeCommand cmd)
         {
+            // 0) Prefer the current UI textbox value (blank means "intentionally skip")
+            var ui = ResolveUiScpiFor(cmd);
+            // Always use UI when available; it’s what the user sees/edits
+            if (ui != null) return ui;
+
+            // 1) Per-profile override from config (including empty => skip)
+            var prof = FindCurrentProfileOverride();
+            if (prof != null && prof.Overrides != null)
+            {
+                var ov = prof.Overrides.FirstOrDefault(o =>
+                    string.Equals(o.Command, cmd.ToString(), StringComparison.OrdinalIgnoreCase));
+                if (ov != null)
+                    return ov.Value ?? string.Empty;
+            }
+
+            // 2) Fallback to profile default
             var vendor = cboVendor.SelectedItem as string;
             var modelDisplay = cboModel.SelectedItem as string;
             var model = ToModelPattern(modelDisplay);
@@ -747,6 +785,7 @@ namespace Oscilloscope_Network_Capture
             string scpi;
             var profSpecific = ScpiProfileRegistry.Find(vendor, model);
             if (profSpecific != null && profSpecific.TryGet(cmd, out scpi)) return scpi;
+
             return string.Empty;
         }
 
@@ -757,25 +796,32 @@ namespace Oscilloscope_Network_Capture
             var model = ToModelPattern(modelDisplay);
             var prof = _config.ScpiProfiles.FirstOrDefault(p => string.Equals(p.Vendor, vendor, StringComparison.OrdinalIgnoreCase) && string.Equals(p.Model, model, StringComparison.OrdinalIgnoreCase));
             if (prof == null) return;
-            string GetVal(string cmd)
+
+            Action<TextBox, string> apply = (tb, cmdName) =>
             {
-                var v = prof.Overrides.FirstOrDefault(o => string.Equals(o.Command, cmd, StringComparison.OrdinalIgnoreCase))?.Value;
-                return string.IsNullOrWhiteSpace(v) ? null : v;
-            }
-            txtCmdIdentify.Text = GetVal(nameof(ScopeCommand.Identify)) ?? txtCmdIdentify.Text;
-            txtCmdClearStats.Text = GetVal(nameof(ScopeCommand.ClearStatistics)) ?? txtCmdClearStats.Text;
-            txtCmdActiveTrig.Text = GetVal(nameof(ScopeCommand.QueryActiveTrigger)) ?? txtCmdActiveTrig.Text;
-            txtCmdStop.Text = GetVal(nameof(ScopeCommand.Stop)) ?? txtCmdStop.Text;
-            txtCmdRun.Text = GetVal(nameof(ScopeCommand.Run)) ?? txtCmdRun.Text;
-            txtCmdSingle.Text = GetVal(nameof(ScopeCommand.Single)) ?? txtCmdSingle.Text;
-            txtCmdTrigMode.Text = GetVal(nameof(ScopeCommand.QueryTriggerMode)) ?? txtCmdTrigMode.Text;
-            txtCmdTrigLevelQ.Text = GetVal(nameof(ScopeCommand.QueryTriggerLevel)) ?? txtCmdTrigLevelQ.Text;
-            txtCmdTrigLevelSet.Text = GetVal(nameof(ScopeCommand.SetTriggerLevel)) ?? txtCmdTrigLevelSet.Text;
-            txtCmdTimeDivQ.Text = GetVal(nameof(ScopeCommand.QueryTimeDiv)) ?? txtCmdTimeDivQ.Text;
-            txtCmdTimeDivSet.Text = GetVal(nameof(ScopeCommand.SetTimeDiv)) ?? txtCmdTimeDivSet.Text;
-            txtCmdDumpImage.Text = GetVal(nameof(ScopeCommand.DumpImage)) ?? txtCmdDumpImage.Text;
-            txtCmdSysErr.Text = GetVal(nameof(ScopeCommand.PopLastSystemError)) ?? txtCmdSysErr.Text;
-            txtCmdOpc.Text = GetVal(nameof(ScopeCommand.OperationComplete)) ?? txtCmdOpc.Text;
+                if (tb == null) return;
+                var ov = prof.Overrides.FirstOrDefault(o => string.Equals(o.Command, cmdName, StringComparison.OrdinalIgnoreCase));
+                if (ov != null)
+                {
+                    // Apply override even if empty -> enables intentional "skip"
+                    tb.Text = ov.Value ?? string.Empty;
+                }
+            };
+
+            apply(txtCmdIdentify, nameof(ScopeCommand.Identify));
+            apply(txtCmdClearStats, nameof(ScopeCommand.ClearStatistics));
+            apply(txtCmdSysErr, nameof(ScopeCommand.DrainSystemErrorQueue));
+            apply(txtCmdOpc, nameof(ScopeCommand.OperationComplete));
+            apply(txtCmdActiveTrig, nameof(ScopeCommand.QueryActiveTrigger));
+            apply(txtCmdStop, nameof(ScopeCommand.Stop));
+            apply(txtCmdSingle, nameof(ScopeCommand.Single));
+            apply(txtCmdRun, nameof(ScopeCommand.Run));
+            apply(txtCmdTrigMode, nameof(ScopeCommand.QueryTriggerMode));
+            apply(txtCmdTrigLevelQ, nameof(ScopeCommand.QueryTriggerLevel));
+            apply(txtCmdTrigLevelSet, nameof(ScopeCommand.SetTriggerLevel));
+            apply(txtCmdTimeDivQ, nameof(ScopeCommand.QueryTimeDiv));
+            apply(txtCmdTimeDivSet, nameof(ScopeCommand.SetTimeDiv));
+            apply(txtCmdDumpImage, nameof(ScopeCommand.DumpImage));
         }
 
         private void ShowCenterOverlay(string text, int milliseconds = 1700)
@@ -847,7 +893,7 @@ namespace Oscilloscope_Network_Capture
             txtCmdTimeDivQ.Text = GetCmd(ScopeCommand.QueryTimeDiv);
             txtCmdTimeDivSet.Text = GetCmd(ScopeCommand.SetTimeDiv);
             txtCmdDumpImage.Text = GetCmd(ScopeCommand.DumpImage);
-            txtCmdSysErr.Text = GetCmd(ScopeCommand.PopLastSystemError);
+            txtCmdSysErr.Text = GetCmd(ScopeCommand.DrainSystemErrorQueue);
             txtCmdOpc.Text = GetCmd(ScopeCommand.OperationComplete);
         }
 
@@ -1039,22 +1085,23 @@ namespace Oscilloscope_Network_Capture
         }
 
         // Save per-profile override at time of testing — only if different from default
-        private void SaveOverrideOnTestClick(ScopeCommand cmd, String value)
+        private void SaveOverrideOnTestClick(ScopeCommand cmd, string value)
         {
-            var defaultScpi = (GetDefaultScpiForCurrentProfile(cmd) ?? string.Empty).Trim();
+            // Compare against raw profile default, not the effective UI value
+            var defaultScpi = (GetProfileDefaultScpiForCurrentModel(cmd) ?? string.Empty).Trim();
             var current = (value ?? string.Empty).Trim();
 
             var prof = FindCurrentProfileOverride();
             var existing = prof?.Overrides?.FirstOrDefault(o => string.Equals(o.Command, cmd.ToString(), StringComparison.OrdinalIgnoreCase));
 
-            // If matches default or empty -> remove override (if any) and possibly remove empty profile node
-            if (string.Equals(current, defaultScpi, StringComparison.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(current))
+            // If equals profile default -> remove override
+            if (string.Equals(current, defaultScpi, StringComparison.OrdinalIgnoreCase))
             {
                 if (existing != null)
                 {
                     prof.Overrides.Remove(existing);
                 }
-                if (prof != null && (prof.Overrides == null || prof.Overrides.Count == 0))
+                if (prof != null && (prof.Overrides == null || prof.Overrides.Count == 0) && string.IsNullOrWhiteSpace(prof.TimeDivValues))
                 {
                     _config.ScpiProfiles.Remove(prof);
                 }
@@ -1062,7 +1109,7 @@ namespace Oscilloscope_Network_Capture
                 return;
             }
 
-            // Different from default: ensure override exists and update
+            // Otherwise persist override AS-IS (including empty => intentional "skip")
             if (prof == null)
             {
                 var vendor = cboVendor.SelectedItem as string ?? string.Empty;
@@ -1073,11 +1120,11 @@ namespace Oscilloscope_Network_Capture
             }
             if (existing == null)
             {
-                prof.Overrides.Add(new ScpiCommandOverride { Command = cmd.ToString(), Value = value });
+                prof.Overrides.Add(new ScpiCommandOverride { Command = cmd.ToString(), Value = current });
             }
             else
             {
-                existing.Value = value;
+                existing.Value = current;
             }
             ConfigurationService.Save(_config);
         }
@@ -1324,7 +1371,7 @@ namespace Oscilloscope_Network_Capture
 
         private async void btnTestSysErr_Click(object sender, EventArgs e)
         {
-            SaveOverrideOnTestClick(ScopeCommand.PopLastSystemError, txtCmdSysErr.Text);
+            SaveOverrideOnTestClick(ScopeCommand.DrainSystemErrorQueue, txtCmdSysErr.Text);
             await WithButtonDisabledAsync((Button)sender, lblStatusSysErr, async () =>
             {
                 await WithOtherTestButtonsDisabledAsync((Button)sender, async () =>
@@ -1336,7 +1383,7 @@ namespace Oscilloscope_Network_Capture
                     }
                     else
                     {
-                        await RunSuiteAsync(ScopeTestSuite.PopLastSystemError, txtCmdSysErr.Text, lblStatusSysErr);
+                        await RunSuiteAsync(ScopeTestSuite.DrainSystemErrorQueue, txtCmdSysErr.Text, lblStatusSysErr);
                     }
                 });
             });
@@ -1366,46 +1413,85 @@ namespace Oscilloscope_Network_Capture
                     {
                         await EnsureConnectedAsync();
 
-                        // Log suite header
+                        // Honor "Force Clear" with optional delay before dumping
+                        if (_config != null && _config.ForceClear)
+                        {
+                            try
+                            {
+                                await RunSuiteHeadlessAsync(ScopeTestSuite.ClearStatistics);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Instance.Error("ClearStatistics suite failed before dump: " + InnermostMessage(ex));
+                            }
+
+                            try
+                            {
+                                var delayMs = Math.Max(0, _config?.DelayMs ?? 0);
+                                if (delayMs > 0)
+                                {
+                                    Logger.Instance.Debug("---");
+                                    Logger.Instance.Debug("Delay before dump: " + delayMs.ToString(CultureInfo.InvariantCulture) + " ms");
+                                    await Task.Delay(delayMs, _cts?.Token ?? CancellationToken.None);
+                                    Logger.Instance.Debug("Delay completed.");
+                                }
+                            }
+                            catch (TaskCanceledException) { }
+                            catch (Exception ex)
+                            {
+                                Logger.Instance.Error("Delay after ClearStatistics failed: " + InnermostMessage(ex));
+                            }
+                        }
+
+                        // Honor Stop-before-dump
+                        try
+                        {
+                            await RunSuiteHeadlessAsync(ScopeTestSuite.Stop);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Instance.Error("Stop suite before dump failed: " + InnermostMessage(ex));
+                        }
+
                         Logger.Instance.Debug("---");
                         Logger.Instance.Debug(ScopeTestSuiteRegistry.GetDisplayName(ScopeTestSuite.DumpImage) + ":");
 
-                        // Execute pre-steps (all steps except DumpImage) using profile defaults
+                        // Execute pre-steps (all steps except DumpImage) using effective (UI-first) SCPI
                         var steps = ScopeTestSuiteRegistry.Resolve(_config, ScopeTestSuite.DumpImage);
                         foreach (var step in steps)
                         {
                             if (step == ScopeCommand.DumpImage) continue;
 
+                            var scpi = GetDefaultScpiForCurrentProfile(step);
+                            if (string.IsNullOrWhiteSpace(scpi))
+                            {
+                                LogSkipEmpty(step);
+                                continue; // Skip empty pre-steps
+                            }
+
                             if (IsQuery(step))
-                            {
-                                var scpi = GetDefaultScpiForCurrentProfile(step);
-                                await _scope.SendRawQueryAsync(scpi, _cts?.Token ?? System.Threading.CancellationToken.None);
-                            }
+                                await _scope.SendRawQueryAsync(scpi, _cts?.Token ?? CancellationToken.None);
                             else
-                            {
-                                var scpi = GetDefaultScpiForCurrentProfile(step);
-                                await _scope.SendRawWriteAsync(scpi, _cts?.Token ?? System.Threading.CancellationToken.None);
-                            }
+                                await _scope.SendRawWriteAsync(scpi, _cts?.Token ?? CancellationToken.None);
                         }
 
                         var cmd = (txtCmdDumpImage.Text ?? string.Empty).Trim();
                         if (string.IsNullOrWhiteSpace(cmd))
                             throw new InvalidOperationException("DumpImage command is empty.");
 
-                        // Raw SCPI definite-length block from the scope
-                        var raw = await _scope.SendRawDumpAndReadAsync(cmd, _cts?.Token ?? System.Threading.CancellationToken.None);
+                        var raw = await _scope.SendRawDumpAndReadAsync(cmd, _cts?.Token ?? CancellationToken.None);
 
-                        // Strip SCPI header to feed the decoder (UI preview)
                         var payload = StripIeee4882Block(raw);
                         if (payload == null || payload.Length == 0)
                             throw new InvalidOperationException("No image data received.");
 
+                        // Decode must succeed or we fail the test
                         try
                         {
-                            using (var ms = new System.IO.MemoryStream(payload))
-                            using (var img = System.Drawing.Image.FromStream(ms))
+                            using (var ms = new MemoryStream(payload))
+                            using (var img = Image.FromStream(ms))
                             {
-                                var clone = (System.Drawing.Image)img.Clone();
+                                var clone = (Image)img.Clone();
                                 var old = picScreen.Image;
                                 picScreen.Image = clone;
                                 try { old?.Dispose(); } catch { }
@@ -1414,22 +1500,46 @@ namespace Oscilloscope_Network_Capture
                         catch (Exception ex)
                         {
                             Logger.Instance.Error("Image decode failed: " + InnermostMessage(ex));
+                            throw; // ensure status becomes Fail
                         }
 
-                        // Detailed info based on the SCPI block (handles BMP header and size)
                         var info = Oscilloscope_Network_Capture.Core.Scopes.ScopeTestSuiteRegistry.FormatDumpImageInfo(raw);
                         Logger.Instance.Info(info);
 
+                        // Honor "Force Acquisition" after dumping
+                        if (_config != null && _config.ForceAcquisition)
+                        {
+                            try
+                            {
+                                await RunSuiteHeadlessAsync(ScopeTestSuite.Run);
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Instance.Error("Run suite after dump failed: " + InnermostMessage(ex));
+                            }
+                        }
+
                         lblStatusDumpImage.Text = "OK";
-                        lblStatusDumpImage.ForeColor = System.Drawing.Color.Green;
+                        lblStatusDumpImage.ForeColor = Color.Green;
                     }
                     catch
                     {
                         lblStatusDumpImage.Text = "Fail";
-                        lblStatusDumpImage.ForeColor = System.Drawing.Color.Red;
+                        lblStatusDumpImage.ForeColor = Color.Red;
                     }
                 });
             });
+        }
+
+        private string GetProfileDefaultScpiForCurrentModel(ScopeCommand cmd)
+        {
+            var vendor = cboVendor.SelectedItem as string;
+            var modelDisplay = cboModel.SelectedItem as string;
+            var model = ToModelPattern(modelDisplay);
+
+            string scpi;
+            var profSpecific = ScpiProfileRegistry.Find(vendor, model);
+            return (profSpecific != null && profSpecific.TryGet(cmd, out scpi)) ? (scpi ?? string.Empty) : string.Empty;
         }
 
         // Helper: inject numeric into SCPI override. If "{0}" exists, format; else replace last number; else append
@@ -1562,6 +1672,33 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
+        private static string FriendlyStepName(ScopeCommand cmd)
+        {
+            switch (cmd)
+            {
+                case ScopeCommand.DrainSystemErrorQueue: return "\"System Error Drain\"";
+                case ScopeCommand.OperationComplete: return "\"Operation Complete\"";
+                case ScopeCommand.ClearStatistics: return "\"Clear Statistics\"";
+                case ScopeCommand.QueryActiveTrigger: return "\"Query Active Trigger\"";
+                case ScopeCommand.Stop: return "\"Stop\"";
+                case ScopeCommand.Single: return "\"Single\"";
+                case ScopeCommand.Run: return "\"Run\"";
+                case ScopeCommand.QueryTriggerMode: return "\"Query Trigger Mode\"";
+                case ScopeCommand.QueryTriggerLevel: return "\"Query Trigger Level\"";
+                case ScopeCommand.SetTriggerLevel: return "\"Set Trigger Level\"";
+                case ScopeCommand.QueryTimeDiv: return "\"Query TIME/DIV\"";
+                case ScopeCommand.SetTimeDiv: return "\"Set TIME/DIV\"";
+                case ScopeCommand.Identify: return "\"Identify\"";
+                case ScopeCommand.DumpImage: return "\"Dump Image\"";
+                default: return cmd.ToString();
+            }
+        }
+
+        private static void LogSkipEmpty(ScopeCommand step)
+        {
+            Logger.Instance.Debug("Skipping " + FriendlyStepName(step) + " (command empty).");
+        }
+
         private async Task RunSuiteAsync(ScopeTestSuite suite, string primaryScpi, Label statusLabel)
         {
             try
@@ -1571,100 +1708,54 @@ namespace Oscilloscope_Network_Capture
                 string lastQueryResponse = null;
                 bool suiteFailed = false;
 
-                // Separator and suite header before executing
                 Logger.Instance.Debug("---");
                 Logger.Instance.Debug(ScopeTestSuiteRegistry.GetDisplayName(suite) + ":");
 
                 foreach (var step in steps)
                 {
-                    // Drain the entire system error queue when this step is reached (avoid extra query)
-                    if (step == ScopeCommand.PopLastSystemError)
+                    if (step == ScopeCommand.DrainSystemErrorQueue)
                     {
                         await DrainSystemErrorQueueAsync().ConfigureAwait(true);
-                        lastQueryResponse = "0"; // treat as no error after full drain
+                        lastQueryResponse = "0";
                         continue;
                     }
 
-                    // For the first step we use the textbox content (primaryScpi) to honor overrides; subsequent steps use profile commands
                     if (step == steps.First())
                     {
+                        var cmdToSend = (primaryScpi ?? string.Empty).Trim();
+                        if (string.IsNullOrWhiteSpace(cmdToSend))
+                        {
+                            LogSkipEmpty(step);
+                            continue;
+                        }
+
                         if (IsQuery(step))
-                            lastQueryResponse = await _scope.SendRawQueryAsync(primaryScpi, _cts?.Token ?? CancellationToken.None);
-                        else
-                            await _scope.SendRawWriteAsync(primaryScpi, _cts?.Token ?? CancellationToken.None);
+                            lastQueryResponse = await _scope.SendRawQueryAsync(cmdToSend, _cts?.Token ?? CancellationToken.None);
+                        else if (step != ScopeCommand.DumpImage)
+                            await _scope.SendRawWriteAsync(cmdToSend, _cts?.Token ?? CancellationToken.None);
                     }
                     else
                     {
-                        // Resolve SCPI from profile and execute
+                        if (step == ScopeCommand.DumpImage)
+                            continue;
+
+                        var scpi = GetDefaultScpiForCurrentProfile(step);
+                        if (string.IsNullOrWhiteSpace(scpi))
+                        {
+                            LogSkipEmpty(step);
+                            continue; // Skip empty profile step
+                        }
+
                         if (IsQuery(step))
-                        {
-                            var scpi = GetDefaultScpiForCurrentProfile(step);
                             lastQueryResponse = await _scope.SendRawQueryAsync(scpi, _cts?.Token ?? CancellationToken.None);
-                        }
-                        else if (step == ScopeCommand.DumpImage)
-                        {
-                            // Handled elsewhere; ignore in generic test runner
-                        }
                         else
-                        {
-                            var scpi = GetDefaultScpiForCurrentProfile(step);
                             await _scope.SendRawWriteAsync(scpi, _cts?.Token ?? CancellationToken.None);
-                        }
                     }
                 }
 
-                // Existing: log IDN breakdown for QueryIdentify
                 if (!suiteFailed && suite == ScopeTestSuite.QueryIdentify && !string.IsNullOrWhiteSpace(lastQueryResponse))
                 {
                     LogIdnVendorModelFirmware(lastQueryResponse);
-                }
-
-                if (!suiteFailed)
-                {
-                    switch (suite)
-                    {
-                        case ScopeTestSuite.ClearStatistics:
-                            Logger.Instance.Info("Statistics cleared");
-                            break;
-
-                        case ScopeTestSuite.QueryActiveTrigger:
-                            {
-                                var s = TrimQuotes(lastQueryResponse ?? string.Empty).Trim();
-                                Logger.Instance.Info("Trigger read as " + (string.IsNullOrEmpty(s) ? "(empty)" : s));
-                                break;
-                            }
-
-                        case ScopeTestSuite.Stop:
-                            Logger.Instance.Info("Trigger set to STOP");
-                            break;
-
-                        case ScopeTestSuite.Run:
-                            Logger.Instance.Info("Trigger set to RUN");
-                            break;
-
-                        case ScopeTestSuite.Single:
-                            Logger.Instance.Info("Trigger set to SINGLE");
-                            break;
-
-                        case ScopeTestSuite.QueryTriggerMode:
-                            {
-                                var s = TrimQuotes(lastQueryResponse ?? string.Empty).Trim();
-                                Logger.Instance.Info("Trigger mode read as " + (string.IsNullOrEmpty(s) ? "(empty)" : s));
-                                break;
-                            }
-
-                        case ScopeTestSuite.DumpImage:
-                            Logger.Instance.Info("Dumped image from raw network stream.");
-                            break;
-
-                        case ScopeTestSuite.PopLastSystemError:
-                            Logger.Instance.Info("System error queue drained.");
-                            break;
-
-                        case ScopeTestSuite.OperationComplete:
-                            Logger.Instance.Info("Operation completed.");
-                            break;
-                    }
                 }
 
                 if (suiteFailed)
@@ -1694,7 +1785,7 @@ namespace Oscilloscope_Network_Capture
                 case ScopeCommand.QueryTriggerMode:
                 case ScopeCommand.QueryTriggerLevel:
                 case ScopeCommand.QueryTimeDiv:
-                case ScopeCommand.PopLastSystemError:
+                case ScopeCommand.DrainSystemErrorQueue:
                 case ScopeCommand.OperationComplete:
                     return true;
                 default:
@@ -2101,20 +2192,29 @@ namespace Oscilloscope_Network_Capture
 
                 if (first)
                 {
-                    if (IsQuery(step))
+                    var cmdToSend = (primary ?? string.Empty).Trim();
+                    if (string.IsNullOrWhiteSpace(cmdToSend))
                     {
-                        var r = await _scope.SendRawQueryAsync(primary, ct).ConfigureAwait(true);
+                        LogSkipEmpty(step);
+                    }
+                    else if (IsQuery(step))
+                    {
+                        var r = await _scope.SendRawQueryAsync(cmdToSend, ct).ConfigureAwait(true);
                         if (step == ScopeCommand.QueryTimeDiv) timeDivResp = r;
                     }
                     else
                     {
-                        await _scope.SendRawWriteAsync(primary, ct).ConfigureAwait(true);
+                        await _scope.SendRawWriteAsync(cmdToSend, ct).ConfigureAwait(true);
                     }
                 }
                 else
                 {
                     var scpi = GetDefaultScpiForCurrentProfile(step);
-                    if (string.IsNullOrWhiteSpace(scpi)) continue;
+                    if (string.IsNullOrWhiteSpace(scpi))
+                    {
+                        LogSkipEmpty(step);
+                        continue;
+                    }
 
                     if (IsQuery(step))
                     {
@@ -2131,7 +2231,6 @@ namespace Oscilloscope_Network_Capture
             if (string.IsNullOrWhiteSpace(timeDivResp))
                 throw new InvalidOperationException("No TIME/DIV response received.");
 
-            // Parse e.g. "2.000000e-06" or "11000e0"
             double seconds;
             if (!double.TryParse(timeDivResp.Trim(),
                                  NumberStyles.Float | NumberStyles.AllowLeadingSign,
@@ -2160,7 +2259,6 @@ namespace Oscilloscope_Network_Capture
 
             var steps = ScopeTestSuiteRegistry.Resolve(_config, ScopeTestSuite.SetTimeDiv);
 
-            // Resolve format: prefer override ONLY if it still has {0}; else use profile default
             string overrideFmt = (txtCmdTimeDivSet?.Text ?? string.Empty).Trim();
             string profileFmt = GetDefaultScpiForCurrentProfile(ScopeCommand.SetTimeDiv) ?? string.Empty;
 
@@ -2168,7 +2266,6 @@ namespace Oscilloscope_Network_Capture
                                 ? overrideFmt
                                 : profileFmt;
 
-            // Prefer exponential seconds representation to avoid locale issues
             string formattedSeconds = targetSeconds.ToString("0.#########e+0", CultureInfo.InvariantCulture);
 
             string primaryScpi;
@@ -2189,8 +2286,7 @@ namespace Oscilloscope_Network_Capture
 
             foreach (var step in steps)
             {
-                // Drain the entire system error queue when this step is reached (avoid extra query)
-                if (step == ScopeCommand.PopLastSystemError)
+                if (step == ScopeCommand.DrainSystemErrorQueue)
                 {
                     await DrainSystemErrorQueueAsync().ConfigureAwait(true);
                     continue;
@@ -2208,11 +2304,13 @@ namespace Oscilloscope_Network_Capture
 
                 var scpi = GetDefaultScpiForCurrentProfile(step);
                 if (string.IsNullOrWhiteSpace(scpi))
+                {
+                    LogSkipEmpty(step);
                     continue;
+                }
 
                 if (IsQuery(step))
                 {
-                    // normal query (non-error step)
                     await _scope.SendRawQueryAsync(scpi, ct).ConfigureAwait(true);
                 }
                 else
@@ -2544,20 +2642,29 @@ namespace Oscilloscope_Network_Capture
 
                 if (first)
                 {
-                    if (IsQuery(step))
+                    var cmdToSend = (primary ?? string.Empty).Trim();
+                    if (string.IsNullOrWhiteSpace(cmdToSend))
                     {
-                        var r = await _scope.SendRawQueryAsync(primary, ct).ConfigureAwait(true);
+                        LogSkipEmpty(step);
+                    }
+                    else if (IsQuery(step))
+                    {
+                        var r = await _scope.SendRawQueryAsync(cmdToSend, ct).ConfigureAwait(true);
                         if (step == ScopeCommand.QueryTriggerLevel) trigResp = r;
                     }
                     else
                     {
-                        await _scope.SendRawWriteAsync(primary, ct).ConfigureAwait(true);
+                        await _scope.SendRawWriteAsync(cmdToSend, ct).ConfigureAwait(true);
                     }
                 }
                 else
                 {
                     var scpi = GetDefaultScpiForCurrentProfile(step);
-                    if (string.IsNullOrWhiteSpace(scpi)) continue;
+                    if (string.IsNullOrWhiteSpace(scpi))
+                    {
+                        LogSkipEmpty(step);
+                        continue;
+                    }
 
                     if (IsQuery(step))
                     {
@@ -2602,12 +2709,10 @@ namespace Oscilloscope_Network_Capture
 
             var steps = ScopeTestSuiteRegistry.Resolve(_config, ScopeTestSuite.SetTriggerLevel);
 
-            // Prefer textbox override if present; else use profile default
             string fmt = (txtCmdTrigLevelSet?.Text ?? string.Empty).Trim();
             if (string.IsNullOrWhiteSpace(fmt))
                 fmt = GetDefaultScpiForCurrentProfile(ScopeCommand.SetTriggerLevel) ?? string.Empty;
 
-            // Build primary SCPI robustly (supports both "{0}" and literal commands)
             string primaryScpi = InjectNumericArg(fmt, targetVolts);
             if (string.IsNullOrWhiteSpace(primaryScpi))
             {
@@ -2619,8 +2724,7 @@ namespace Oscilloscope_Network_Capture
 
             foreach (var step in steps)
             {
-                // Drain the entire system error queue when this step is reached (avoid extra query)
-                if (step == ScopeCommand.PopLastSystemError)
+                if (step == ScopeCommand.DrainSystemErrorQueue)
                 {
                     await DrainSystemErrorQueueAsync().ConfigureAwait(true);
                     continue;
@@ -2642,11 +2746,13 @@ namespace Oscilloscope_Network_Capture
 
                 var scpi = GetDefaultScpiForCurrentProfile(step);
                 if (string.IsNullOrWhiteSpace(scpi))
+                {
+                    LogSkipEmpty(step);
                     continue;
+                }
 
                 if (IsQuery(step))
                 {
-                    // normal query (non-error step)
                     await _scope.SendRawQueryAsync(scpi, ct).ConfigureAwait(true);
                 }
                 else
@@ -2676,18 +2782,18 @@ namespace Oscilloscope_Network_Capture
             {
                 case ScopeTestSuite.QueryIdentify: return txtCmdIdentify?.Text ?? string.Empty;
                 case ScopeTestSuite.ClearStatistics: return txtCmdClearStats?.Text ?? string.Empty;
+                case ScopeTestSuite.DrainSystemErrorQueue: return txtCmdSysErr?.Text ?? string.Empty;
+                case ScopeTestSuite.OperationComplete: return txtCmdOpc?.Text ?? string.Empty;
                 case ScopeTestSuite.QueryActiveTrigger: return txtCmdActiveTrig?.Text ?? string.Empty;
                 case ScopeTestSuite.Stop: return txtCmdStop?.Text ?? string.Empty;
-                case ScopeTestSuite.Run: return txtCmdRun?.Text ?? string.Empty;
                 case ScopeTestSuite.Single: return txtCmdSingle?.Text ?? string.Empty;
+                case ScopeTestSuite.Run: return txtCmdRun?.Text ?? string.Empty;
                 case ScopeTestSuite.QueryTriggerMode: return txtCmdTrigMode?.Text ?? string.Empty;
                 case ScopeTestSuite.QueryTriggerLevel: return txtCmdTrigLevelQ?.Text ?? string.Empty;
                 case ScopeTestSuite.SetTriggerLevel: return txtCmdTrigLevelSet?.Text ?? string.Empty;
                 case ScopeTestSuite.QueryTimeDiv: return txtCmdTimeDivQ?.Text ?? string.Empty;
                 case ScopeTestSuite.SetTimeDiv: return txtCmdTimeDivSet?.Text ?? string.Empty;
                 case ScopeTestSuite.DumpImage: return txtCmdDumpImage?.Text ?? string.Empty;
-                case ScopeTestSuite.PopLastSystemError: return txtCmdSysErr?.Text ?? string.Empty;
-                case ScopeTestSuite.OperationComplete: return txtCmdOpc?.Text ?? string.Empty;
                 default: return string.Empty;
             }
         }
@@ -2711,14 +2817,12 @@ namespace Oscilloscope_Network_Capture
             string primary = GetPrimaryScpiForSuite(suite);
             string lastQueryResponse = null;
 
-            // Separator and suite header before executing
             Logger.Instance.Debug("---");
             Logger.Instance.Debug(ScopeTestSuiteRegistry.GetDisplayName(suite) + ":");
 
             foreach (var step in steps)
             {
-                // Drain the entire system error queue when this step is reached
-                if (step == ScopeCommand.PopLastSystemError)
+                if (step == ScopeCommand.DrainSystemErrorQueue)
                 {
                     await DrainSystemErrorQueueAsync().ConfigureAwait(true);
                     lastQueryResponse = "0";
@@ -2727,36 +2831,37 @@ namespace Oscilloscope_Network_Capture
 
                 if (step == steps.First())
                 {
-                    if (IsQuery(step))
-                        lastQueryResponse = await _scope.SendRawQueryAsync(primary, _cts?.Token ?? CancellationToken.None);
-                    else if (step == ScopeCommand.DumpImage)
+                    var cmdToSend = (primary ?? string.Empty).Trim();
+                    if (string.IsNullOrWhiteSpace(cmdToSend))
                     {
-                        // DumpImage is handled in CaptureAndSaveAsync; skip here
+                        LogSkipEmpty(step);
+                        continue;
                     }
-                    else
-                        await _scope.SendRawWriteAsync(primary, _cts?.Token ?? CancellationToken.None);
+
+                    if (IsQuery(step))
+                        lastQueryResponse = await _scope.SendRawQueryAsync(cmdToSend, _cts?.Token ?? CancellationToken.None);
+                    else if (step != ScopeCommand.DumpImage)
+                        await _scope.SendRawWriteAsync(cmdToSend, _cts?.Token ?? CancellationToken.None);
                 }
                 else
                 {
                     if (step == ScopeCommand.DumpImage)
-                    {
-                        // DumpImage is handled in CaptureAndSaveAsync; skip here
                         continue;
+
+                    var scpi = GetDefaultScpiForCurrentProfile(step);
+                    if (string.IsNullOrWhiteSpace(scpi))
+                    {
+                        LogSkipEmpty(step);
+                        continue; // Skip empty profile step
                     }
+
                     if (IsQuery(step))
-                    {
-                        var scpi = GetDefaultScpiForCurrentProfile(step);
                         lastQueryResponse = await _scope.SendRawQueryAsync(scpi, _cts?.Token ?? CancellationToken.None);
-                    }
                     else
-                    {
-                        var scpi = GetDefaultScpiForCurrentProfile(step);
                         await _scope.SendRawWriteAsync(scpi, _cts?.Token ?? CancellationToken.None);
-                    }
                 }
             }
 
-            // Existing: log IDN breakdown for QueryIdentify
             if (suite == ScopeTestSuite.QueryIdentify && !string.IsNullOrWhiteSpace(lastQueryResponse))
             {
                 LogIdnVendorModelFirmware(lastQueryResponse);
@@ -2767,41 +2872,33 @@ namespace Oscilloscope_Network_Capture
                 case ScopeTestSuite.ClearStatistics:
                     Logger.Instance.Info("Statistics cleared");
                     break;
-
                 case ScopeTestSuite.QueryActiveTrigger:
                     {
                         var s = TrimQuotes(lastQueryResponse ?? string.Empty).Trim();
                         Logger.Instance.Info("Trigger read as " + (string.IsNullOrEmpty(s) ? "(empty)" : s));
                         break;
                     }
-
                 case ScopeTestSuite.Stop:
                     Logger.Instance.Info("Trigger set to STOP");
                     break;
-
                 case ScopeTestSuite.Run:
                     Logger.Instance.Info("Trigger set to RUN");
                     break;
-
                 case ScopeTestSuite.Single:
                     Logger.Instance.Info("Trigger set to SINGLE");
                     break;
-
                 case ScopeTestSuite.QueryTriggerMode:
                     {
                         var s = TrimQuotes(lastQueryResponse ?? string.Empty).Trim();
                         Logger.Instance.Info("Trigger mode read as " + (string.IsNullOrEmpty(s) ? "(empty)" : s));
                         break;
                     }
-
                 case ScopeTestSuite.DumpImage:
                     Logger.Instance.Info("Dumped image from raw network stream.");
                     break;
-
-                case ScopeTestSuite.PopLastSystemError:
+                case ScopeTestSuite.DrainSystemErrorQueue:
                     Logger.Instance.Info("Popped last system error.");
                     break;
-
                 case ScopeTestSuite.OperationComplete:
                     Logger.Instance.Info("Operation completed.");
                     break;
@@ -2814,22 +2911,7 @@ namespace Oscilloscope_Network_Capture
 
             try
             {
-                // Visual cue: clear current image and set black background
-                try
-                {
-                    var old = picScreen.Image;
-                    picScreen.Image = null;
-                    try { old?.Dispose(); } catch { }
-                    picScreen.BackColor = Color.Black;
-                }
-                catch { }
-
-                // Optional start beep
-                if (_config != null && _config.EnableBeep) BeepStart();
-
-                await EnsureConnectedAsync();
-
-                // Optional pre-clear step
+                // Honor "Force Clear" with optional delay before capture
                 if (_config != null && _config.ForceClear)
                 {
                     try
@@ -2841,7 +2923,6 @@ namespace Oscilloscope_Network_Capture
                         Logger.Instance.Error("ClearStatistics suite failed before capture: " + InnermostMessage(ex));
                     }
 
-                    // Optional delay after clear
                     try
                     {
                         var delayMs = Math.Max(0, _config?.DelayMs ?? 0);
@@ -2849,7 +2930,7 @@ namespace Oscilloscope_Network_Capture
                         {
                             Logger.Instance.Debug("---");
                             Logger.Instance.Debug("Delay before capture: " + delayMs.ToString(CultureInfo.InvariantCulture) + " ms");
-                            await Task.Delay(delayMs, _cts?.Token ?? System.Threading.CancellationToken.None);
+                            await Task.Delay(delayMs, _cts?.Token ?? CancellationToken.None);
                             Logger.Instance.Debug("Delay completed.");
                         }
                     }
@@ -2860,7 +2941,7 @@ namespace Oscilloscope_Network_Capture
                     }
                 }
 
-                // NEW: Stop acquisition before DumpImage
+                // Stop acquisition before DumpImage
                 try
                 {
                     await RunSuiteHeadlessAsync(ScopeTestSuite.Stop);
@@ -2870,8 +2951,8 @@ namespace Oscilloscope_Network_Capture
                     Logger.Instance.Error("Stop suite before capture failed: " + InnermostMessage(ex));
                 }
 
-                // Perform capture via the DumpImage suite (executed and logged inside CaptureScreenAsync)
-                var data = await _scope.CaptureScreenAsync(_cts?.Token ?? System.Threading.CancellationToken.None);
+                // Perform capture using UI-effective SCPI (not the core default)
+                var data = await CaptureScreenViaUiAsync(_cts?.Token ?? System.Threading.CancellationToken.None);
                 if (data == null || data.Length == 0)
                 {
                     Logger.Instance.Error("Capture returned no data.");
@@ -2891,13 +2972,10 @@ namespace Oscilloscope_Network_Capture
                     var fileName = baseName + ".png";
                     var path = Path.Combine(folder, fileName);
 
-                    // Overwrite if it exists
                     try { if (File.Exists(path)) File.Delete(path); } catch { }
 
-                    // Save PNG
                     img.Save(path, System.Drawing.Imaging.ImageFormat.Png);
 
-                    // Show in UI (clone to avoid using disposed image)
                     try
                     {
                         var clone = (Image)img.Clone();
@@ -2907,7 +2985,6 @@ namespace Oscilloscope_Network_Capture
                     }
                     catch { }
 
-                    // Detailed saved-file info (dimensions, bpp, on-disk size)
                     try
                     {
                         long bytes = 0;
@@ -2941,11 +3018,10 @@ namespace Oscilloscope_Network_Capture
                     }
                 }
 
-                // Auto-increment NUMBER after a successful save in capture mode
                 if (savedOk && _captureMode)
                 {
                     IncrementNumberAfterSuccessfulSave();
-                    UpdateActionRichTextForNextFilename(); // Refresh to show updated next + previous
+                    UpdateActionRichTextForNextFilename();
                 }
             }
             catch (Exception ex)
@@ -2954,7 +3030,6 @@ namespace Oscilloscope_Network_Capture
             }
             finally
             {
-                // Optional end beep (lower tone)
                 if (_config != null && _config.EnableBeep) BeepEnd();
             }
         }
@@ -3094,7 +3169,7 @@ namespace Oscilloscope_Network_Capture
 
             Logger.Instance.Info(string.Format("Auto-connecting to {0} {1} at {2}:", vendor, modelDisplay, resource));
             await _scope.ConnectAsync(_cts.Token);
-            Logger.Instance.Debug("   hest 1 Auto-connected.");
+            Logger.Instance.Debug("Auto-connected.");
         }
 
         private static bool TryParseSystemErrorCode(string resp, out int code)
@@ -3119,19 +3194,53 @@ namespace Oscilloscope_Network_Capture
             return false;
         }
 
+        private async Task<byte[]> CaptureScreenViaUiAsync(CancellationToken ct)
+        {
+            // Mirror the Test button behavior, but as a reusable helper for capture mode
+            Logger.Instance.Debug("---");
+            Logger.Instance.Debug(ScopeTestSuiteRegistry.GetDisplayName(ScopeTestSuite.DumpImage) + ":");
+
+            var steps = ScopeTestSuiteRegistry.Resolve(_config, ScopeTestSuite.DumpImage);
+
+            // Execute pre-steps (all steps except DumpImage) using effective (UI-first) SCPI
+            foreach (var step in steps)
+            {
+                if (step == ScopeCommand.DumpImage) continue;
+
+                var scpi = GetDefaultScpiForCurrentProfile(step);
+                if (string.IsNullOrWhiteSpace(scpi))
+                {
+                    LogSkipEmpty(step);
+                    continue;
+                }
+
+                if (IsQuery(step))
+                    await _scope.SendRawQueryAsync(scpi, ct).ConfigureAwait(true);
+                else
+                    await _scope.SendRawWriteAsync(scpi, ct).ConfigureAwait(true);
+            }
+
+            // DumpImage from UI; empty => skip/abort
+            var cmd = ResolveUiScpiFor(ScopeCommand.DumpImage);
+            if (string.IsNullOrWhiteSpace(cmd))
+                throw new InvalidOperationException("DumpImage command is empty.");
+
+            // Read raw IEEE 488.2 block and strip header for image decode
+            var raw = await _scope.SendRawDumpAndReadAsync(cmd, ct).ConfigureAwait(true);
+            return StripIeee4882Block(raw);
+        }
+
         private async Task DrainSystemErrorQueueAsync()
         {
             await EnsureConnectedAsync();
             var ct = _cts?.Token ?? CancellationToken.None;
 
-            // Prefer profile SCPI; fallback to textbox override
-            var scpi = GetDefaultScpiForCurrentProfile(ScopeCommand.PopLastSystemError);
-            if (string.IsNullOrWhiteSpace(scpi))
-                scpi = txtCmdSysErr?.Text;
-
+            // Prefer UI textbox; GetDefaultScpiForCurrentProfile already resolves UI-first
+            var scpi = GetDefaultScpiForCurrentProfile(ScopeCommand.DrainSystemErrorQueue);
             if (string.IsNullOrWhiteSpace(scpi))
             {
-                Logger.Instance.Error("Cannot drain system error queue: SCPI command is empty.");
+                // Intentionally skipped for this vendor/model
+                Logger.Instance.Debug("Skipping system error drain (command empty).");
                 return;
             }
 
@@ -3162,11 +3271,7 @@ namespace Oscilloscope_Network_Capture
                 drained++;
             }
 
-            if (drained == 0)
-            {
-//                Logger.Instance.Info("No system errors.");
-            }
-            else
+            if (drained > 0)
             {
                 Logger.Instance.Info("Drained " + drained.ToString(CultureInfo.InvariantCulture) + " system error(s).");
             }

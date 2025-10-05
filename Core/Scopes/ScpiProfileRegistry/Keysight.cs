@@ -22,7 +22,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                 },
                 p => p
                     .Map(ScopeCommand.Identify, "*IDN?")
-                    .Map(ScopeCommand.PopLastSystemError, ":SYSTEM:ERROR?")
+                    .Map(ScopeCommand.DrainSystemErrorQueue, ":SYSTEM:ERROR?")
                     .Map(ScopeCommand.OperationComplete, "*OPC?")
                     .Map(ScopeCommand.ClearStatistics, "*CLS")
                     .Map(ScopeCommand.QueryActiveTrigger, ":TRIGGER:STATUS?")
@@ -45,11 +45,12 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
             AddSeriesProfiles(
                 "Keysight",
                 new[] {
-                    "InfiniiVision 6000 X"
+                    "InfiniiVision 6000 X",
+                    "InfiniiVision 6000L"
                 },
                 p => p
                     .Map(ScopeCommand.Identify, "*IDN?")
-                    .Map(ScopeCommand.PopLastSystemError, ":SYSTEM:ERROR?")
+                    .Map(ScopeCommand.DrainSystemErrorQueue, ":SYSTEM:ERROR?")
                     .Map(ScopeCommand.OperationComplete, "*OPC?")
                     .Map(ScopeCommand.ClearStatistics, "*CLS")
                     .Map(ScopeCommand.QueryActiveTrigger, ":TRIGGER:SWEEP?")
@@ -73,7 +74,8 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                 new[]
                 {
                     "InfiniiVision 2000 X",
-                    "InfiniiVision 6000 X"
+                    "InfiniiVision 6000 X",
+                    "InfiniiVision 6000L"
                 },
                 new[]
                 {

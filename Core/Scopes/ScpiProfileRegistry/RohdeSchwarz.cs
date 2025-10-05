@@ -24,7 +24,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                 },
                 p => p
                     .Map(ScopeCommand.Identify, "*IDN?")
-                    .Map(ScopeCommand.PopLastSystemError, "SYSTEM:ERROR?")
+                    .Map(ScopeCommand.DrainSystemErrorQueue, "SYSTEM:ERROR?")
                     .Map(ScopeCommand.OperationComplete, "*OPC?")
                     .Map(ScopeCommand.ClearStatistics, "MEASUREMENT:STATISTICS:RESET")
                     .Map(ScopeCommand.QueryActiveTrigger, ":TRIGGER:STATUS?")
@@ -50,7 +50,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                 },
                 p => p
                     .Map(ScopeCommand.Identify, "*IDN?")
-                    .Map(ScopeCommand.PopLastSystemError, "SYSTEM:ERROR?")
+                    .Map(ScopeCommand.DrainSystemErrorQueue, "SYSTEM:ERROR?")
                     .Map(ScopeCommand.OperationComplete, "*OPC?")
                     .Map(ScopeCommand.ClearStatistics, "MEASUREMENT:STATISTICS:RESET")
                     .Map(ScopeCommand.QueryActiveTrigger, ":ACQUIRE:STATE?")
@@ -59,7 +59,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                     .Map(ScopeCommand.Run, "RUN")
                     .Map(ScopeCommand.QueryTriggerMode, "TRIGGER:A:MODE?")
                     .Map(ScopeCommand.QueryTriggerLevel, "TRIGGER:A:LEVEL?")
-                    .Map(ScopeCommand.SetTriggerLevel, "TRIGGER:A:LEVEL {0}")
+                    .Map(ScopeCommand.SetTriggerLevel, "TRIGGER:A:LEVEL {0} 1")
                     .Map(ScopeCommand.QueryTimeDiv, "TIMEBASE:SCALE?")
                     .Map(ScopeCommand.SetTimeDiv, "TIMEBASE:SCALE {0}")
                     .Map(ScopeCommand.DumpImage, "HCOPY:DATA?")

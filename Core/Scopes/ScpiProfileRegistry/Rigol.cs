@@ -27,7 +27,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                 },
                 p => p
                     .Map(ScopeCommand.Identify, "*IDN?")
-                    .Map(ScopeCommand.PopLastSystemError, ":SYSTEM:ERROR?")
+                    .Map(ScopeCommand.DrainSystemErrorQueue, ":SYSTEM:ERROR?")
                     .Map(ScopeCommand.OperationComplete, "*OPC?")
                     .Map(ScopeCommand.ClearStatistics, ":CLEAR")
                     .Map(ScopeCommand.QueryActiveTrigger, ":TRIGGER:STATUS?")
