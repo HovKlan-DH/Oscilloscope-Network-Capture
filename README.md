@@ -52,14 +52,14 @@ The keyboard actions were implemented to support using an external numpad (or ke
   - InfiniiVision 2000 X 
   - InfiniiVision 6000 X
   - InfiniiVision 6000L
-- **Micsig**
-  - ATO
-  - ETO
-  - MDO
-  - MHO3
-  - SATO
-  - STO
-  - TO
+- ~~**Micsig**~~
+  - ~~ATO~~
+  - ~~ETO~~
+  - ~~MDO~~
+  - ~~MHO3~~
+  - ~~SATO~~
+  - ~~STO~~
+  - ~~TO~~
 - **Rigol**
   - DHO1000
   - DHO4000
@@ -103,22 +103,22 @@ If so, then please follow this checklist:
 # Screenshots
 
 
-<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/5dfd4320-e6ae-4c67-9034-2841dc74546c" />
+<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/5c36ac1f-865c-4140-b104-93d53b2083ca" />
 
 
-<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/46a34465-dfdb-497e-870f-0936ee94e030" />
+<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/4ff0a7b4-8f86-43da-b728-f007ac3475e4" />
 
 
-<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/93ea6573-db29-40b1-bf78-8322bc3faf71" />
+<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/2e838426-bfe4-40ba-b527-2f54e1b502d0" />
 
 
-<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/cb817fe6-c84f-48bb-aead-3764c6afaeed" />
+<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/4de08143-7ffc-4044-8725-4aa807af3c4a" />
 
 
-<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/64462a2c-807e-4e45-8039-d4e560010936" />
+<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/7197fd59-33c4-42c4-821d-067d66dae13c" />
 
 
-<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/c9d73360-16bb-475c-8ca4-a9e928f749a6" />
+<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/f4054597-3267-4e8b-8772-bba20a9ee7dc" />
 
 
-<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/3e3a0cbd-d97f-4e78-979c-d9964c391e24" />
+<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/2d142a59-2479-41ef-9a1d-b6b81652260c" />
