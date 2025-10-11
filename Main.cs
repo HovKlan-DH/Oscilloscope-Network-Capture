@@ -36,6 +36,8 @@ namespace Oscilloscope_Network_Capture
         private string versionOnline = "";
 
         private int _timeDivAdjustBusy;
+        private Panel _enterFlashOverlay;
+        private System.Windows.Forms.Timer _enterFlashTimer;
 
         // Trigger-level adjust pump (coalesces rapid keypresses)
         private int _triggerAdjustPending;                 // net steps (+/-)
@@ -158,6 +160,9 @@ namespace Oscilloscope_Network_Capture
             GetAssemblyVersion();
             CheckForNewVersionAsync();
 
+            // Ensure initial indicator state (inactive shown by default)
+            UpdateCaptureModeIndicators();
+
             // Capture whether a config file existed at startup (before any saves)
             _hadConfigOnStartup = ConfigurationService.Exists;
 
@@ -180,7 +185,7 @@ namespace Oscilloscope_Network_Capture
                 _config.VariableNames = new List<string> { "COMPONENT" };
                 //_config.VariableValues = new List<string> { "U1", "PAL" };
                 _config.VariableValues = new List<string> { "U1" };
-                _config.NumberValue = "0";
+//                _config.NumberValue = "0";
                 _config.DelayMs = designerDelayMs; // never persist -1
                 // Default capture folder to executable directory
                 _config.CaptureFolder = Application.StartupPath;
@@ -287,19 +292,11 @@ namespace Oscilloscope_Network_Capture
                 InitializeTriggerSetButtonState();
             }
 
-            // Initialize Measurements NUMBER from config
             if (numericUpDown1 != null)
             {
-                decimal parsed;
-                if (decimal.TryParse(_config.NumberValue ?? "0", NumberStyles.Number, CultureInfo.InvariantCulture, out parsed))
-                {
-                    if (parsed >= numericUpDown1.Minimum && parsed <= numericUpDown1.Maximum)
-                        numericUpDown1.Value = parsed;
-                }
+                // Keep designer default; just update preview when changed
                 numericUpDown1.ValueChanged += (s, a) =>
                 {
-                    _config.NumberValue = numericUpDown1.Value.ToString(CultureInfo.InvariantCulture);
-                    ConfigurationService.Save(_config);
                     UpdateActionRichTextForNextFilename();
                 };
             }
@@ -369,6 +366,7 @@ namespace Oscilloscope_Network_Capture
                                ?? this.Controls.Find("checkBox2", true).FirstOrDefault() as CheckBox;
             var chkForceClear = this.Controls.Find("checkBoxForceClear", true).FirstOrDefault() as CheckBox
                                  ?? this.Controls.Find("checkBox3", true).FirstOrDefault() as CheckBox;
+            var chkDoNotClearWhenStop = this.Controls.Find("checkBoxDoNotClearWhenStop", true).FirstOrDefault() as CheckBox;
             var numDelay = this.Controls.Find("numericUpDownDelayMs", true).FirstOrDefault() as NumericUpDown
                            ?? this.Controls.Find("numericUpDown2", true).FirstOrDefault() as NumericUpDown;
             var chkDelDU = this.Controls.Find("checkBoxDeleteDoubleUnderscore", true).FirstOrDefault() as CheckBox;
@@ -408,16 +406,17 @@ namespace Oscilloscope_Network_Capture
             {
                 chkForceClear.Checked = _config.ForceClear;
 
-                // NEW: sync Delay numeric enabled state on load
+                // Sync on load
                 if (numDelay != null) numDelay.Enabled = chkForceClear.Checked;
-
+                if (chkDoNotClearWhenStop != null) chkDoNotClearWhenStop.Enabled = chkForceClear.Checked;
                 chkForceClear.CheckedChanged += (s, a) =>
                 {
                     _config.ForceClear = chkForceClear.Checked;
                     ConfigurationService.Save(_config);
 
-                    // NEW: toggle Delay numeric when the checkbox changes
+                    // Toggle both controls when ForceClear changes
                     if (numDelay != null) numDelay.Enabled = chkForceClear.Checked;
+                    if (chkDoNotClearWhenStop != null) chkDoNotClearWhenStop.Enabled = chkForceClear.Checked;
                 };
             }
             if (chkDelDU != null)
@@ -464,8 +463,10 @@ namespace Oscilloscope_Network_Capture
             buttonOpenFolder.Click += (s, a) =>
             {
                 OpenCaptureFolder();
-                textBoxFilenameFormat.Focus();
-                textBoxFilenameFormat.Select(0, 0);
+                //                textBoxFilenameFormat.Focus();
+                //                textBoxFilenameFormat.Select(0, 0);
+                // Remove caret from any input control and ensure form receives keys
+                removeFocus();
             };
 
             // Wire capture start button (prefer new name, fallback to legacy button1)
@@ -476,6 +477,17 @@ namespace Oscilloscope_Network_Capture
                 textBoxFilenameFormat.Focus();
                 textBoxFilenameFormat.Select(0, 0);
             };
+
+            // Persist DoNotClearWhenStop state
+            if (chkDoNotClearWhenStop != null)
+            {
+                chkDoNotClearWhenStop.Checked = _config.DoNotClearWhenStop;
+                chkDoNotClearWhenStop.CheckedChanged += (s, a) =>
+                {
+                    _config.DoNotClearWhenStop = chkDoNotClearWhenStop.Checked;
+                    ConfigurationService.Save(_config);
+                };
+            }
 
             // Enable layout persistence after initial show
             _suppressLayoutSave = false;
@@ -1885,6 +1897,30 @@ namespace Oscilloscope_Network_Capture
 
             rtb.Clear();
             rtb.AppendText("Capture mode enabled. Press [ENTER] to capture image. View \"Help\" tab to see all keyboard commands available." + Environment.NewLine);
+
+            // PREVIOUS filename, if available
+            if (_savedFileHistory.Count > 0)
+            {
+                var prev = _savedFileHistory[_savedFileHistory.Count - 1];
+                rtb.AppendText("Previous image was saved with filename [");
+
+                int prevBoldStart = rtb.TextLength;
+                rtb.AppendText(prev);
+                int prevBoldLen = rtb.TextLength - prevBoldStart;
+
+                rtb.SelectionStart = prevBoldStart;
+                rtb.SelectionLength = prevBoldLen;
+                try { rtb.SelectionFont = new Font(rtb.Font, FontStyle.Bold); } catch { }
+
+                // Reset to regular before the closing bracket and any subsequent text
+                rtb.SelectionStart = rtb.TextLength;
+                rtb.SelectionLength = 0;
+                try { rtb.SelectionFont = rtb.Font; } catch { }
+
+                rtb.AppendText("]" + Environment.NewLine);
+            }
+
+            // NEXT filename
             rtb.AppendText("Next image will be saved with filename [");
 
             // Bold NEXT filename only
@@ -1902,28 +1938,6 @@ namespace Oscilloscope_Network_Capture
             try { rtb.SelectionFont = rtb.Font; } catch { }
 
             rtb.AppendText("]");
-
-            // Append PREVIOUS filename if available
-            if (_savedFileHistory.Count > 0)
-            {
-                var prev = _savedFileHistory[_savedFileHistory.Count - 1];
-                rtb.AppendText(Environment.NewLine + "Previous image was saved with filename [");
-
-                int prevBoldStart = rtb.TextLength;
-                rtb.AppendText(prev);
-                int prevBoldLen = rtb.TextLength - prevBoldStart;
-
-                rtb.SelectionStart = prevBoldStart;
-                rtb.SelectionLength = prevBoldLen;
-                try { rtb.SelectionFont = new Font(rtb.Font, FontStyle.Bold); } catch { }
-
-                // Reset to regular before the closing bracket and any subsequent text
-                rtb.SelectionStart = rtb.TextLength;
-                rtb.SelectionLength = 0;
-                try { rtb.SelectionFont = rtb.Font; } catch { }
-
-                rtb.AppendText("]");
-            }
         }
 
         private void IncrementNumberAfterSuccessfulSave()
@@ -2003,6 +2017,9 @@ namespace Oscilloscope_Network_Capture
                         ShowCenterOverlay("Deleted last saved file");
                 }
                 catch { }
+
+                // NEW: subtle delete beep (respects the same EnableBeep setting)
+                if (_config != null && _config.EnableBeep) BeepDelete();
             }
             catch (Exception ex)
             {
@@ -2011,6 +2028,7 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
+        // Capture mode: ENTER=stop+capture+save, ESC=exit
         // Capture mode: ENTER=stop+capture+save, ESC=exit
         private async Task StartCaptureModeAsync()
         {
@@ -2030,6 +2048,9 @@ namespace Oscilloscope_Network_Capture
             this.KeyDown -= Form1_Capture_KeyDown;
             this.KeyDown += Form1_Capture_KeyDown;
             Logger.Instance.Info("Capture mode enabled.");
+
+            // Update indicators to show capture-mode is active
+            UpdateCaptureModeIndicators();
 
             UpdateActionRichTextForNextFilename();
         }
@@ -2067,6 +2088,7 @@ namespace Oscilloscope_Network_Capture
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
+                FlashEnterFeedback(); // subtle visual feedback
                 _ = ExecuteCaptureKeyAsync(async () =>
                 {
                     await CaptureAndSaveAsync();
@@ -2911,48 +2933,104 @@ namespace Oscilloscope_Network_Capture
 
             try
             {
-                // Honor "Force Clear" with optional delay before capture
+                if (_config != null && _config.EnableBeep) BeepStart();
+
+                var ct = _cts?.Token ?? CancellationToken.None;
+                bool skipClearAndStop = false; // when true, jump directly to "capture" section
+
                 if (_config != null && _config.ForceClear)
                 {
-                    try
+                    // If user asked to avoid clearing when we're already in STOP mode
+                    if (_config.DoNotClearWhenStop)
                     {
-                        await RunSuiteHeadlessAsync(ScopeTestSuite.ClearStatistics);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Instance.Error("ClearStatistics suite failed before capture: " + InnermostMessage(ex));
-                    }
-
-                    try
-                    {
-                        var delayMs = Math.Max(0, _config?.DelayMs ?? 0);
-                        if (delayMs > 0)
+                        try
                         {
-                            Logger.Instance.Debug("---");
-                            Logger.Instance.Debug("Delay before capture: " + delayMs.ToString(CultureInfo.InvariantCulture) + " ms");
-                            await Task.Delay(delayMs, _cts?.Token ?? CancellationToken.None);
-                            Logger.Instance.Debug("Delay completed.");
+                            await EnsureConnectedAsync();
+
+                            // Resolve UI-effective SCPI for QueryActiveTrigger (suite has only this single command)
+                            var cmdActive = GetPrimaryScpiForSuite(ScopeTestSuite.QueryActiveTrigger);
+                            if (string.IsNullOrWhiteSpace(cmdActive))
+                                cmdActive = GetDefaultScpiForCurrentProfile(ScopeCommand.QueryActiveTrigger);
+
+                            if (!string.IsNullOrWhiteSpace(cmdActive))
+                            {
+                                var resp = await _scope.SendRawQueryAsync(cmdActive, ct).ConfigureAwait(true);
+                                var s = TrimQuotes(resp ?? string.Empty).Trim();
+
+                                if (!string.IsNullOrEmpty(s) &&
+                                    s.IndexOf("stop", StringComparison.OrdinalIgnoreCase) >= 0)
+                                {
+                                    // Already in STOP → skip Clear/Delay/Stop and go straight to capture
+                                    Logger.Instance.Info("Scope already in STOP; skipping Clear/Delay/Stop.");
+                                    skipClearAndStop = true;
+                                }
+                            }
+                            else
+                            {
+                                Logger.Instance.Debug("QueryActiveTrigger command empty; cannot determine STOP state.");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Instance.Error("QueryActiveTrigger failed: " + InnermostMessage(ex));
                         }
                     }
-                    catch (TaskCanceledException) { }
-                    catch (Exception ex)
+
+                    // Only clear + delay + stop if not explicitly skipping
+                    if (!skipClearAndStop)
                     {
-                        Logger.Instance.Error("Delay after ClearStatistics failed: " + InnermostMessage(ex));
+                        try
+                        {
+                            await RunSuiteHeadlessAsync(ScopeTestSuite.ClearStatistics);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Instance.Error("ClearStatistics suite failed before capture: " + InnermostMessage(ex));
+                        }
+
+                        try
+                        {
+                            var delayMs = Math.Max(0, _config?.DelayMs ?? 0);
+                            if (delayMs > 0)
+                            {
+                                Logger.Instance.Debug("---");
+                                Logger.Instance.Debug("Delay before capture: " + delayMs.ToString(CultureInfo.InvariantCulture) + " ms");
+                                await Task.Delay(delayMs, ct);
+                                Logger.Instance.Debug("Delay completed.");
+                            }
+                        }
+                        catch (TaskCanceledException) { }
+                        catch (Exception ex)
+                        {
+                            Logger.Instance.Error("Delay after ClearStatistics failed: " + InnermostMessage(ex));
+                        }
+
+                        // Stop acquisition before DumpImage (only when not skipping this phase)
+                        try
+                        {
+                            await RunSuiteHeadlessAsync(ScopeTestSuite.Stop);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Instance.Error("Stop suite before capture failed: " + InnermostMessage(ex));
+                        }
                     }
                 }
-
-                // Stop acquisition before DumpImage
-                try
+                else
                 {
-                    await RunSuiteHeadlessAsync(ScopeTestSuite.Stop);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Instance.Error("Stop suite before capture failed: " + InnermostMessage(ex));
+                    // Original behavior when ForceClear is disabled: Stop before dump
+                    try
+                    {
+                        await RunSuiteHeadlessAsync(ScopeTestSuite.Stop);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Instance.Error("Stop suite before capture failed: " + InnermostMessage(ex));
+                    }
                 }
 
                 // Perform capture using UI-effective SCPI (not the core default)
-                var data = await CaptureScreenViaUiAsync(_cts?.Token ?? System.Threading.CancellationToken.None);
+                var data = await CaptureScreenViaUiAsync(ct);
                 if (data == null || data.Length == 0)
                 {
                     Logger.Instance.Error("Capture returned no data.");
@@ -3060,6 +3138,24 @@ namespace Oscilloscope_Network_Capture
         private void BeepEnd()
         {
             try { System.Threading.Tasks.Task.Run(() => { try { Console.Beep(800, 180); } catch { } }); } catch { }
+        }
+
+        private void BeepDelete()
+        {
+            try
+            {
+                System.Threading.Tasks.Task.Run(() =>
+                {
+                    try
+                    {
+                        // Two short down tones to distinguish from capture beeps
+                        Console.Beep(600, 150);
+                        Console.Beep(600, 150);
+                    }
+                    catch { }
+                });
+            }
+            catch { }
         }
 
         private string ResolveCaptureFolder()
@@ -3435,6 +3531,9 @@ namespace Oscilloscope_Network_Capture
             int nameTbWidth = numericUpDownVariables != null ? numericUpDownVariables.Width : 220;
             int xLabel = xText + nameTbWidth + 6; // label closer to textbox
 
+            // Start TabIndex right after numericUpDownVariables
+            int startTab = ((numericUpDownVariables != null) ? numericUpDownVariables.TabIndex : 0) + 1;
+
             // Dynamic variables (editable)
             for (int i = 0; i < (_config?.VariableCount ?? 0); i++)
             {
@@ -3444,7 +3543,8 @@ namespace Oscilloscope_Network_Capture
                     Name = VarNameEditorPrefix + i,
                     Location = new Point(xText, baseY + i * rowH),
                     Width = nameTbWidth,
-                    Text = (_config.VariableNames.ElementAtOrDefault(i) ?? ("VAR" + (i + 1)))
+                    Text = (_config.VariableNames.ElementAtOrDefault(i) ?? ("VAR" + (i + 1))),
+                    TabIndex = startTab + i
                 };
                 try { tb.CharacterCasing = CharacterCasing.Upper; } catch { }
                 int idx = i;
@@ -3467,12 +3567,13 @@ namespace Oscilloscope_Network_Capture
                 };
                 tabSettings.Controls.Add(tb);
 
-                // Label to the right: shows current variable name token {NAME}
+                // Label to the right: shows current variable name token {NAME}; skip in tab order
                 var nameLbl = new Label
                 {
                     Name = VarNameLabelPrefix + i,
                     AutoSize = true,
                     Location = new Point(xLabel, baseY + i * rowH + 3),
+                    TabStop = false
                 };
                 var nmTxt = _config.VariableNames.ElementAtOrDefault(i);
                 if (string.IsNullOrWhiteSpace(nmTxt)) nmTxt = "VAR" + (i + 1);
@@ -3502,7 +3603,8 @@ namespace Oscilloscope_Network_Capture
                 Name = VarNameLabelPrefix + "DATE",
                 AutoSize = true,
                 Location = new Point(xLabel, afterDynamicY + 3),
-                Text = "{DATE}"
+                Text = "{DATE}",
+                TabStop = false
             };
             try { lblDate.Font = label2?.Font ?? lblDate.Font; } catch { }
             tabSettings.Controls.Add(lblDate);
@@ -3525,7 +3627,8 @@ namespace Oscilloscope_Network_Capture
                 Name = VarNameLabelPrefix + "TIME",
                 AutoSize = true,
                 Location = new Point(xLabel, afterDynamicY + rowH + 3),
-                Text = "{TIME}"
+                Text = "{TIME}",
+                TabStop = false
             };
             try { lblTime.Font = label2?.Font ?? lblTime.Font; } catch { }
             tabSettings.Controls.Add(lblTime);
@@ -3569,6 +3672,9 @@ namespace Oscilloscope_Network_Capture
             int xLabel = (label2 != null) ? label2.Left : (xText + textWidth + 10);
             int rowH = 26;
 
+            // NEW: start TabIndex right after numericUpDown1 (which is 4 -> start at 5)
+            int startTab = ((numericUpDown1 != null) ? numericUpDown1.TabIndex : 4) + 1;
+
             // Dynamic (editable) variables
             for (int i = 0; i < desired; i++)
             {
@@ -3578,7 +3684,8 @@ namespace Oscilloscope_Network_Capture
                     Name = VarTextPrefix + i,
                     Location = new Point(xText, baseY + i * rowH),
                     Width = textWidth,
-                    Text = _config.VariableValues.ElementAtOrDefault(i) ?? string.Empty
+                    Text = _config.VariableValues.ElementAtOrDefault(i) ?? string.Empty,
+                    TabIndex = startTab + i // <-- ensure tab order 5, 6, ...
                 };
                 int idx = i;
                 tb.TextChanged += (s, a) =>
@@ -3590,7 +3697,7 @@ namespace Oscilloscope_Network_Capture
                 };
                 tabCapturing.Controls.Add(tb);
 
-                // Label: token name {NAME}
+                // Label: token name {NAME} (not focusable)
                 var name = _config.VariableNames.ElementAtOrDefault(i);
                 if (string.IsNullOrWhiteSpace(name)) name = "VAR" + (i + 1);
                 var lbl = new Label
@@ -3598,7 +3705,8 @@ namespace Oscilloscope_Network_Capture
                     Name = VarLabelPrefix + i,
                     AutoSize = true,
                     Location = new Point(xLabel, baseY + i * rowH + 3),
-                    Text = "{" + name.ToUpperInvariant() + "}"
+                    Text = "{" + name.ToUpperInvariant() + "}",
+                    TabStop = false
                 };
                 try { lbl.Font = label2?.Font ?? lbl.Font; } catch { }
                 tabCapturing.Controls.Add(lbl);
@@ -3625,7 +3733,8 @@ namespace Oscilloscope_Network_Capture
                 Name = VarLabelPrefix + "DATE",
                 AutoSize = true,
                 Location = new Point(xLabel, afterDynamicY + 3),
-                Text = "{DATE}"
+                Text = "{DATE}",
+                TabStop = false
             };
             try { lblDate.Font = label2?.Font ?? lblDate.Font; } catch { }
             tabCapturing.Controls.Add(lblDate);
@@ -3647,7 +3756,8 @@ namespace Oscilloscope_Network_Capture
                 Name = VarLabelPrefix + "TIME",
                 AutoSize = true,
                 Location = new Point(xLabel, afterDynamicY + rowH + 3),
-                Text = "{TIME}"
+                Text = "{TIME}",
+                TabStop = false
             };
             try { lblTime.Font = label2?.Font ?? lblTime.Font; } catch { }
             tabCapturing.Controls.Add(lblTime);
@@ -3660,16 +3770,16 @@ namespace Oscilloscope_Network_Capture
                     int totalRows = desired + 2;
                     int newY = baseY + totalRows * rowH + 10;
 
-                    // Move the button
                     int btnX = buttonCaptureStart.Location.X;
                     buttonCaptureStart.Location = new Point(btnX, newY);
+                    // Optional: move button after variables in tab order:
+                    // buttonCaptureStart.TabIndex = startTab + desired;
 
-                    // Move label15 directly under buttonCaptureStart
                     var altStatus = (label15 != null ? label15 : this.Controls.Find("label15", true).FirstOrDefault() as Label);
                     if (altStatus != null)
                     {
                         int lblX = btnX;
-                        int lblY = buttonCaptureStart.Bottom + 4; // small spacing below the button
+                        int lblY = buttonCaptureStart.Bottom + 4;
                         altStatus.Location = new Point(lblX, lblY);
                     }
                 }
@@ -3796,7 +3906,14 @@ namespace Oscilloscope_Network_Capture
                 var capturingTab = tabCapturing ?? this.Controls.Find("tabCapturing", true).FirstOrDefault() as TabPage;
                 var debugTab = tabDebug ?? this.Controls.Find("tabDebug", true).FirstOrDefault() as TabPage;
 
-                return ReferenceEquals(selected, capturingTab) || ReferenceEquals(selected, debugTab);
+                // Only Capturing or Debug tabs allow hotkeys
+                bool tabOk = ReferenceEquals(selected, capturingTab) || ReferenceEquals(selected, debugTab);
+                if (!tabOk) return false;
+
+                // If user is editing filename/number/variables, suspend hotkeys
+                if (_suspendCaptureHotkeys) return false;
+
+                return true;
             }
             catch
             {
@@ -4175,5 +4292,96 @@ namespace Oscilloscope_Network_Capture
                 try { MessageBox.Show("Unable to open link:\r\n" + e.LinkText, "Open Link", MessageBoxButtons.OK, MessageBoxIcon.Error); } catch { }
             }
         }
+
+        private void picScreen_Click(object sender, EventArgs e)
+        {
+            try { this.Validate(); } catch { /* best-effort */ }
+            removeFocus();
+        }
+
+        private void labelCaptureModeInactive_Click(object sender, EventArgs e)
+        {
+            removeFocus();
+        }
+
+        private void removeFocus ()
+        {
+            // Remove caret from any input control and ensure form receives keys
+            this.ActiveControl = null;
+            this.Select();
+
+            // Resume hotkeys and refresh indicators
+            _suspendCaptureHotkeys = false;
+            UpdateCaptureModeIndicators();
+        }
+
+        private void FlashEnterFeedback(int durationMs = 100)
+        {
+            try
+            {
+                if (picScreen == null) return;
+
+                if (_enterFlashOverlay == null)
+                {
+                    _enterFlashOverlay = new Panel
+                    {
+                        BackColor = Color.DimGray,   // brief solid grey flash
+                        Visible = false,
+                        Enabled = false
+                    };
+                    _enterFlashOverlay.Parent = picScreen;
+                    _enterFlashOverlay.Bounds = new Rectangle(0, 0, picScreen.ClientSize.Width, picScreen.ClientSize.Height);
+                    _enterFlashOverlay.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+                }
+
+                // Ensure it covers current size
+                _enterFlashOverlay.BringToFront();
+                _enterFlashOverlay.Visible = true;
+
+                if (_enterFlashTimer == null)
+                {
+                    _enterFlashTimer = new System.Windows.Forms.Timer();
+                    _enterFlashTimer.Tick += (s, a) =>
+                    {
+                        _enterFlashTimer.Stop();
+                        if (_enterFlashOverlay != null) _enterFlashOverlay.Visible = false;
+                    };
+                }
+
+                _enterFlashTimer.Interval = Math.Max(40, durationMs);
+                _enterFlashTimer.Stop();
+                _enterFlashTimer.Start();
+            }
+            catch { /* best-effort */ }
+        }
+
+        // Call this whenever capture mode might change
+        private void UpdateCaptureModeIndicators()
+        {
+            try
+            {
+                // Prefer designer fields; fallback to lookup for resilience
+                var lblActive = this.labelCaptureModeActive
+                                ?? this.Controls.Find("labelCaptureModeActive", true).FirstOrDefault() as Label;
+                var lblInactive = this.labelCaptureModeInactive
+                                  ?? this.Controls.Find("labelCaptureModeInactive", true).FirstOrDefault() as Label;
+
+                // Active only when capture mode is enabled AND not suspended by editing focus
+                bool activeUi = _captureMode && !_suspendCaptureHotkeys;
+
+                void Apply()
+                {
+                    if (lblActive != null) lblActive.Visible = activeUi;
+                    if (lblInactive != null) lblInactive.Visible = !activeUi;
+                }
+
+                if (this.IsHandleCreated && this.InvokeRequired)
+                    this.BeginInvoke(new Action(Apply));
+                else
+                    Apply();
+            }
+            catch { /* best-effort */ }
+        }
+
     }
 }

@@ -88,6 +88,9 @@
     <Compile Include="Core\Configuration\AppConfiguration.cs" />
     <Compile Include="Core\Configuration\ConfigurationService.cs" />
     <Compile Include="Core\Keyboard\Keyboard.cs" />
+    <Compile Include="Core\Keyboard\KeyboardGuard.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Core\Logging\LogEventArgs.cs" />
     <Compile Include="Core\Logging\Logger.cs" />
     <Compile Include="Core\Logging\LogLevel.cs" />

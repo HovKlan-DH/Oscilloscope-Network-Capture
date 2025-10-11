@@ -92,6 +92,7 @@
             this.txtCmdIdentify = new System.Windows.Forms.TextBox();
             this.lblCmdIdentify = new System.Windows.Forms.Label();
             this.tabSettings = new System.Windows.Forms.TabPage();
+            this.checkBoxDoNotClearWhenStop = new System.Windows.Forms.CheckBox();
             this.checkBoxMaskSerial = new System.Windows.Forms.CheckBox();
             this.checkBoxEnableDelete = new System.Windows.Forms.CheckBox();
             this.label14 = new System.Windows.Forms.Label();
@@ -108,6 +109,8 @@
             this.checkBoxForceAcquisition = new System.Windows.Forms.CheckBox();
             this.checkBoxEnableBeep = new System.Windows.Forms.CheckBox();
             this.tabCapturing = new System.Windows.Forms.TabPage();
+            this.labelCaptureModeInactive = new System.Windows.Forms.Label();
+            this.labelCaptureModeActive = new System.Windows.Forms.Label();
             this.label15 = new System.Windows.Forms.Label();
             this.textBoxFilenameFormat = new System.Windows.Forms.TextBox();
             this.label3 = new System.Windows.Forms.Label();
@@ -115,7 +118,6 @@
             this.label10 = new System.Windows.Forms.Label();
             this.buttonOpenFolder = new System.Windows.Forms.Button();
             this.buttonCaptureStart = new System.Windows.Forms.Button();
-            this.label5 = new System.Windows.Forms.Label();
             this.richTextBoxAction = new System.Windows.Forms.RichTextBox();
             this.textBoxCaptureOutputFolder = new System.Windows.Forms.TextBox();
             this.label4 = new System.Windows.Forms.Label();
@@ -988,6 +990,7 @@
             // 
             // tabSettings
             // 
+            this.tabSettings.Controls.Add(this.checkBoxDoNotClearWhenStop);
             this.tabSettings.Controls.Add(this.checkBoxMaskSerial);
             this.tabSettings.Controls.Add(this.checkBoxEnableDelete);
             this.tabSettings.Controls.Add(this.label14);
@@ -1010,32 +1013,44 @@
             this.tabSettings.Text = "Settings";
             this.tabSettings.UseVisualStyleBackColor = true;
             // 
+            // checkBoxDoNotClearWhenStop
+            // 
+            this.checkBoxDoNotClearWhenStop.AutoSize = true;
+            this.checkBoxDoNotClearWhenStop.Checked = true;
+            this.checkBoxDoNotClearWhenStop.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.checkBoxDoNotClearWhenStop.Location = new System.Drawing.Point(13, 129);
+            this.checkBoxDoNotClearWhenStop.Name = "checkBoxDoNotClearWhenStop";
+            this.checkBoxDoNotClearWhenStop.Size = new System.Drawing.Size(378, 24);
+            this.checkBoxDoNotClearWhenStop.TabIndex = 4;
+            this.checkBoxDoNotClearWhenStop.Text = "Do not \"Clear Statistics\" when already in STOP mode";
+            this.checkBoxDoNotClearWhenStop.UseVisualStyleBackColor = true;
+            // 
             // checkBoxMaskSerial
             // 
             this.checkBoxMaskSerial.AutoSize = true;
             this.checkBoxMaskSerial.Checked = true;
             this.checkBoxMaskSerial.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBoxMaskSerial.Location = new System.Drawing.Point(13, 221);
+            this.checkBoxMaskSerial.Location = new System.Drawing.Point(13, 245);
             this.checkBoxMaskSerial.Name = "checkBoxMaskSerial";
             this.checkBoxMaskSerial.Size = new System.Drawing.Size(348, 24);
-            this.checkBoxMaskSerial.TabIndex = 63;
+            this.checkBoxMaskSerial.TabIndex = 8;
             this.checkBoxMaskSerial.Text = "Mask oscilloscope serial number in \"Debug\" tab";
             this.checkBoxMaskSerial.UseVisualStyleBackColor = true;
             // 
             // checkBoxEnableDelete
             // 
             this.checkBoxEnableDelete.AutoSize = true;
-            this.checkBoxEnableDelete.Location = new System.Drawing.Point(13, 195);
+            this.checkBoxEnableDelete.Location = new System.Drawing.Point(13, 219);
             this.checkBoxEnableDelete.Name = "checkBoxEnableDelete";
             this.checkBoxEnableDelete.Size = new System.Drawing.Size(326, 24);
-            this.checkBoxEnableDelete.TabIndex = 6;
+            this.checkBoxEnableDelete.TabIndex = 7;
             this.checkBoxEnableDelete.Text = "Keyboard [DELETE] will delete last saved file";
             this.checkBoxEnableDelete.UseVisualStyleBackColor = true;
             // 
             // label14
             // 
             this.label14.AutoSize = true;
-            this.label14.Location = new System.Drawing.Point(80, 168);
+            this.label14.Location = new System.Drawing.Point(80, 192);
             this.label14.Name = "label14";
             this.label14.Size = new System.Drawing.Size(198, 20);
             this.label14.TabIndex = 62;
@@ -1049,10 +1064,10 @@
             "0.25V",
             "0.5V",
             "1V"});
-            this.comboBoxAdjustToGrid.Location = new System.Drawing.Point(13, 165);
+            this.comboBoxAdjustToGrid.Location = new System.Drawing.Point(13, 189);
             this.comboBoxAdjustToGrid.Name = "comboBoxAdjustToGrid";
             this.comboBoxAdjustToGrid.Size = new System.Drawing.Size(61, 28);
-            this.comboBoxAdjustToGrid.TabIndex = 5;
+            this.comboBoxAdjustToGrid.TabIndex = 6;
             this.comboBoxAdjustToGrid.Text = "0.25V";
             // 
             // labelNewVersion6
@@ -1073,7 +1088,7 @@
             this.checkBoxTrimUnderscore.AutoSize = true;
             this.checkBoxTrimUnderscore.Checked = true;
             this.checkBoxTrimUnderscore.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBoxTrimUnderscore.Location = new System.Drawing.Point(13, 371);
+            this.checkBoxTrimUnderscore.Location = new System.Drawing.Point(13, 395);
             this.checkBoxTrimUnderscore.Name = "checkBoxTrimUnderscore";
             this.checkBoxTrimUnderscore.Size = new System.Drawing.Size(504, 24);
             this.checkBoxTrimUnderscore.TabIndex = 21;
@@ -1095,7 +1110,7 @@
             this.checkBoxDeleteDoubleUnderscore.AutoSize = true;
             this.checkBoxDeleteDoubleUnderscore.Checked = true;
             this.checkBoxDeleteDoubleUnderscore.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBoxDeleteDoubleUnderscore.Location = new System.Drawing.Point(13, 341);
+            this.checkBoxDeleteDoubleUnderscore.Location = new System.Drawing.Point(13, 365);
             this.checkBoxDeleteDoubleUnderscore.Name = "checkBoxDeleteDoubleUnderscore";
             this.checkBoxDeleteDoubleUnderscore.Size = new System.Drawing.Size(475, 24);
             this.checkBoxDeleteDoubleUnderscore.TabIndex = 20;
@@ -1105,7 +1120,7 @@
             // label7
             // 
             this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(80, 134);
+            this.label7.Location = new System.Drawing.Point(80, 158);
             this.label7.Name = "label7";
             this.label7.Size = new System.Drawing.Size(379, 20);
             this.label7.TabIndex = 6;
@@ -1113,7 +1128,7 @@
             // 
             // numericUpDownDelayMs
             // 
-            this.numericUpDownDelayMs.Location = new System.Drawing.Point(13, 132);
+            this.numericUpDownDelayMs.Location = new System.Drawing.Point(13, 156);
             this.numericUpDownDelayMs.Maximum = new decimal(new int[] {
             5000,
             0,
@@ -1121,7 +1136,7 @@
             0});
             this.numericUpDownDelayMs.Name = "numericUpDownDelayMs";
             this.numericUpDownDelayMs.Size = new System.Drawing.Size(61, 27);
-            this.numericUpDownDelayMs.TabIndex = 4;
+            this.numericUpDownDelayMs.TabIndex = 5;
             this.numericUpDownDelayMs.Value = new decimal(new int[] {
             1750,
             0,
@@ -1131,7 +1146,7 @@
             // label6
             // 
             this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(9, 267);
+            this.label6.Location = new System.Drawing.Point(9, 291);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(244, 20);
             this.label6.TabIndex = 4;
@@ -1139,7 +1154,7 @@
             // 
             // numericUpDownVariables
             // 
-            this.numericUpDownVariables.Location = new System.Drawing.Point(13, 290);
+            this.numericUpDownVariables.Location = new System.Drawing.Point(13, 314);
             this.numericUpDownVariables.Maximum = new decimal(new int[] {
             5,
             0,
@@ -1147,7 +1162,7 @@
             0});
             this.numericUpDownVariables.Name = "numericUpDownVariables";
             this.numericUpDownVariables.Size = new System.Drawing.Size(120, 27);
-            this.numericUpDownVariables.TabIndex = 7;
+            this.numericUpDownVariables.TabIndex = 10;
             // 
             // checkBoxForceClear
             // 
@@ -1185,6 +1200,8 @@
             // 
             // tabCapturing
             // 
+            this.tabCapturing.Controls.Add(this.labelCaptureModeInactive);
+            this.tabCapturing.Controls.Add(this.labelCaptureModeActive);
             this.tabCapturing.Controls.Add(this.label15);
             this.tabCapturing.Controls.Add(this.textBoxFilenameFormat);
             this.tabCapturing.Controls.Add(this.label3);
@@ -1192,7 +1209,6 @@
             this.tabCapturing.Controls.Add(this.label10);
             this.tabCapturing.Controls.Add(this.buttonOpenFolder);
             this.tabCapturing.Controls.Add(this.buttonCaptureStart);
-            this.tabCapturing.Controls.Add(this.label5);
             this.tabCapturing.Controls.Add(this.richTextBoxAction);
             this.tabCapturing.Controls.Add(this.textBoxCaptureOutputFolder);
             this.tabCapturing.Controls.Add(this.label4);
@@ -1208,6 +1224,32 @@
             this.tabCapturing.TabIndex = 1;
             this.tabCapturing.Text = "Capturing";
             this.tabCapturing.UseVisualStyleBackColor = true;
+            // 
+            // labelCaptureModeInactive
+            // 
+            this.labelCaptureModeInactive.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.labelCaptureModeInactive.BackColor = System.Drawing.Color.IndianRed;
+            this.labelCaptureModeInactive.ForeColor = System.Drawing.Color.White;
+            this.labelCaptureModeInactive.Location = new System.Drawing.Point(8, 553);
+            this.labelCaptureModeInactive.Name = "labelCaptureModeInactive";
+            this.labelCaptureModeInactive.Size = new System.Drawing.Size(284, 83);
+            this.labelCaptureModeInactive.TabIndex = 66;
+            this.labelCaptureModeInactive.Text = "Capture mode inactive";
+            this.labelCaptureModeInactive.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.labelCaptureModeInactive.Click += new System.EventHandler(this.labelCaptureModeInactive_Click);
+            // 
+            // labelCaptureModeActive
+            // 
+            this.labelCaptureModeActive.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.labelCaptureModeActive.BackColor = System.Drawing.Color.DarkSeaGreen;
+            this.labelCaptureModeActive.ForeColor = System.Drawing.Color.Black;
+            this.labelCaptureModeActive.Location = new System.Drawing.Point(8, 553);
+            this.labelCaptureModeActive.Name = "labelCaptureModeActive";
+            this.labelCaptureModeActive.Size = new System.Drawing.Size(284, 83);
+            this.labelCaptureModeActive.TabIndex = 65;
+            this.labelCaptureModeActive.Text = "Capture mode active";
+            this.labelCaptureModeActive.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.labelCaptureModeActive.Visible = false;
             // 
             // label15
             // 
@@ -1273,25 +1315,18 @@
             this.buttonCaptureStart.Text = "Check oscilloscope connectivity and start capture mode";
             this.buttonCaptureStart.UseVisualStyleBackColor = true;
             // 
-            // label5
-            // 
-            this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(7, 532);
-            this.label5.Name = "label5";
-            this.label5.Size = new System.Drawing.Size(52, 20);
-            this.label5.TabIndex = 9;
-            this.label5.Text = "Action";
-            // 
             // richTextBoxAction
             // 
             this.richTextBoxAction.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.richTextBoxAction.BackColor = System.Drawing.Color.White;
             this.richTextBoxAction.Font = new System.Drawing.Font("Segoe UI", 10.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.richTextBoxAction.Location = new System.Drawing.Point(12, 553);
+            this.richTextBoxAction.Location = new System.Drawing.Point(299, 553);
             this.richTextBoxAction.Name = "richTextBoxAction";
-            this.richTextBoxAction.Size = new System.Drawing.Size(1045, 83);
-            this.richTextBoxAction.TabIndex = 8;
+            this.richTextBoxAction.ReadOnly = true;
+            this.richTextBoxAction.Size = new System.Drawing.Size(758, 83);
+            this.richTextBoxAction.TabIndex = 30;
+            this.richTextBoxAction.TabStop = false;
             this.richTextBoxAction.Text = "You should start capture mode";
             // 
             // textBoxCaptureOutputFolder
@@ -1363,6 +1398,7 @@
             this.picScreen.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.picScreen.TabIndex = 0;
             this.picScreen.TabStop = false;
+            this.picScreen.Click += new System.EventHandler(this.picScreen_Click);
             // 
             // tabDebug
             // 
@@ -1711,7 +1747,6 @@
         private System.Windows.Forms.NumericUpDown numericUpDown1;
         private System.Windows.Forms.TextBox textBoxCaptureOutputFolder;
         private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.Label label5;
         private System.Windows.Forms.RichTextBox richTextBoxAction;
         private System.Windows.Forms.TabPage tabSettings;
         private System.Windows.Forms.Button buttonCaptureStart;
@@ -1754,6 +1789,9 @@
         private System.Windows.Forms.CheckBox checkBoxFeedbackAttachConfig;
         private System.Windows.Forms.CheckBox checkBoxFeedbackAttachDebug;
         private System.Windows.Forms.Label label18;
+        private System.Windows.Forms.CheckBox checkBoxDoNotClearWhenStop;
+        private System.Windows.Forms.Label labelCaptureModeActive;
+        private System.Windows.Forms.Label labelCaptureModeInactive;
     }
 }
 

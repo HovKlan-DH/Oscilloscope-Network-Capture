@@ -18,6 +18,7 @@ namespace Oscilloscope_Network_Capture.Core.Configuration
         public bool EnableBeep { get; set; } = true;
         public bool ForceAcquisition { get; set; } = true;
         public bool ForceClear { get; set; } = false;
+        public bool DoNotClearWhenStop { get; set; } = true;
         public bool DeleteDoubleUnderscore { get; set; } = true;
         public bool TrimUnderscore { get; set; } = true;
         public int DelayMs { get; set; } = -1;

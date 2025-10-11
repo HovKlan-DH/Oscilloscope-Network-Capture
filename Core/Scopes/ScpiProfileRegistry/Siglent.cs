@@ -42,10 +42,10 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                     .Map(ScopeCommand.Run, "TRIG_MODE AUTO")
                     .Map(ScopeCommand.QueryTriggerMode, "TRIG_SELECT?")
                     .Map(ScopeCommand.QueryTriggerLevel, "TRIG_LEVEL?")
-                    .Map(ScopeCommand.SetTriggerLevel, "TRIG_LEVEL {0}")
+                    .Map(ScopeCommand.SetTriggerLevel, "C1:TRIG_LEVEL {0}")
                     .Map(ScopeCommand.QueryTimeDiv, "TIME_DIV?")
                     .Map(ScopeCommand.SetTimeDiv, "TIME_DIV {0}")
-                    .Map(ScopeCommand.DumpImage, "SCREEN_DUMP")
+                    .Map(ScopeCommand.DumpImage, "SCDP")
             );
 
             // SDS3000X HD Series
