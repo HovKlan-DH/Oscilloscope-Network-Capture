@@ -51,6 +51,15 @@ The keyboard actions were implemented to support using an external numpad (or ke
 - **Keysight/Agilent**
   - InfiniiVision 2000 X 
   - InfiniiVision 6000 X
+  - InfiniiVision 6000L
+- **Micsig**
+  - ATO
+  - ETO
+  - MDO
+  - MHO3
+  - SATO
+  - STO
+  - TO
 - **Rigol**
   - DHO1000
   - DHO4000
@@ -63,9 +72,9 @@ The keyboard actions were implemented to support using an external numpad (or ke
   - RTA4000
 - **Siglent**
   - SDS800X HD
-  - SDS1000DL+
   - SDS1000CML+
   - SDS1000CNL+
+  - SDS1000DL+
   - SDS1000X
   - SDS1000X+
   - SDS1000X-E
@@ -88,28 +97,28 @@ If so, then please follow this checklist:
 - Launch application and make sure you can connect to the scope
 - Check which are the required SCPI commands to use
 - Make sure you can test everything successfully from the _Configuration_ tab
-- Goto _Debug_ tab and send the debug info and configuration file to the developer via the button
+- Goto _Feedback_ tab and send the debug info and configuration file to the developer
 
 
 # Screenshots
 
 
-<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/6955586a-8e9a-4291-bddd-4a380eacddd9" />
+<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/5dfd4320-e6ae-4c67-9034-2841dc74546c" />
 
 
-<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/ff684323-9427-4fde-92c7-81b92098757b" />
+<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/46a34465-dfdb-497e-870f-0936ee94e030" />
 
 
-<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/2c062af0-63f9-4b6b-86e7-1434132c9711" />
+<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/93ea6573-db29-40b1-bf78-8322bc3faf71" />
 
 
-<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/d18d213e-e5bd-4ff7-b68e-b2d251349aeb" />
+<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/cb817fe6-c84f-48bb-aead-3764c6afaeed" />
 
 
-<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/1c4dd614-2260-4c15-9033-697567122789" />
+<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/64462a2c-807e-4e45-8039-d4e560010936" />
 
 
-<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/f68bb338-1567-4e71-9448-9d7f612e6fb0" />
+<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/c9d73360-16bb-475c-8ca4-a9e928f749a6" />
 
 
-<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/57710b2c-e685-43b4-96b0-a13b1ea6aa01" />
+<img width="900" height="602" alt="image" src="https://github.com/user-attachments/assets/3e3a0cbd-d97f-4e78-979c-d9964c391e24" />
