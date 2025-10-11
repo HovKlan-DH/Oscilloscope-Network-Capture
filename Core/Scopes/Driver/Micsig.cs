@@ -1,4 +1,5 @@
-﻿using Oscilloscope_Network_Capture.Core.Scopes.Attributes;
+﻿#if !DISABLE_MICSIG
+using Oscilloscope_Network_Capture.Core.Scopes.Attributes;
 using Oscilloscope_Network_Capture.Core.Transport;
 
 namespace Oscilloscope_Network_Capture.Core.Scopes.Implementations
@@ -13,3 +14,4 @@ namespace Oscilloscope_Network_Capture.Core.Scopes.Implementations
         }
     }
 }
+#endif

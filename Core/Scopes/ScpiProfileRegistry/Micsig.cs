@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if !DISABLE_MICSIG
+using System;
 
 namespace Oscilloscope_Network_Capture.Core.Scopes
 {
@@ -66,3 +67,4 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
         }
     }
 }
+#endif
