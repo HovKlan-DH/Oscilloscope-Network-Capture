@@ -4293,17 +4293,6 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
-        private void picScreen_Click(object sender, EventArgs e)
-        {
-            try { this.Validate(); } catch { /* best-effort */ }
-            removeFocus();
-        }
-
-        private void labelCaptureModeInactive_Click(object sender, EventArgs e)
-        {
-            removeFocus();
-        }
-
         private void removeFocus ()
         {
             // Remove caret from any input control and ensure form receives keys

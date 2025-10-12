@@ -1234,9 +1234,8 @@
             this.labelCaptureModeInactive.Name = "labelCaptureModeInactive";
             this.labelCaptureModeInactive.Size = new System.Drawing.Size(284, 83);
             this.labelCaptureModeInactive.TabIndex = 66;
-            this.labelCaptureModeInactive.Text = "Capture mode inactive";
+            this.labelCaptureModeInactive.Text = "Capture mode inactive.\\r\\nClick outside input field to reactivate capture mode.";
             this.labelCaptureModeInactive.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-            this.labelCaptureModeInactive.Click += new System.EventHandler(this.labelCaptureModeInactive_Click);
             // 
             // labelCaptureModeActive
             // 
@@ -1398,7 +1397,6 @@
             this.picScreen.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.picScreen.TabIndex = 0;
             this.picScreen.TabStop = false;
-            this.picScreen.Click += new System.EventHandler(this.picScreen_Click);
             // 
             // tabDebug
             // 

@@ -17,6 +17,9 @@ namespace Oscilloscope_Network_Capture
 
             try { WireCaptureEditingFocusGuards(); } catch { }
 
+            // NEW: resume capture-mode when clicking anywhere outside the input fields on Capturing tab
+            try { WireResumeOnClickOutsideEditors(); } catch { }
+
             try
             {
                 if (tabMain != null)
@@ -26,6 +29,9 @@ namespace Oscilloscope_Network_Capture
                 }
             }
             catch { }
+
+            labelCaptureModeInactive.Text = "Capture mode inactive." + Environment.NewLine + Environment.NewLine +
+                "Click outside input field" + Environment.NewLine + "to reactivate capture mode.";
         }
 
         private void TabMain_SelectedIndexChanged_ResetHotkeys(object sender, EventArgs e)
@@ -117,6 +123,86 @@ namespace Oscilloscope_Network_Capture
         {
             _suspendCaptureHotkeys = false;
             UpdateCaptureModeIndicators();
+        }
+
+        // ---------------------------
+        // NEW: Resume when clicking anywhere outside the input editors on the Capturing tab
+        // ---------------------------
+
+        private void WireResumeOnClickOutsideEditors()
+        {
+            if (tabCapturing == null) return;
+
+            // Clicking the empty area of the tab
+            tabCapturing.MouseDown -= Control_MouseDown_ResumeIfNotEditor;
+            tabCapturing.MouseDown += Control_MouseDown_ResumeIfNotEditor;
+
+            // Clicking any existing non-editor child control
+            HookMouseDownRecursively(tabCapturing);
+
+            // Also cover dynamically added controls (labels for variables, etc.)
+            tabCapturing.ControlAdded -= TabCapturing_ControlAdded_HookMouse;
+            tabCapturing.ControlAdded += TabCapturing_ControlAdded_HookMouse;
+        }
+
+        private void TabCapturing_ControlAdded_HookMouse(object sender, ControlEventArgs e)
+        {
+            HookMouseDownRecursively(e.Control);
+        }
+
+        private void HookMouseDownRecursively(Control root)
+        {
+            if (root == null) return;
+
+            foreach (Control c in root.Controls)
+            {
+                // Attach to non-editor controls only
+                if (!IsCaptureEditor(c))
+                {
+                    c.MouseDown -= Control_MouseDown_ResumeIfNotEditor;
+                    c.MouseDown += Control_MouseDown_ResumeIfNotEditor;
+                }
+
+                if (c.HasChildren)
+                    HookMouseDownRecursively(c);
+            }
+        }
+
+        private void Control_MouseDown_ResumeIfNotEditor(object sender, MouseEventArgs e)
+        {
+            try
+            {
+                var ctrl = sender as Control;
+                if (ctrl == null) return;
+
+                // Ignore clicks inside input editors; resume otherwise
+                if (!IsCaptureEditor(ctrl))
+                {
+                    // Reuse your existing helper
+                    removeFocus();
+                }
+            }
+            catch { /* best-effort */ }
+        }
+
+        private bool IsCaptureEditor(Control c)
+        {
+            if (c == null) return false;
+
+            // Filename format editor
+            if (ReferenceEquals(c, _tbFilenameFormat)) return true;
+            if (c is TextBox && ((c.Name ?? "").Equals("textBoxFilenameFormat", StringComparison.OrdinalIgnoreCase)
+                              || (c.Name ?? "").Equals("textBox1", StringComparison.OrdinalIgnoreCase)))
+                return true;
+
+            // NUMBER numeric up/down
+            if (ReferenceEquals(c, numericUpDown1)) return true;
+
+            // Dynamic variable value editors ("varTxt*")
+            if (c is TextBox && (c.Name ?? string.Empty).StartsWith(VarTextPrefix, StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            return false;
         }
     }
 }
