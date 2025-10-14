@@ -157,7 +157,9 @@ namespace Oscilloscope_Network_Capture
             foreach (Control c in root.Controls)
             {
                 // Attach to non-editor controls only
-                if (!IsCaptureEditor(c))
+//                if (!IsCaptureEditor(c))
+                // Skip if it's an editor, or a Button (or you can broaden to any control needing its own Click)
+                if (!IsCaptureEditor(c) && !(c is Button) && !(c is NumericUpDown))
                 {
                     c.MouseDown -= Control_MouseDown_ResumeIfNotEditor;
                     c.MouseDown += Control_MouseDown_ResumeIfNotEditor;

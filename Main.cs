@@ -149,7 +149,6 @@ namespace Oscilloscope_Network_Capture
             {
                 case LogLevel.Debug: return Color.DarkSeaGreen;   // requested
                 case LogLevel.Info:  return Color.LightGreen;     // requested
-//                case LogLevel.Warn:  return Color.OrangeRed;      // requested change
                 case LogLevel.Error: return Color.LightPink;      // requested
                 default:             return Color.Gainsboro;
             }
@@ -185,13 +184,10 @@ namespace Oscilloscope_Network_Capture
                 _config.VariableNames = new List<string> { "COMPONENT" };
                 //_config.VariableValues = new List<string> { "U1", "PAL" };
                 _config.VariableValues = new List<string> { "U1" };
-//                _config.NumberValue = "0";
                 _config.DelayMs = designerDelayMs; // never persist -1
                 // Default capture folder to executable directory
                 _config.CaptureFolder = Application.StartupPath;
                 _config.EnableDelete = false; // or true, your choice
-//                var chkMaskSerialAtLoad = this.Controls.Find("checkBoxMaskSerial", true).FirstOrDefault() as CheckBox;
-//                _config.MaskSerial = chkMaskSerialAtLoad?.Checked ?? true;
                 ConfigurationService.Save(_config);
             }
 
@@ -460,22 +456,11 @@ namespace Oscilloscope_Network_Capture
                 _tbCaptureFolder.Click += (s, a) => SelectCaptureFolder(_tbCaptureFolder);
             }
 
-            buttonOpenFolder.Click += (s, a) =>
-            {
-                OpenCaptureFolder();
-                //                textBoxFilenameFormat.Focus();
-                //                textBoxFilenameFormat.Select(0, 0);
-                // Remove caret from any input control and ensure form receives keys
-                removeFocus();
-            };
-
             // Wire capture start button (prefer new name, fallback to legacy button1)
             buttonCaptureStart.Click -= async (s, a) => await StartCaptureModeAsync();
             buttonCaptureStart.Click += async (s, a) =>
             {
                 await RunConnectivityCheckAsync(_btnCaptureStart);
-                textBoxFilenameFormat.Focus();
-                textBoxFilenameFormat.Select(0, 0);
             };
 
             // Persist DoNotClearWhenStop state
@@ -512,16 +497,6 @@ namespace Oscilloscope_Network_Capture
             // Make hyperlinks clickable in both Help and About
             WireRichTextBoxHyperlinks("richTextBoxHelp", "richTextBoxAbout");
 
-            /*
-            // Auto-connect on startup if a config file already existed (not first run)
-            if (_hadConfigOnStartup)
-            {
-                BeginInvoke(new Action(async () =>
-                {
-                    try { await ConnectAndRefreshAsync(); } catch { }
-                }));
-            }
-            */
             if (_hadConfigOnStartup)
             {
                 BeginInvoke(new Action(async () =>
@@ -530,6 +505,12 @@ namespace Oscilloscope_Network_Capture
                     await AutoStartCaptureModeIfConnectedAsync();
                 }));
             }
+        }
+
+        private void buttonOpenFolder_Click(object sender, EventArgs e)
+        {
+            OpenCaptureFolder();
+            removeFocus();
         }
 
         private Task ExecuteCaptureKeyAsync(Func<Task> action)
@@ -2415,27 +2396,6 @@ namespace Oscilloscope_Network_Capture
             }
             catch { return 0.5; }
         }
-
-        /*
-        // Decimal-based grid helpers to avoid floating-point stalls around values like 2.299990
-        private static bool IsOnGrid(double value, double step)
-        {
-            if (step <= 0) return false;
-
-            // Quantize input to 1e-6 to match instrument formatting, then work in decimal
-            decimal v = Math.Round((decimal)value, 6, MidpointRounding.AwayFromZero);
-            decimal s = (decimal)step;
-
-            if (s == 0) return false;
-
-            decimal q = v / s; // value in "grid units"
-            decimal nearest = Math.Round(q, 0, MidpointRounding.AwayFromZero);
-
-            // Tolerance in grid units (e.g., 0.0002 of a step)
-            const decimal tolQ = 0.0002m;
-            return Math.Abs(q - nearest) <= tolQ;
-        }
-        */
 
         private static double SnapNext(double current, double step)
         {
@@ -4371,6 +4331,5 @@ namespace Oscilloscope_Network_Capture
             }
             catch { /* best-effort */ }
         }
-
     }
 }

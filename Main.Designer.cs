@@ -1304,6 +1304,7 @@
             this.buttonOpenFolder.TabIndex = 2;
             this.buttonOpenFolder.Text = "Open capture folder";
             this.buttonOpenFolder.UseVisualStyleBackColor = true;
+            this.buttonOpenFolder.Click += new System.EventHandler(this.buttonOpenFolder_Click);
             // 
             // buttonCaptureStart
             // 
@@ -1393,7 +1394,7 @@
             this.picScreen.Location = new System.Drawing.Point(299, 0);
             this.picScreen.Margin = new System.Windows.Forms.Padding(4);
             this.picScreen.Name = "picScreen";
-            this.picScreen.Size = new System.Drawing.Size(762, 546);
+            this.picScreen.Size = new System.Drawing.Size(758, 546);
             this.picScreen.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.picScreen.TabIndex = 0;
             this.picScreen.TabStop = false;
