@@ -12,7 +12,9 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.NetworkInformation;
 using System.Reflection;
+using System.Security.Policy;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -38,6 +40,12 @@ namespace Oscilloscope_Network_Capture
         private int _timeDivAdjustBusy;
         private Panel _enterFlashOverlay;
         private System.Windows.Forms.Timer _enterFlashTimer;
+        private System.Windows.Forms.Timer _connectionMonitorTimer;
+        private int _connectionCheckBusy; // 0 = idle, 1 = monitor tick in-flight
+        private bool _isConnectable = false; // true only after a successful connection; false on failure/loss
+        private int _connFailStreak;                         // consecutive heartbeat failures
+        private const int ConnectionFailThreshold = 3;       // require N failures before disabling
+        private DateTime _lastHeartbeatUtc;                  // last successful heartbeat timestamp
 
         // Trigger-level adjust pump (coalesces rapid keypresses)
         private int _triggerAdjustPending;                 // net steps (+/-)
@@ -68,7 +76,7 @@ namespace Oscilloscope_Network_Capture
         private readonly List<string> _savedFileHistory = new List<string>();
 
         // Capture mode state and UI refs
-        private bool _captureMode;
+        private bool _captureMode = false;
         private Button _btnCaptureStart;
         private TextBox _tbCaptureFolder;
         private TextBox _tbFilenameFormat;
@@ -77,6 +85,13 @@ namespace Oscilloscope_Network_Capture
         {
             InitializeComponent();
             Logger.Instance.MessageLogged += Logger_MessageLogged;
+        }
+
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            // Make sure the initial indicators reflect default state immediately
+            UpdateCaptureModeIndicators();
         }
 
         private void Logger_MessageLogged(object sender, LogEventArgs e)
@@ -687,6 +702,7 @@ namespace Oscilloscope_Network_Capture
             try
             {
                 SetConnectButtonsEnabled(false);
+                Cursor = Cursors.WaitCursor;
 
                 await WithOtherTestButtonsDisabledAsync(selfButton, async () =>
                 {
@@ -698,6 +714,7 @@ namespace Oscilloscope_Network_Capture
             finally
             {
                 SetConnectButtonsEnabled(true);
+                Cursor = Cursors.Default;
                 if (selfButton != null && selfButton.CanFocus) selfButton.Focus();
             }
         }
@@ -859,6 +876,50 @@ namespace Oscilloscope_Network_Capture
             _deleteOverlayTimer.Start();
         }
 
+        private void ShowWaitOverlay(string text = "Wait ...")
+        {
+            try
+            {
+                if (picScreen == null) return;
+
+                if (_deleteOverlayLabel == null)
+                {
+                    _deleteOverlayLabel = new Label
+                    {
+                        AutoSize = true,
+                        BackColor = Color.IndianRed,
+                        ForeColor = Color.White,
+                        Padding = new Padding(12, 8, 12, 8),
+                        TextAlign = ContentAlignment.MiddleCenter
+                    };
+                    try { _deleteOverlayLabel.Font = new Font(Font.FontFamily, 20f, FontStyle.Bold); } catch { }
+                    _deleteOverlayLabel.Parent = picScreen;
+                }
+
+                // Cancel any pending auto-hide for the delete overlay
+                try { _deleteOverlayTimer?.Stop(); } catch { }
+
+                _deleteOverlayLabel.Text = text ?? string.Empty;
+                _deleteOverlayLabel.Visible = true;
+                _deleteOverlayLabel.BringToFront();
+
+                // center within picScreen
+                var x = Math.Max(0, (picScreen.ClientSize.Width - _deleteOverlayLabel.Width) / 2);
+                var y = Math.Max(0, (picScreen.ClientSize.Height - _deleteOverlayLabel.Height) / 2);
+                _deleteOverlayLabel.Location = new Point(x, y);
+            }
+            catch { /* best-effort */ }
+        }
+
+        private void HideWaitOverlay()
+        {
+            try
+            {
+                try { _deleteOverlayTimer?.Stop(); } catch { }
+                if (_deleteOverlayLabel != null) _deleteOverlayLabel.Visible = false;
+            }
+            catch { /* best-effort */ }
+        }
 
         private void PopulateCommandTextboxes()
         {
@@ -2010,7 +2071,6 @@ namespace Oscilloscope_Network_Capture
         }
 
         // Capture mode: ENTER=stop+capture+save, ESC=exit
-        // Capture mode: ENTER=stop+capture+save, ESC=exit
         private async Task StartCaptureModeAsync()
         {
             try
@@ -2034,6 +2094,9 @@ namespace Oscilloscope_Network_Capture
             UpdateCaptureModeIndicators();
 
             UpdateActionRichTextForNextFilename();
+
+            // Begin monitoring the connection (only while capture mode is active)
+            EnsureConnectionMonitorStarted();
         }
 
         // Add this helper near other private helpers (e.g., below StartCaptureModeAsync / ExitCaptureMode)
@@ -2043,7 +2106,9 @@ namespace Oscilloscope_Network_Capture
             {
                 if (IsDisposed) return;
                 if (_captureMode) return; // already active
-                if (_scope != null && _scope.IsConnected)
+
+                // Only trust our own connectable flag (set after successful checks), not the raw socket flag.
+                if (_isConnectable && _scope != null && _scope.IsConnected)
                 {
                     Logger.Instance.Info("Auto-starting capture mode.");
                     await StartCaptureModeAsync().ConfigureAwait(true);
@@ -2051,7 +2116,7 @@ namespace Oscilloscope_Network_Capture
             }
             catch
             {
-                // swallow; auto-start is best-effort
+                // best-effort
             }
         }
 
@@ -2085,6 +2150,18 @@ namespace Oscilloscope_Network_Capture
                     e.SuppressKeyPress = true;
                     DeleteLastSavedFile();
                 }
+                return;
+            }
+
+            // NEW: Numpad 9 => Set TIME/DIV to 1 µs
+            if (e.KeyCode == Keys.NumPad9)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                _ = ExecuteCaptureKeyAsync(async () =>
+                {
+                    await RunSetTimeDivSuiteAsync(1e-6); // 1 microsecond
+                });
                 return;
             }
 
@@ -2893,6 +2970,9 @@ namespace Oscilloscope_Network_Capture
 
             try
             {
+                // Show IndianRed overlay while capturing
+                ShowWaitOverlay("Wait ...");
+
                 if (_config != null && _config.EnableBeep) BeepStart();
 
                 var ct = _cts?.Token ?? CancellationToken.None;
@@ -3068,6 +3148,9 @@ namespace Oscilloscope_Network_Capture
             }
             finally
             {
+                // Always hide overlay at the end
+                HideWaitOverlay();
+
                 if (_config != null && _config.EnableBeep) BeepEnd();
             }
         }
@@ -3204,6 +3287,7 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
+        // Mark connectable only after a successful connection
         private async Task EnsureConnectedAsync()
         {
             if (_scope != null && _scope.IsConnected) return;
@@ -3225,6 +3309,7 @@ namespace Oscilloscope_Network_Capture
 
             Logger.Instance.Info(string.Format("Auto-connecting to {0} {1} at {2}:", vendor, modelDisplay, resource));
             await _scope.ConnectAsync(_cts.Token);
+            _isConnectable = true;                 // <-- set flag on success
             Logger.Instance.Debug("Auto-connected.");
         }
 
@@ -3459,6 +3544,7 @@ namespace Oscilloscope_Network_Capture
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
             PersistWindowLayout();
+            try { StopConnectionMonitor(); } catch { }
             base.OnFormClosed(e);
         }
 
@@ -3635,6 +3721,14 @@ namespace Oscilloscope_Network_Capture
             // NEW: start TabIndex right after numericUpDown1 (which is 4 -> start at 5)
             int startTab = ((numericUpDown1 != null) ? numericUpDown1.TabIndex : 4) + 1;
 
+            EventHandler clearAltStatus = (s, a) => ClearLabel15IfCapturing();
+
+            numericUpDown1.Enter += clearAltStatus;
+            numericUpDown1.Click += clearAltStatus;
+            textBoxFilenameFormat.Enter += clearAltStatus;
+            textBoxFilenameFormat.Click += clearAltStatus;
+
+
             // Dynamic (editable) variables
             for (int i = 0; i < desired; i++)
             {
@@ -3647,6 +3741,10 @@ namespace Oscilloscope_Network_Capture
                     Text = _config.VariableValues.ElementAtOrDefault(i) ?? string.Empty,
                     TabIndex = startTab + i // <-- ensure tab order 5, 6, ...
                 };
+
+                tb.Enter += clearAltStatus;
+                tb.Click += clearAltStatus;
+
                 int idx = i;
                 tb.TextChanged += (s, a) =>
                 {
@@ -3742,19 +3840,27 @@ namespace Oscilloscope_Network_Capture
                         int lblY = buttonCaptureStart.Bottom + 4;
                         altStatus.Location = new Point(lblX, lblY);
                     }
-                }
+               }
             }
             catch { }
         }
 
-        /*
-        private int GetCurrentVariableCount() => _config?.VariableCount ?? 0;
-
-        private void VarValue_TextChanged(object sender, EventArgs e)
+        private void ClearLabel15IfCapturing()
         {
-            // Not used in dynamic layout.
+            try
+            {
+                // Only clear when Capturing tab is active
+                var capturingTab = tabCapturing ?? this.Controls.Find("tabCapturing", true).FirstOrDefault() as TabPage;
+                if (tabMain != null && capturingTab != null && tabMain.SelectedTab == capturingTab)
+                {
+                    if (label15.Text == "Success - you are now connected to the oscilloscope, and capture mode has been enabled")
+                    {
+                        label15.Text = string.Empty;
+                    }
+                }
+            }
+            catch { /* best-effort */ }
         }
-        */
 
         private void buttonDebugClear_Click(object sender, EventArgs e)
         {
@@ -3768,6 +3874,7 @@ namespace Oscilloscope_Network_Capture
             catch { }
         }
 
+        // Update flag and UI in the explicit connect flow
         private async Task ConnectAndRefreshAsync()
         {
             Logger.Instance.Debug("---");
@@ -3791,11 +3898,37 @@ namespace Oscilloscope_Network_Capture
                 if (string.IsNullOrWhiteSpace(vendor) || string.IsNullOrWhiteSpace(modelPattern))
                 {
                     Logger.Instance.Error("Auto-connect skipped: no oscilloscope selected.");
+                    _isConnectable = false;
+                    UpdateCaptureModeIndicators();
                     return;
                 }
 
-                if (_scope == null || !_scope.IsConnected)
+                // Consider session valid only if socket says connected AND our own flag is true AND ping responds.
+                bool assumeConnected = (_scope != null && _scope.IsConnected && _isConnectable);
+                if (assumeConnected)
                 {
+                    var pingOk = await PingScopeAsync(800).ConfigureAwait(true);
+                    if (!pingOk)
+                    {
+                        assumeConnected = false;
+                        try { await _scope.DisconnectAsync(); } catch { }
+                    }
+                }
+
+                if (!assumeConnected)
+                {
+                    // Early reachability check to avoid waiting full TCP timeout when cable is unplugged
+                    var pingOk = await PingScopeAsync(800).ConfigureAwait(true);
+                    if (!pingOk)
+                    {
+                        Logger.Instance.Error("Oscilloscope is unreachable (ICMP ping failed).");
+                        _isConnectable = false;
+                        SetConnectivityStatus("Oscilloscope is unreachable (ping failed)", Color.Red);
+                        try { await (_scope?.DisconnectAsync() ?? Task.CompletedTask); } catch { }
+                        _scope = null;
+                        return;
+                    }
+
                     try { if (_scope != null) await _scope.DisconnectAsync(); } catch { }
                     _scope = ScopeFactory.Create(vendor, modelPattern, resource);
 
@@ -3803,38 +3936,84 @@ namespace Oscilloscope_Network_Capture
                     _cts = new CancellationTokenSource();
 
                     Logger.Instance.Info(string.Format("Connecting to {0} {1} at {2}.", vendor, modelDisplay, resource));
-                    await _scope.ConnectAsync(_cts.Token);
-                    Logger.Instance.Info("Network session established.");
+                    try
+                    {
+                        await _scope.ConnectAsync(_cts.Token).ConfigureAwait(true);
+                        Logger.Instance.Info("Network session established.");
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        Logger.Instance.Error("Network session canceled.");
+                        _isConnectable = false;
+                        SetConnectivityStatus("Network session canceled", Color.Red);
+                        try { await _scope.DisconnectAsync(); } catch { }
+                        _scope = null;
+                        return;
+                    }
+                    catch (TimeoutException tex)
+                    {
+                        Logger.Instance.Error("Network session cannot be established: " + InnermostMessage(tex));
+                        _isConnectable = false;
+                        SetConnectivityStatus("Network session cannot be established (timeout)", Color.Red);
+                        try { await _scope.DisconnectAsync(); } catch { }
+                        _scope = null;
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Instance.Error("Network session failed: " + InnermostMessage(ex));
+                        _isConnectable = false;
+                        SetConnectivityStatus("Failure - oscilloscope is not connectable via network", Color.Red);
+                        try { await _scope.DisconnectAsync(); } catch { }
+                        _scope = null;
+                        return;
+                    }
                 }
                 else
                 {
                     Logger.Instance.Info("Network session already established.");
                 }
 
-                var idn = await QueryIdentifyViaSuiteAsync().ConfigureAwait(true);
+                // Mark connectable only after we can talk to the instrument (IDN sanity check)
+                try
+                {
+                    var idn = await QueryIdentifyViaSuiteAsync().ConfigureAwait(true);
+                    var parsed = ParseIdn(idn);
+                    Logger.Instance.Info("Oscilloscope identified as:");
+                    Logger.Instance.Info("Vendor: " + parsed.Vendor);
+                    Logger.Instance.Info("Model: " + parsed.Model);
+                    if (!string.IsNullOrWhiteSpace(parsed.Serial))
+                        Logger.Instance.Info("Serial: " + (_config != null && _config.MaskSerial ? new string('*', (parsed.Serial ?? string.Empty).Length) : parsed.Serial));
+                    Logger.Instance.Info("Firmware: " + parsed.Firmware);
 
-                var parsed = ParseIdn(idn);
-                Logger.Instance.Info("Oscilloscope identified as:");
-                Logger.Instance.Info("Vendor: " + parsed.Vendor);
-                Logger.Instance.Info("Model: " + parsed.Model);
-                if (!string.IsNullOrWhiteSpace(parsed.Serial))
-                    Logger.Instance.Info("Serial: " + (_config != null && _config.MaskSerial ? new string('*', (parsed.Serial ?? string.Empty).Length) : parsed.Serial));
-                Logger.Instance.Info("Firmware: " + parsed.Firmware);
+                    _isConnectable = true;
+                    SetConnectivityStatus("Success - you are now connected to the oscilloscope, and capture mode has been enabled", Color.Green);
 
-                SetConnectivityStatus("Success - oscilloscope is connectable via network, and capture mode has now been enabled", Color.Green);
+                    PopulateCommandTextboxes();
+                    ApplyScpiOverridesForCurrentProfile();
+                }
+                catch (TimeoutException tex)
+                {
+                    Logger.Instance.Error("Network session cannot be established: " + InnermostMessage(tex));
+                    _isConnectable = false;
+                    SetConnectivityStatus("Network session cannot be established (timeout)", Color.Red);
 
-                PopulateCommandTextboxes();
-                ApplyScpiOverridesForCurrentProfile();
+                    try { await _scope.DisconnectAsync(); } catch { }
+                    _scope = null;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Instance.Error("Connectivity check failed: " + InnermostMessage(ex));
+                    _isConnectable = false;
+                    SetConnectivityStatus("Failure - oscilloscope is not connectable via network", Color.Red);
+
+                    try { await _scope.DisconnectAsync(); } catch { }
+                    _scope = null;
+                }
             }
-            catch (TimeoutException tex)
+            finally
             {
-                Logger.Instance.Error("Network session cannot be established: " + InnermostMessage(tex));
-                SetConnectivityStatus("Network session cannot be established (timeout)", Color.Red);
-            }
-            catch (Exception ex)
-            {
-                Logger.Instance.Error("Connectivity check failed: " + InnermostMessage(ex));
-                SetConnectivityStatus("Failure - oscilloscope is not connectable via network", Color.Red);
+                UpdateCaptureModeIndicators(); // reflect latest state
             }
         }
 
@@ -4097,6 +4276,7 @@ namespace Oscilloscope_Network_Capture
             sb.Append("    * " + KeycapRtf("-") + " to increase TIME/DIV timespan (zoom-out)\\line ");
             sb.Append("    * " + KeycapRtf("ARROW UP") + " to raise trigger level\\line ");
             sb.Append("    * " + KeycapRtf("ARROW DOWN") + " to lower trigger level\\line ");
+            sb.Append("    * " + KeycapRtf("NUMPAD 9") + " is a \"secret\" command to set scope to "+ KeycapRtf("1uS") + " as a quick (experimental) reference\\line ");
             sb.Append(@"\line");
 
             sb.Append(@"{\fs28{\b Checkboxes}}\line ");
@@ -4305,23 +4485,51 @@ namespace Oscilloscope_Network_Capture
         }
 
         // Call this whenever capture mode might change
+        // Use the explicit flag in the indicators
         private void UpdateCaptureModeIndicators()
         {
             try
             {
-                // Prefer designer fields; fallback to lookup for resilience
                 var lblActive = this.labelCaptureModeActive
                                 ?? this.Controls.Find("labelCaptureModeActive", true).FirstOrDefault() as Label;
                 var lblInactive = this.labelCaptureModeInactive
                                   ?? this.Controls.Find("labelCaptureModeInactive", true).FirstOrDefault() as Label;
 
-                // Active only when capture mode is enabled AND not suspended by editing focus
-                bool activeUi = _captureMode && !_suspendCaptureHotkeys;
+                bool captureMode = _captureMode;
+                bool hotkeysSuspended = _suspendCaptureHotkeys;
+                bool activeUi = captureMode && !hotkeysSuspended;
+
+                // IMPORTANT: use our own connectable flag, not _scope?.IsConnected
+                bool scopeConnected = _isConnectable;
+
+                const string InactiveWhileSuspendedText =
+                    "Capture mode inactive.\r\n\r\nClick outside input field\r\nto reactivate capture mode.";
+                const string InactiveWhileOffButConnectedText =
+                    "Capture mode inactive.\r\n\r\nClick outside input field\r\nto reactivate capture mode.";
+                const string InactiveWhileOffAndNotConnectedText =
+                    "Capture mode inactive and\r\noscilloscope is not connected.\r\n\r\nClick the \"Connect to oscilloscope\" button.";
 
                 void Apply()
                 {
                     if (lblActive != null) lblActive.Visible = activeUi;
-                    if (lblInactive != null) lblInactive.Visible = !activeUi;
+
+                    if (lblInactive != null)
+                    {
+                        lblInactive.Visible = !activeUi;
+
+                        if (captureMode && hotkeysSuspended)
+                        {
+                            lblInactive.Text = InactiveWhileSuspendedText;
+                        }
+                        else if (!captureMode && scopeConnected)
+                        {
+                            lblInactive.Text = InactiveWhileOffButConnectedText;
+                        }
+                        else
+                        {
+                            lblInactive.Text = InactiveWhileOffAndNotConnectedText;
+                        }
+                    }
                 }
 
                 if (this.IsHandleCreated && this.InvokeRequired)
@@ -4329,7 +4537,150 @@ namespace Oscilloscope_Network_Capture
                 else
                     Apply();
             }
+            catch { }
+        }
+
+        // Add these helpers near other private helpers (e.g., close to UpdateCaptureModeIndicators)
+
+        private void EnsureConnectionMonitorStarted()
+        {
+            try
+            {
+                if (_connectionMonitorTimer == null)
+                {
+                    _connectionMonitorTimer = new System.Windows.Forms.Timer();
+                    _connectionMonitorTimer.Interval = 1500; // nominal heartbeat
+                    _connectionMonitorTimer.Tick += async (s, a) => await ConnectionMonitorTickAsync();
+                }
+
+                if (_captureMode)
+                {
+                    // Reset streak when (re)starting monitoring
+                    _connFailStreak = 0;
+                    _lastHeartbeatUtc = DateTime.UtcNow;
+
+                    _connectionMonitorTimer.Stop();
+                    _connectionMonitorTimer.Start();
+                }
+            }
             catch { /* best-effort */ }
+        }
+
+        private void StopConnectionMonitor()
+        {
+            try { _connectionMonitorTimer?.Stop(); } catch { }
+        }
+
+        private async Task ConnectionMonitorTickAsync()
+        {
+            // Stop monitoring if capture mode was turned off
+            if (!_captureMode)
+            {
+                StopConnectionMonitor();
+                return;
+            }
+
+            // Prevent overlapping checks
+            if (System.Threading.Interlocked.CompareExchange(ref _connectionCheckBusy, 1, 0) != 0)
+                return;
+
+            try
+            {
+                // If a capture-mode key action is running, skip this tick to avoid stepping on user ops
+                if (System.Threading.Volatile.Read(ref _keyActionBusy) != 0)
+                    return;
+
+                var scope = _scope;
+                if (scope == null || !scope.IsConnected)
+                {
+                    // Treat explicit disconnect as hard loss
+                    _connFailStreak = ConnectionFailThreshold;
+                }
+                else
+                {
+                    bool ok = await PingScopeAsync(1000).ConfigureAwait(true);
+
+                    if (ok)
+                    {
+                        _connFailStreak = 0;
+                        _lastHeartbeatUtc = DateTime.UtcNow;
+
+                        // Return monitor interval to normal after previous failures
+                        if (_connectionMonitorTimer != null && _connectionMonitorTimer.Interval != 1500)
+                            _connectionMonitorTimer.Interval = 1500;
+                    }
+                    else
+                    {
+                        // Count the failure; bias for quick recheck on next tick
+                        _connFailStreak++;
+                        if (_connectionMonitorTimer != null && _connectionMonitorTimer.Interval > 800)
+                            _connectionMonitorTimer.Interval = 800; // temporarily recheck faster
+                    }
+                }
+
+                if (_connFailStreak >= ConnectionFailThreshold)
+                {
+                    OnConnectionLost("Oscilloscope connection lost (ICMP ping failed).");
+                }
+            }
+            finally
+            {
+                System.Threading.Interlocked.Exchange(ref _connectionCheckBusy, 0);
+            }
+        }
+
+        // Ensure we clear the flag when connection is lost
+        private void OnConnectionLost(string reason)
+        {
+            try
+            {
+                StopConnectionMonitor();
+                _isConnectable = false;            // <-- clear on loss
+                DisableCaptureMode(reason);
+                SetConnectivityStatus("Connection lost - capture mode disabled", Color.Red);
+                Logger.Instance.Error(reason ?? "Connection lost.");
+            }
+            catch { }
+            finally
+            {
+                UpdateCaptureModeIndicators();
+            }
+        }
+
+        // Centralized way to exit capture mode (used by monitor and can be reused elsewhere)
+        private void DisableCaptureMode(string reason = null)
+        {
+            if (!_captureMode) return;
+
+            _captureMode = false;
+            try { this.KeyDown -= Form1_Capture_KeyDown; } catch { }
+
+            UpdateCaptureModeIndicators();
+
+            if (!string.IsNullOrWhiteSpace(reason))
+            {
+                try { Logger.Instance.Info("Capture mode disabled: " + reason); } catch { }
+            }
+        }
+
+        private async Task<bool> PingScopeAsync(int timeoutMs = 800)
+        {
+            try
+            {
+                var ip = (txtIp?.Text ?? _config?.ScopeIp ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(ip))
+                    return false;
+
+                using (var ping = new Ping())
+                {
+                    var reply = await ping.SendPingAsync(ip, Math.Max(100, timeoutMs));
+                    return reply.Status == IPStatus.Success;
+                }
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

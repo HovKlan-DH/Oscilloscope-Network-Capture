@@ -185,12 +185,13 @@
             // 
             // btnConnect
             // 
+            this.btnConnect.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnConnect.Location = new System.Drawing.Point(371, 47);
             this.btnConnect.Margin = new System.Windows.Forms.Padding(4);
             this.btnConnect.Name = "btnConnect";
             this.btnConnect.Size = new System.Drawing.Size(203, 57);
             this.btnConnect.TabIndex = 5;
-            this.btnConnect.Text = "Check oscilloscope connectivity and start capture mode";
+            this.btnConnect.Text = "Connect to oscilloscope and start capture mode";
             this.btnConnect.UseVisualStyleBackColor = true;
             this.btnConnect.Click += new System.EventHandler(this.btnConnect_Click);
             // 
@@ -441,6 +442,7 @@
             // 
             // btnTestOpc
             // 
+            this.btnTestOpc.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnTestOpc.Location = new System.Drawing.Point(546, 281);
             this.btnTestOpc.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestOpc.Name = "btnTestOpc";
@@ -481,6 +483,7 @@
             // 
             // btnTestSysErr
             // 
+            this.btnTestSysErr.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnTestSysErr.Location = new System.Drawing.Point(546, 253);
             this.btnTestSysErr.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestSysErr.Name = "btnTestSysErr";
@@ -521,6 +524,7 @@
             // 
             // btnTestDumpImage
             // 
+            this.btnTestDumpImage.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnTestDumpImage.Location = new System.Drawing.Point(546, 580);
             this.btnTestDumpImage.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestDumpImage.Name = "btnTestDumpImage";
@@ -561,6 +565,7 @@
             // 
             // btnTestTimeDivSet
             // 
+            this.btnTestTimeDivSet.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnTestTimeDivSet.Location = new System.Drawing.Point(546, 553);
             this.btnTestTimeDivSet.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestTimeDivSet.Name = "btnTestTimeDivSet";
@@ -601,6 +606,7 @@
             // 
             // btnTestTimeDivQ
             // 
+            this.btnTestTimeDivQ.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnTestTimeDivQ.Location = new System.Drawing.Point(546, 526);
             this.btnTestTimeDivQ.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestTimeDivQ.Name = "btnTestTimeDivQ";
@@ -641,6 +647,7 @@
             // 
             // btnTestTrigLevelSet
             // 
+            this.btnTestTrigLevelSet.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnTestTrigLevelSet.Location = new System.Drawing.Point(546, 499);
             this.btnTestTrigLevelSet.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestTrigLevelSet.Name = "btnTestTrigLevelSet";
@@ -681,6 +688,7 @@
             // 
             // btnTestTrigLevelQ
             // 
+            this.btnTestTrigLevelQ.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnTestTrigLevelQ.Location = new System.Drawing.Point(546, 472);
             this.btnTestTrigLevelQ.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestTrigLevelQ.Name = "btnTestTrigLevelQ";
@@ -721,6 +729,7 @@
             // 
             // btnTestTrigMode
             // 
+            this.btnTestTrigMode.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnTestTrigMode.Location = new System.Drawing.Point(546, 445);
             this.btnTestTrigMode.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestTrigMode.Name = "btnTestTrigMode";
@@ -761,6 +770,7 @@
             // 
             // btnTestSingle
             // 
+            this.btnTestSingle.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnTestSingle.Location = new System.Drawing.Point(546, 391);
             this.btnTestSingle.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestSingle.Name = "btnTestSingle";
@@ -801,6 +811,7 @@
             // 
             // btnTestRun
             // 
+            this.btnTestRun.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnTestRun.Location = new System.Drawing.Point(546, 418);
             this.btnTestRun.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestRun.Name = "btnTestRun";
@@ -841,6 +852,7 @@
             // 
             // btnTestStop
             // 
+            this.btnTestStop.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnTestStop.Location = new System.Drawing.Point(546, 364);
             this.btnTestStop.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestStop.Name = "btnTestStop";
@@ -881,6 +893,7 @@
             // 
             // btnTestActiveTrig
             // 
+            this.btnTestActiveTrig.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnTestActiveTrig.Location = new System.Drawing.Point(546, 337);
             this.btnTestActiveTrig.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestActiveTrig.Name = "btnTestActiveTrig";
@@ -921,6 +934,7 @@
             // 
             // btnTestClearStats
             // 
+            this.btnTestClearStats.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnTestClearStats.Location = new System.Drawing.Point(546, 309);
             this.btnTestClearStats.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestClearStats.Name = "btnTestClearStats";
@@ -961,6 +975,7 @@
             // 
             // btnTestIdentify
             // 
+            this.btnTestIdentify.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnTestIdentify.Location = new System.Drawing.Point(546, 225);
             this.btnTestIdentify.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestIdentify.Name = "btnTestIdentify";
@@ -1138,7 +1153,7 @@
             this.numericUpDownDelayMs.Size = new System.Drawing.Size(61, 27);
             this.numericUpDownDelayMs.TabIndex = 5;
             this.numericUpDownDelayMs.Value = new decimal(new int[] {
-            1750,
+            2000,
             0,
             0,
             0});
@@ -1234,7 +1249,8 @@
             this.labelCaptureModeInactive.Name = "labelCaptureModeInactive";
             this.labelCaptureModeInactive.Size = new System.Drawing.Size(284, 83);
             this.labelCaptureModeInactive.TabIndex = 66;
-            this.labelCaptureModeInactive.Text = "Capture mode inactive.\\r\\nClick outside input field to reactivate capture mode.";
+            this.labelCaptureModeInactive.Text = "Capture mode inactive and oscilloscope is not connected.\n\\r\\nClick the \"Connect t" +
+    "o oscilloscope\" button.";
             this.labelCaptureModeInactive.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // labelCaptureModeActive
@@ -1255,7 +1271,7 @@
             this.label15.ForeColor = System.Drawing.Color.Gray;
             this.label15.Location = new System.Drawing.Point(7, 346);
             this.label15.Name = "label15";
-            this.label15.Size = new System.Drawing.Size(285, 44);
+            this.label15.Size = new System.Drawing.Size(285, 62);
             this.label15.TabIndex = 64;
             this.label15.Text = "Network connectivity not checked";
             // 
@@ -1298,6 +1314,7 @@
             // 
             // buttonOpenFolder
             // 
+            this.buttonOpenFolder.Cursor = System.Windows.Forms.Cursors.Hand;
             this.buttonOpenFolder.Location = new System.Drawing.Point(8, 100);
             this.buttonOpenFolder.Name = "buttonOpenFolder";
             this.buttonOpenFolder.Size = new System.Drawing.Size(284, 28);
@@ -1308,11 +1325,12 @@
             // 
             // buttonCaptureStart
             // 
+            this.buttonCaptureStart.Cursor = System.Windows.Forms.Cursors.Hand;
             this.buttonCaptureStart.Location = new System.Drawing.Point(8, 274);
             this.buttonCaptureStart.Name = "buttonCaptureStart";
             this.buttonCaptureStart.Size = new System.Drawing.Size(284, 52);
             this.buttonCaptureStart.TabIndex = 20;
-            this.buttonCaptureStart.Text = "Check oscilloscope connectivity and start capture mode";
+            this.buttonCaptureStart.Text = "Connect to oscilloscope and start capture mode";
             this.buttonCaptureStart.UseVisualStyleBackColor = true;
             // 
             // richTextBoxAction
@@ -1416,6 +1434,7 @@
             // buttonDebugClear
             // 
             this.buttonDebugClear.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.buttonDebugClear.Cursor = System.Windows.Forms.Cursors.Hand;
             this.buttonDebugClear.Location = new System.Drawing.Point(957, 603);
             this.buttonDebugClear.Name = "buttonDebugClear";
             this.buttonDebugClear.Size = new System.Drawing.Size(75, 27);
@@ -1527,6 +1546,7 @@
             // buttonSendToDeveloper
             // 
             this.buttonSendToDeveloper.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.buttonSendToDeveloper.Cursor = System.Windows.Forms.Cursors.Hand;
             this.buttonSendToDeveloper.Location = new System.Drawing.Point(23, 465);
             this.buttonSendToDeveloper.Name = "buttonSendToDeveloper";
             this.buttonSendToDeveloper.Size = new System.Drawing.Size(259, 27);
