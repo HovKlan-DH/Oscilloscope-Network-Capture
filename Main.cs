@@ -90,8 +90,13 @@ namespace Oscilloscope_Network_Capture
         protected override void OnShown(EventArgs e)
         {
             base.OnShown(e);
+
             // Make sure the initial indicators reflect default state immediately
             UpdateCaptureModeIndicators();
+
+            // Enable ENTER-to-start-capture-mode for Capturing tab fields
+            TryWireEnterKeyForCapturingInputs();
+            WireEnterKeyForFutureVariableFields();
         }
 
         private void Logger_MessageLogged(object sender, LogEventArgs e)
@@ -2139,6 +2144,17 @@ namespace Oscilloscope_Network_Capture
                 {
                     await CaptureAndSaveAsync();
                 });
+                return;
+            }
+
+            if (e.KeyCode == Keys.Escape)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+
+                try { StopConnectionMonitor(); } catch { }
+                DisableCaptureMode("Stopped by user (ESC)");
+                FocusNumberOnCapturingTab();
                 return;
             }
 
@@ -4682,5 +4698,128 @@ namespace Oscilloscope_Network_Capture
                 return false;
             }
         }
+
+        // NEW: Wire KeyDown for static and current dynamic Capturing-tab inputs
+        private void TryWireEnterKeyForCapturingInputs()
+        {
+            try
+            {
+                // Only act if Capturing tab exists
+                var capturingTab = tabCapturing ?? this.Controls.Find("tabCapturing", true).FirstOrDefault() as TabPage;
+                if (capturingTab == null) return;
+
+                // Filename format textbox (prefer field; otherwise find)
+                var tbFmt = _tbFilenameFormat
+                            ?? this.Controls.Find("textBoxFilenameFormat", true).FirstOrDefault() as TextBox
+                            ?? this.Controls.Find("textBox1", true).FirstOrDefault() as TextBox;
+                WireEnterToStartCaptureMode(tbFmt);
+
+                // NUMBER control
+                WireEnterToStartCaptureMode(numericUpDown1);
+
+                // All current dynamic variable value textboxes (varTxt*)
+                foreach (var tb in capturingTab.Controls.OfType<TextBox>()
+                                                        .Where(t => (t.Name ?? string.Empty)
+                                                            .StartsWith(VarTextPrefix, StringComparison.OrdinalIgnoreCase)))
+                {
+                    WireEnterToStartCaptureMode(tb);
+                }
+            }
+            catch { /* best-effort */ }
+        }
+
+        // NEW: also wire future dynamic variable fields when they’re added to the Capturing tab
+        private void WireEnterKeyForFutureVariableFields()
+        {
+            try
+            {
+                var capturingTab = tabCapturing ?? this.Controls.Find("tabCapturing", true).FirstOrDefault() as TabPage;
+                if (capturingTab == null) return;
+
+                capturingTab.ControlAdded -= CapturingTab_ControlAdded;
+                capturingTab.ControlAdded += CapturingTab_ControlAdded;
+            }
+            catch { /* best-effort */ }
+        }
+
+        private void CapturingTab_ControlAdded(object sender, ControlEventArgs e)
+        {
+            try
+            {
+                var tb = e.Control as TextBox;
+                if (tb != null && (tb.Name ?? string.Empty).StartsWith(VarTextPrefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    WireEnterToStartCaptureMode(tb);
+                }
+            }
+            catch { /* best-effort */ }
+        }
+
+        // NEW: attach one Enter handler to a control (TextBox/NumericUpDown)
+        private void WireEnterToStartCaptureMode(Control ctrl)
+        {
+            if (ctrl == null) return;
+            ctrl.KeyDown -= Input_EnterToStartCaptureMode_KeyDown;
+            ctrl.KeyDown += Input_EnterToStartCaptureMode_KeyDown;
+        }
+
+        // NEW: pressing ENTER once enters capture mode (only on Capturing tab), then removes focus.
+        // If already in capture mode, it just removes focus so the next ENTER will capture.
+        private async void Input_EnterToStartCaptureMode_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode != Keys.Enter) return;
+
+            try
+            {
+                // Only in Capturing tab
+                var capturingTab = tabCapturing ?? this.Controls.Find("tabCapturing", true).FirstOrDefault() as TabPage;
+                if (tabMain == null || capturingTab == null || tabMain.SelectedTab != capturingTab) return;
+
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+
+                // If not in capture mode, enable it
+                if (!_captureMode)
+                {
+                    await StartCaptureModeAsync().ConfigureAwait(true);
+                }
+
+                // Remove focus so the next ENTER goes to the form hotkeys and triggers the actual capture
+                removeFocus();
+            }
+            catch
+            {
+                // best-effort
+            }
+        }
+
+        // Helper: ensure Capturing tab is active and focus NUMBER control
+        private void FocusNumberOnCapturingTab()
+        {
+            try
+            {
+                var capturingTab = tabCapturing ?? this.Controls.Find("tabCapturing", true).FirstOrDefault() as TabPage;
+                if (tabMain != null && capturingTab != null)
+                    tabMain.SelectedTab = capturingTab;
+
+                if (numericUpDown1 != null && numericUpDown1.CanFocus)
+                {
+                    numericUpDown1.Focus();
+
+                    // Post to UI queue so focus/formatting completes, then move caret to end
+                    BeginInvoke(new Action(() =>
+                    {
+                        try
+                        {
+                            var len = numericUpDown1.Text?.Length ?? 0;
+                            numericUpDown1.Select(len, 0); // UpDownBase.Select => sets caret/selection of inner editor
+                        }
+                        catch { /* best-effort */ }
+                    }));
+                }
+            }
+            catch { /* best-effort */ }
+        }
+
     }
 }
