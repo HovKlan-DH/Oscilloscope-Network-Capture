@@ -36,9 +36,9 @@ The important thing when measuring on an oscilloscope is to focus on getting the
 - `ARROW DOWN` to lower trigger level
 - `DELETE` or `BACKSPACE` will delete the last saved file (requires a checkbox in "Settings" tab)
 - `NUMPAD DECIMAL` to "Clear Statistics"
-- `NUMPAD 7` is experimental and will set scope TIME/DIV to `100mS`as a quick-reference
-- `NUMPAD 8` is experimental and will set scope TIME/DIV to `1mS`as a quick-reference
-- `NUMPAD 9` is experimental and will set scope TIME/DIV to `1µS`as a quick-reference
+- `NUMPAD 7` is _experimental_ and will set scope TIME/DIV to `100mS`as a quick-reference
+- `NUMPAD 8` is _experimental_ and will set scope TIME/DIV to `1mS`as a quick-reference
+- `NUMPAD 9` is _experimental_ and will set scope TIME/DIV to `1µS`as a quick-reference
 
 The keyboard actions were implemented to support using an external numpad (or keyboard) placed near your measurement bench - maybe with something like this, which I find works like a dream for me:
 
