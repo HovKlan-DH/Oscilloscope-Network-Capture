@@ -1057,9 +1057,10 @@
             this.checkBoxEnableDelete.AutoSize = true;
             this.checkBoxEnableDelete.Location = new System.Drawing.Point(13, 219);
             this.checkBoxEnableDelete.Name = "checkBoxEnableDelete";
-            this.checkBoxEnableDelete.Size = new System.Drawing.Size(326, 24);
+            this.checkBoxEnableDelete.Size = new System.Drawing.Size(603, 24);
             this.checkBoxEnableDelete.TabIndex = 7;
-            this.checkBoxEnableDelete.Text = "Keyboard [DELETE] will delete last saved file";
+            this.checkBoxEnableDelete.Text = "Keyboard [DELETE] or [BACKSPACE] will delete last saved file when in \"Capture mod" +
+    "e\"";
             this.checkBoxEnableDelete.UseVisualStyleBackColor = true;
             // 
             // label14

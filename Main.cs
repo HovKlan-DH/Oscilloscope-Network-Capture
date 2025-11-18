@@ -1,9 +1,7 @@
 ﻿using Ookii.Dialogs.WinForms;
 using Oscilloscope_Network_Capture.Core.Configuration;
 using Oscilloscope_Network_Capture.Core.Logging;
-using Oscilloscope_Network_Capture.Core.Online;
 using Oscilloscope_Network_Capture.Core.Scopes;
-using Oscilloscope_Network_Capture.Core.Scopes.Implementations;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -11,16 +9,13 @@ using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Net.NetworkInformation;
 using System.Reflection;
-using System.Security.Policy;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Xml.Serialization;
 
 namespace Oscilloscope_Network_Capture
 {
@@ -66,6 +61,7 @@ namespace Oscilloscope_Network_Capture
         private readonly Queue<LogEventArgs> _logQueue = new Queue<LogEventArgs>();
         private readonly object _logSync = new object();
         private bool _logDrainPending;
+        private bool _numUpSuppressCollapse;
 
         private const string VarLabelPrefix = "varLbl";
         private const string VarTextPrefix = "varTxt";
@@ -310,11 +306,16 @@ namespace Oscilloscope_Network_Capture
 
             if (numericUpDown1 != null)
             {
+                FixNumericUpDownCaret(numericUpDown1);
+
                 // Keep designer default; just update preview when changed
                 numericUpDown1.ValueChanged += (s, a) =>
                 {
                     UpdateActionRichTextForNextFilename();
                 };
+
+                WireNumericUpDownCaretPreserve(numericUpDown1);
+//                WireCaretAtEndOnFocus(numericUpDown1);
             }
 
             // Filename format textbox: load from config, default to designer text on first run; debounce saves
@@ -2057,6 +2058,8 @@ namespace Oscilloscope_Network_Capture
                 DecrementNumberAfterDelete();
                 UpdateActionRichTextForNextFilename();
 
+                BlankPictureBox();
+
                 // Show a brief overlay if we're on the Measurements tab
                 try
                 {
@@ -2158,7 +2161,10 @@ namespace Oscilloscope_Network_Capture
                 return;
             }
 
-            if (e.KeyCode == Keys.Delete)
+            if (
+                e.KeyCode == Keys.Delete ||
+                e.KeyCode == Keys.Back
+                )
             {
                 if (checkBoxEnableDelete.Checked)
                 {
@@ -2169,7 +2175,31 @@ namespace Oscilloscope_Network_Capture
                 return;
             }
 
-            // NEW: Numpad 9 => Set TIME/DIV to 1 µs
+            // Numpad 7 => Set TIME/DIV to 100 mS
+            if (e.KeyCode == Keys.NumPad7)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                _ = ExecuteCaptureKeyAsync(async () =>
+                {
+                    await RunSetTimeDivSuiteAsync(1e-1); // 100 milliseconds
+                });
+                return;
+            }
+
+            // Numpad 8 => Set TIME/DIV to 1 mS
+            if (e.KeyCode == Keys.NumPad8)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                _ = ExecuteCaptureKeyAsync(async () =>
+                {
+                    await RunSetTimeDivSuiteAsync(1e-3); // 1 millisecond
+                });
+                return;
+            }
+
+            // Numpad 9 => Set TIME/DIV to 1 µS
             if (e.KeyCode == Keys.NumPad9)
             {
                 e.Handled = true;
@@ -2980,12 +3010,29 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
+        private void BlankPictureBox()
+        {
+            try
+            {
+                if (picScreen != null)
+                {
+                    var old = picScreen.Image;
+                    picScreen.Image = null;
+                    try { old?.Dispose(); } catch { }
+                    picScreen.BackColor = Color.Black;
+                }
+            }
+            catch { /* best-effort */ }
+        }
+
         private async Task CaptureAndSaveAsync()
         {
             bool savedOk = false;
 
             try
             {
+                BlankPictureBox();
+
                 // Show IndianRed overlay while capturing
                 ShowWaitOverlay("Wait ...");
 
@@ -3169,6 +3216,218 @@ namespace Oscilloscope_Network_Capture
 
                 if (_config != null && _config.EnableBeep) BeepEnd();
             }
+        }
+
+        private void WireNumericUpDownCaretPreserve(NumericUpDown nud)
+        {
+            if (nud == null) return;
+
+            // Remove any previous generic wiring
+            nud.Enter -= CaretPositioning_Enter;
+            nud.MouseUp -= CaretPositioning_MouseUp;
+
+            nud.Enter -= NumericUpDown_Enter;
+            nud.Enter += NumericUpDown_Enter;
+
+            nud.DoubleClick -= Numeric_DoubleClick;
+            nud.DoubleClick += Numeric_DoubleClick;
+
+            // Inner TextBox actually receives the double-click
+            var inner = nud.Controls.OfType<TextBox>().FirstOrDefault();
+            if (inner != null)
+            {
+                inner.DoubleClick -= Numeric_DoubleClick;
+                inner.DoubleClick += Numeric_DoubleClick;
+                inner.MouseUp -= NumericInner_MouseUp;
+                inner.MouseUp += NumericInner_MouseUp;
+            }
+        }
+
+        private void Numeric_DoubleClick(object sender, EventArgs e)
+        {
+            _numUpSuppressCollapse = true; // user explicitly double-clicked -> keep selection
+        }
+
+        private void NumericUpDown_Enter(object sender, EventArgs e)
+        {
+            var nud = sender as NumericUpDown;
+            if (nud == null) return;
+
+            _numUpSuppressCollapse = false; // fresh focus cycle
+
+            BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    var inner = nud.Controls.OfType<TextBox>().FirstOrDefault();
+                    if (inner == null) return;
+
+                    // If user double-clicked (suppressed) or partial selection chosen, do nothing
+                    if (_numUpSuppressCollapse) return;
+                    if (inner.SelectionLength > 0 && inner.SelectionLength != inner.TextLength) return;
+
+                    // Framework often auto-selects full text on focus, collapse that to caret at end
+                    if (inner.SelectionLength == inner.TextLength)
+                    {
+                        inner.SelectionStart = inner.TextLength;
+                        inner.SelectionLength = 0;
+                    }
+                }
+                catch { }
+            }));
+        }
+
+        private void NumericInner_MouseUp(object sender, MouseEventArgs e)
+        {
+            // Single click inside number after focus: push caret to end unless user selected something
+            if (e.Clicks > 1) return; // double-click already handled
+            var tb = sender as TextBox;
+            if (tb == null) return;
+            if (tb.SelectionLength > 0) return; // user dragged
+            if (_numUpSuppressCollapse) return; // came from double-click
+            BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    tb.SelectionStart = tb.TextLength;
+                    tb.SelectionLength = 0;
+                }
+                catch { }
+            }));
+        }
+
+        // ADD near existing numeric caret helpers
+        private void FixNumericUpDownCaret(NumericUpDown nud)
+        {
+            if (nud == null) return;
+
+            // Inner editor
+            var inner = nud.Controls.OfType<TextBox>().FirstOrDefault();
+            if (inner == null) return;
+
+            // Ensure we don't double-wire
+            nud.ValueChanged -= NumericValueChanged_CaretToEnd;
+            nud.ValueChanged += NumericValueChanged_CaretToEnd;
+
+            // Also handle keyboard increment (Up/Down keys) and mouse wheel
+            nud.KeyUp -= NumericKeyUp_CaretToEnd;
+            nud.KeyUp += NumericKeyUp_CaretToEnd;
+
+            nud.MouseWheel -= NumericMouseWheel_CaretToEnd;
+            nud.MouseWheel += NumericMouseWheel_CaretToEnd;
+        }
+
+        private void NumericValueChanged_CaretToEnd(object sender, EventArgs e)
+        {
+            var nud = sender as NumericUpDown;
+            if (nud == null) return;
+
+            // Defer until after internal UpDownBase logic (which moves caret to position 0)
+            BeginInvoke(new Action(() =>
+            {
+                try
+                {
+                    var inner = nud.Controls.OfType<TextBox>().FirstOrDefault();
+                    if (inner == null) return;
+
+                    // Only adjust if user is not actively selecting inside (preserve manual mid-edit selections)
+                    if (inner.SelectionLength > 0 && inner.SelectionStart > 0) return;
+
+                    inner.SelectionStart = inner.Text.Length;
+                    inner.SelectionLength = 0;
+                }
+                catch { }
+            }));
+        }
+
+        private void NumericKeyUp_CaretToEnd(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode != Keys.Up && e.KeyCode != Keys.Down && e.KeyCode != Keys.PageUp && e.KeyCode != Keys.PageDown)
+                return;
+
+            // Let ValueChanged handler do the actual caret move (this fires before ValueChanged)
+            // No action needed here unless you want stricter timing.
+        }
+
+        private void NumericMouseWheel_CaretToEnd(object sender, MouseEventArgs e)
+        {
+            // Wheel will trigger ValueChanged; no extra logic needed.
+        }
+
+        // Places caret at end when control becomes active (focus gained or single click).
+        // Preserves user double-click selection (e.Clicks > 1) and any non-zero selection (e.g. manual drag).
+        private void CaretPositioning_Enter(object sender, EventArgs e)
+        {
+            var c = sender as Control;
+            if (c == null) return;
+
+            // Defer until after WinForms finishes its default focus/select behavior
+            BeginInvoke(new Action(() =>
+            {
+                if (c is TextBox tb)
+                {
+                    // If the framework auto-selected all text on focus, collapse to caret at end.
+                    // (SelectionLength == TextLength indicates the typical focus-select-all case.)
+                    if (tb.SelectionLength == tb.TextLength)
+                    {
+                        tb.SelectionStart = tb.TextLength;
+                        tb.SelectionLength = 0;
+                    }
+                    // If user previously had a partial selection (e.g. tabbing back), keep it.
+                    return;
+                }
+
+                if (c is UpDownBase udb)
+                {
+                    var len = udb.Text?.Length ?? 0;
+                    udb.Select(len, 0);
+                }
+            }));
+        }
+
+        private void CaretPositioning_MouseUp(object sender, MouseEventArgs e)
+        {
+            var c = sender as Control;
+            if (c == null) return;
+
+            // Skip if this is a double-click (user intends a word selection) or multi-click
+            if (e.Clicks > 1) return;
+
+            // Defer to allow click placement logic to run first
+            BeginInvoke(new Action(() =>
+            {
+                if (c is TextBox tb)
+                {
+                    // If user already selected something (drag), leave it as-is
+                    if (tb.SelectionLength > 0) return;
+
+                    // Single click activation: move caret to end
+                    tb.SelectionStart = tb.TextLength;
+                    tb.SelectionLength = 0;
+                    return;
+                }
+
+                if (c is UpDownBase udb)
+                {
+                    var len = udb.Text?.Length ?? 0;
+                    udb.Select(len, 0);
+                }
+            }));
+        }
+
+        private void WireCaretAtEndOnFocus(Control ctrl)
+        {
+            if (ctrl == null) return;
+
+            // Remove old handlers if previously wired
+            ctrl.Enter -= CaretPositioning_Enter;
+            ctrl.MouseUp -= CaretPositioning_MouseUp;
+
+            ctrl.Enter += CaretPositioning_Enter;
+            ctrl.MouseUp += CaretPositioning_MouseUp;
+
+            // NOTE: We intentionally do NOT hook Click anymore to allow double-click selection
+            // (double-click still raises Click events before DoubleClick; removing Click avoids overriding word selection).
         }
 
         private void InitializeTriggerSetButtonState()
@@ -3769,6 +4028,7 @@ namespace Oscilloscope_Network_Capture
                     ConfigurationService.Save(_config);
                     UpdateActionRichTextForNextFilename();
                 };
+                WireCaretAtEndOnFocus(tb);
                 tabCapturing.Controls.Add(tb);
 
                 // Label: token name {NAME} (not focusable)
@@ -4273,9 +4533,9 @@ namespace Oscilloscope_Network_Capture
             sb.Append(@"{\fs28{\b Variables to use in filename format}}\line ");
             sb.Append(@"    * " + KeycapRtf("{NUMBER}") + @" is a sequential number counting up for every measurement you do (e.g. it could be IC pin number 7)\line ");
             sb.Append(@"    * " + KeycapRtf("{COMPONENT}") + @" is the component you are measuring on\line ");
-            sb.Append(@"    * " + KeycapRtf("{VAR2}") + @" is some text or number you define yourself - you can have up to 5 variables\line ");
-            sb.Append(@"    * " + KeycapRtf("{DATE}") + @" is YYYYMMDD - e.g. 20251231\line ");
-            sb.Append(@"    * " + KeycapRtf("{TIME}") + @" is HHMMSS - e.g. 235959\line ");
+            sb.Append(@"    * " + KeycapRtf("{VAR2}") + @" is some text or number you define yourself - you can name this as you like and have up to 5 variables\line ");
+            sb.Append(@"    * " + KeycapRtf("{DATE}") + @" is system date; YYYYMMDD - e.g. 20251231\line ");
+            sb.Append(@"    * " + KeycapRtf("{TIME}") + @" is system time; HHMMSS - e.g. 235959\line ");
             sb.Append(@"\line");
 
             sb.Append(@"{\fs28{\b General}}\line ");
@@ -4284,7 +4544,7 @@ namespace Oscilloscope_Network_Capture
 
             sb.Append(@"{\fs28{\b Keyboard commands (only in capture mode)}}\line ");
             sb.Append("    * " + KeycapRtf("ENTER") + " will save image from scope to a file with a specific filename format, and increase the "+ KeycapRtf("{NUMBER}") + @"\line ");
-            sb.Append("    * " + KeycapRtf("DELETE") + " will delete last saved file; requires a checkbox to be set in \"Settings\" \\line ");
+            sb.Append("    * " + KeycapRtf("DELETE") + " or " + KeycapRtf("BACKSPACE") + " will delete last saved file; " + "{\\b requires a checkbox to be set in \"Settings\"}" + " \\line ");
             sb.Append("    * " + KeycapRtf("*") + " to set SINGLE trigger on scope\\line ");
             sb.Append("    * " + KeycapRtf("/") + " to RESUME acquisition on scope\\line ");
             sb.Append("    * " + KeycapRtf("NUMPAD DECIMAL") + " to \"Clear Statistics\" on scope\\line ");
@@ -4292,7 +4552,9 @@ namespace Oscilloscope_Network_Capture
             sb.Append("    * " + KeycapRtf("-") + " to increase TIME/DIV timespan (zoom-out)\\line ");
             sb.Append("    * " + KeycapRtf("ARROW UP") + " to raise trigger level\\line ");
             sb.Append("    * " + KeycapRtf("ARROW DOWN") + " to lower trigger level\\line ");
-            sb.Append("    * " + KeycapRtf("NUMPAD 9") + " is a \"secret\" command to set scope to "+ KeycapRtf("1uS") + " as a quick (experimental) reference\\line ");
+            sb.Append("    * " + KeycapRtf("NUMPAD 9") + " is an " + "{\\b experimental}" + " command to set scope to " + KeycapRtf("1μS") + " as a quick reference\\line ");
+            sb.Append("    * " + KeycapRtf("NUMPAD 8") + " is an " + "{\\b experimental}" + " command to set scope to " + KeycapRtf("1mS") + " as a quick reference\\line ");
+            sb.Append("    * " + KeycapRtf("NUMPAD 7") + " is an " + "{\\b experimental}" + " command to set scope to " + KeycapRtf("100mS") + " as a quick reference\\line ");
             sb.Append(@"\line");
 
             sb.Append(@"{\fs28{\b Checkboxes}}\line ");
