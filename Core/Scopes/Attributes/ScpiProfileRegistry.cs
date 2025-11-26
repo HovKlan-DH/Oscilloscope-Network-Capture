@@ -10,6 +10,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
     {
         private static readonly List<ScopeScpiProfile> _profiles = new List<ScopeScpiProfile>();
         private static readonly List<TimeDivEntry> _timeDivs = new List<TimeDivEntry>();
+        private static readonly List<VoltsDivEntry> _voltsDivs = new List<VoltsDivEntry>();
         private static bool _initialized;
         private static readonly object _sync = new object();
 
@@ -174,6 +175,17 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
             if (pattern.EndsWith("*"))
                 return model.StartsWith(pattern.TrimEnd('*'));
             return model.Equals(pattern);
+        }
+
+        private static void AddVoltsDivTokens(string vendor, IEnumerable<string> modelSeries, IEnumerable<string> tokens)
+        {
+            if (modelSeries == null) return;
+            var tokList = (tokens ?? Enumerable.Empty<string>()).ToArray();
+            foreach (var series in modelSeries)
+            {
+                if (string.IsNullOrWhiteSpace(series)) continue;
+                _voltsDivs.Add(new VoltsDivEntry(vendor, series, tokList));
+            }
         }
 
         // ---------------- TIME/DIV helpers ----------------
@@ -357,6 +369,104 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                 if (string.IsNullOrWhiteSpace(series)) continue;
                 _timeDivs.Add(new TimeDivEntry(vendor, series, tokList));
             }
+        }
+
+        private static void AddTimeDivTokens(
+            string vendor,
+            IEnumerable<string> modelSeries,
+            IEnumerable<string> timeTokens,
+            IEnumerable<string> voltsDivTokens)
+        {
+            AddTimeDivTokens(vendor, modelSeries, timeTokens);     // existing registration
+            AddVoltsDivTokens(vendor, modelSeries, voltsDivTokens);// new VOLTS/DIV registration
+        }
+
+        public static IReadOnlyList<string> GetVoltsDivTextValues(string vendor, string model)
+        {
+            Ensure();
+            var vd = FindVoltsDivEntry(vendor, model);
+            return vd?.Tokens ?? Array.Empty<string>();
+        }
+
+        // 5. Finder (same semantics as FindTimeDivEntry)
+        private static VoltsDivEntry FindVoltsDivEntry(string vendor, string model)
+        {
+            var matches = _voltsDivs
+                .Where(p => p.Vendor.Equals(vendor ?? string.Empty, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(p => Specificity(p.ModelPattern));
+            foreach (var p in matches)
+            {
+                if (ModelMatches(p.ModelPattern, model)) return p;
+            }
+            return null;
+        }
+
+        // 6. Container for VOLTS/DIV (tokens only)
+        private sealed class VoltsDivEntry
+        {
+            public string Vendor { get; }
+            public string ModelPattern { get; }
+            public IReadOnlyList<string> Tokens { get; }
+
+            public VoltsDivEntry(string vendor, string modelPattern, IEnumerable<string> tokens)
+            {
+                Vendor = vendor ?? string.Empty;
+                ModelPattern = string.IsNullOrWhiteSpace(modelPattern) ? "*" : modelPattern;
+                Tokens = (tokens ?? Enumerable.Empty<string>()).Select(s => (s ?? string.Empty).Trim())
+                           .Where(s => !string.IsNullOrWhiteSpace(s))
+                           .ToList();
+            }
+        }
+
+        // ADD: parse a volts token like "0.5", "1V", "500mV", "200uV"
+        private static double ParseVoltsTokenToDouble(string token)
+        {
+            if (string.IsNullOrWhiteSpace(token)) return 0;
+            var s = token.Trim();
+
+            // strip trailing V
+            if (s.EndsWith("V", StringComparison.OrdinalIgnoreCase))
+                s = s.Substring(0, s.Length - 1);
+
+            double mult = 1.0;
+            // handle SI suffix (m,u,n) if present as last char
+            if (s.EndsWith("m", StringComparison.OrdinalIgnoreCase)) { mult = 1e-3; s = s.Substring(0, s.Length - 1); }
+            else if (s.EndsWith("u", StringComparison.OrdinalIgnoreCase) || s.EndsWith("?")) { mult = 1e-6; s = s.Substring(0, s.Length - 1); }
+            else if (s.EndsWith("n", StringComparison.OrdinalIgnoreCase)) { mult = 1e-9; s = s.Substring(0, s.Length - 1); }
+
+            double v;
+            return double.TryParse(s, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out v) ? v * mult : 0;
+        }
+
+        // ADD: next/prev based on registered VOLTS/DIV tokens (ascending order)
+        public static bool TryGetNextVoltsDiv(string vendor, string model, double current, out double next)
+        {
+            next = 0;
+            var e = FindVoltsDivEntry(vendor, model);
+            if (e == null || e.Tokens == null) return false;
+            var values = e.Tokens
+                .Select(ParseVoltsTokenToDouble)
+                .Where(x => x > 0)
+                .Distinct()
+                .OrderBy(x => x)
+                .ToList();
+            if (values.Count == 0) return false;
+            return TryGetNext(values, current, out next, 1e-12);
+        }
+
+        public static bool TryGetPrevVoltsDiv(string vendor, string model, double current, out double prev)
+        {
+            prev = 0;
+            var e = FindVoltsDivEntry(vendor, model);
+            if (e == null || e.Tokens == null) return false;
+            var values = e.Tokens
+                .Select(ParseVoltsTokenToDouble)
+                .Where(x => x > 0)
+                .Distinct()
+                .OrderBy(x => x)
+                .ToList();
+            if (values.Count == 0) return false;
+            return TryGetPrev(values, current, out prev, 1e-12);
         }
 
         // Optional: numeric TIME/DIV duplication across series

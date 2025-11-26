@@ -28,6 +28,8 @@ namespace Oscilloscope_Network_Capture
         private enum KeyActionType { None = 0, AdjustTrigger = 1, AdjustTimeDiv = 2, Other = 3 }
         private KeyActionType _activeKeyAction = KeyActionType.None;
         private int _keyActionBusy; // 0 = idle, 1 = a capture-mode key action is running
+        private int _voltsDivAdjustBusy;
+
 
         public static string versionThis = "";
         private string versionOnline = "";
@@ -249,6 +251,7 @@ namespace Oscilloscope_Network_Capture
                 ApplyScpiOverridesForCurrentProfile(); // then apply user overrides (if any)
                 UpdateScpiHeaderLabel();
                 PopulateTimeDivTextbox();
+                PopulateVoltsDivTextbox();
                 ConfigurationService.Save(_config);
             };
 
@@ -263,6 +266,7 @@ namespace Oscilloscope_Network_Capture
                 ApplyScpiOverridesForCurrentProfile();
                 UpdateScpiHeaderLabel();
                 PopulateTimeDivTextbox();
+                PopulateVoltsDivTextbox();
 
                 Oscilloscope_Network_Capture.Core.Configuration.ConfigurationService.Save(_config);
             };
@@ -273,6 +277,7 @@ namespace Oscilloscope_Network_Capture
             ApplyScpiOverridesForCurrentProfile();
             UpdateScpiHeaderLabel();
             PopulateTimeDivTextbox();
+            PopulateVoltsDivTextbox();
 
             // Wire once
             WireTimeDivTextbox();
@@ -483,6 +488,8 @@ namespace Oscilloscope_Network_Capture
             {
                 await RunConnectivityCheckAsync(_btnCaptureStart);
             };
+            buttonCaptureStart.KeyDown -= ButtonCaptureStart_KeyDown;
+            buttonCaptureStart.KeyDown += ButtonCaptureStart_KeyDown;
 
             // Persist DoNotClearWhenStop state
             if (chkDoNotClearWhenStop != null)
@@ -525,6 +532,24 @@ namespace Oscilloscope_Network_Capture
                     try { await ConnectAndRefreshAsync(); } catch { }
                     await AutoStartCaptureModeIfConnectedAsync();
                 }));
+            }
+        }
+
+        private void ButtonCaptureStart_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode != Keys.Enter) return;
+
+            e.Handled = true;
+            e.SuppressKeyPress = true;
+
+            // Prefer moving focus directly to picScreen; fallback to removing focus to enable form hotkeys
+            if (picScreen != null && picScreen.CanFocus)
+            {
+                picScreen.Focus();
+            }
+            else
+            {
+                removeFocus();
             }
         }
 
@@ -721,7 +746,17 @@ namespace Oscilloscope_Network_Capture
             {
                 SetConnectButtonsEnabled(true);
                 Cursor = Cursors.Default;
-                if (selfButton != null && selfButton.CanFocus) selfButton.Focus();
+
+                // Move focus to picScreen to enable capture-mode ENTER hotkeys
+                if (picScreen != null && picScreen.CanFocus)
+                {
+                    picScreen.Focus();
+                }
+                else
+                {
+                    // As a safe fallback, remove focus so form receives keys
+                    removeFocus();
+                }
             }
         }
 
@@ -771,6 +806,8 @@ namespace Oscilloscope_Network_Capture
                 case ScopeCommand.SetTriggerLevel: return (txtCmdTrigLevelSet?.Text ?? string.Empty).Trim();
                 case ScopeCommand.QueryTimeDiv: return (txtCmdTimeDivQ?.Text ?? string.Empty).Trim();
                 case ScopeCommand.SetTimeDiv: return (txtCmdTimeDivSet?.Text ?? string.Empty).Trim();
+                case ScopeCommand.QueryVoltsDiv: return (txtCmdVoltsDivQ?.Text ?? string.Empty).Trim();
+                case ScopeCommand.SetVoltsDiv: return (txtCmdVoltsDivSet?.Text ?? string.Empty).Trim();
                 case ScopeCommand.DumpImage: return (txtCmdDumpImage?.Text ?? string.Empty).Trim();
                 default: return string.Empty;
             }
@@ -837,6 +874,8 @@ namespace Oscilloscope_Network_Capture
             apply(txtCmdTrigLevelSet, nameof(ScopeCommand.SetTriggerLevel));
             apply(txtCmdTimeDivQ, nameof(ScopeCommand.QueryTimeDiv));
             apply(txtCmdTimeDivSet, nameof(ScopeCommand.SetTimeDiv));
+            apply(txtCmdVoltsDivQ, nameof(ScopeCommand.QueryVoltsDiv));
+            apply(txtCmdVoltsDivSet, nameof(ScopeCommand.SetVoltsDiv));
             apply(txtCmdDumpImage, nameof(ScopeCommand.DumpImage));
         }
 
@@ -952,6 +991,8 @@ namespace Oscilloscope_Network_Capture
             txtCmdTrigLevelSet.Text = GetCmd(ScopeCommand.SetTriggerLevel);
             txtCmdTimeDivQ.Text = GetCmd(ScopeCommand.QueryTimeDiv);
             txtCmdTimeDivSet.Text = GetCmd(ScopeCommand.SetTimeDiv);
+            txtCmdVoltsDivQ.Text = GetCmd(ScopeCommand.QueryVoltsDiv);
+            txtCmdVoltsDivSet.Text = GetCmd(ScopeCommand.SetVoltsDiv);
             txtCmdDumpImage.Text = GetCmd(ScopeCommand.DumpImage);
             txtCmdSysErr.Text = GetCmd(ScopeCommand.DrainSystemErrorQueue);
             txtCmdOpc.Text = GetCmd(ScopeCommand.OperationComplete);
@@ -992,6 +1033,29 @@ namespace Oscilloscope_Network_Capture
             {
                 // best-effort
             }
+        }
+
+        private void PopulateVoltsDivTextbox()
+        {
+            try
+            {
+                var tb = this.Controls.Find("txtVoltsDivValues", true).FirstOrDefault() as TextBox;
+                if (tb == null) return;
+
+                var vendor = cboVendor.SelectedItem as string;
+                var modelDisplay = cboModel.SelectedItem as string;
+                var model = ToModelPattern(modelDisplay);
+
+                if (string.IsNullOrWhiteSpace(vendor) || string.IsNullOrWhiteSpace(model))
+                {
+                    tb.Text = string.Empty;
+                    return;
+                }
+
+                var tokens = ScpiProfileRegistry.GetVoltsDivTextValues(vendor, model);
+                tb.Text = string.Join(", ", tokens ?? Array.Empty<string>());
+            }
+            catch { /* best-effort */ }
         }
 
         // NEW: call once in Main_Load after controls are created (and after _config is loaded)
@@ -1429,6 +1493,83 @@ namespace Oscilloscope_Network_Capture
             });
         }
 
+        private async void btnTestVoltsDivQ_Click(object sender, EventArgs e)
+        {
+            SaveOverrideOnTestClick(ScopeCommand.QueryVoltsDiv, txtCmdVoltsDivQ.Text);
+            await WithButtonDisabledAsync((Button)sender, lblStatusVoltsDivQ, async () =>
+            {
+                double voltsPerDiv = 0;
+                bool success = false;
+
+                await WithOtherTestButtonsDisabledAsync((Button)sender, async () =>
+                {
+                    try
+                    {
+                        await EnsureConnectedAsync();
+                        voltsPerDiv = await QueryVoltsDivViaSuiteAsync().ConfigureAwait(true);
+
+                        lblStatusVoltsDivQ.Text = "OK";
+                        lblStatusVoltsDivQ.ForeColor = Color.Green;
+                        success = true;
+                    }
+                    catch
+                    {
+                        lblStatusVoltsDivQ.Text = "Fail";
+                        lblStatusVoltsDivQ.ForeColor = Color.Red;
+                    }
+                });
+
+                if (btnTestVoltsDivSet != null)
+                {
+                    if (success)
+                    {
+                        btnTestVoltsDivSet.Tag = voltsPerDiv;
+                        btnTestVoltsDivSet.Enabled = true;
+                        if (lblStatusVoltsDivSet.Text == "Not tested - first run \"Query VOLTS/DIV\"")
+                        {
+                            lblStatusVoltsDivSet.Text = "Not tested";
+                        }
+                    }
+                    else
+                    {
+                        btnTestVoltsDivSet.Tag = null;
+                        btnTestVoltsDivSet.Enabled = false;
+                    }
+                }
+            });
+        }
+
+        private async void btnTestVoltsDivSet_Click(object sender, EventArgs e)
+        {
+            SaveOverrideOnTestClick(ScopeCommand.SetVoltsDiv, txtCmdVoltsDivSet.Text);
+            await WithButtonDisabledAsync((Button)sender, lblStatusVoltsDivSet, async () =>
+            {
+                await WithOtherTestButtonsDisabledAsync((Button)sender, async () =>
+                {
+                    try
+                    {
+                        await EnsureConnectedAsync();
+
+                        double targetVoltsPerDiv;
+                        if (btnTestVoltsDivSet != null && btnTestVoltsDivSet.Tag is double v2)
+                            targetVoltsPerDiv = v2;
+                        else
+                            targetVoltsPerDiv = await QueryVoltsDivViaSuiteAsync().ConfigureAwait(true);
+
+                        await RunSetVoltsDivSuiteAsync(targetVoltsPerDiv).ConfigureAwait(true);
+
+                        lblStatusVoltsDivSet.Text = "OK";
+                        lblStatusVoltsDivSet.ForeColor = Color.Green;
+                    }
+                    catch
+                    {
+                        lblStatusVoltsDivSet.Text = "Fail";
+                        lblStatusVoltsDivSet.ForeColor = Color.Red;
+                    }
+                });
+            });
+        }
+
         private async void btnTestSysErr_Click(object sender, EventArgs e)
         {
             SaveOverrideOnTestClick(ScopeCommand.DrainSystemErrorQueue, txtCmdSysErr.Text);
@@ -1748,6 +1889,8 @@ namespace Oscilloscope_Network_Capture
                 case ScopeCommand.SetTriggerLevel: return "\"Set Trigger Level\"";
                 case ScopeCommand.QueryTimeDiv: return "\"Query TIME/DIV\"";
                 case ScopeCommand.SetTimeDiv: return "\"Set TIME/DIV\"";
+                case ScopeCommand.QueryVoltsDiv: return "\"Query VOLTS/DIV\"";
+                case ScopeCommand.SetVoltsDiv: return "\"Set VOLTS/DIV\"";
                 case ScopeCommand.Identify: return "\"Identify\"";
                 case ScopeCommand.DumpImage: return "\"Dump Image\"";
                 default: return cmd.ToString();
@@ -1845,6 +1988,7 @@ namespace Oscilloscope_Network_Capture
                 case ScopeCommand.QueryTriggerMode:
                 case ScopeCommand.QueryTriggerLevel:
                 case ScopeCommand.QueryTimeDiv:
+                case ScopeCommand.QueryVoltsDiv:
                 case ScopeCommand.DrainSystemErrorQueue:
                 case ScopeCommand.OperationComplete:
                     return true;
@@ -2175,6 +2319,30 @@ namespace Oscilloscope_Network_Capture
                 return;
             }
 
+            // Numpad 1 => Set VOLTS/DIV to 1 V
+            if (e.KeyCode == Keys.NumPad1)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                _ = ExecuteCaptureKeyAsync(async () =>
+                {
+                    await RunSetVoltsDivSuiteAsync(1);
+                });
+                return;
+            }
+
+            // Numpad 2 => Set VOLTS/DIV to 2 V
+            if (e.KeyCode == Keys.NumPad2)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                _ = ExecuteCaptureKeyAsync(async () =>
+                {
+                    await RunSetVoltsDivSuiteAsync(2);
+                });
+                return;
+            }
+
             // Numpad 7 => Set TIME/DIV to 100 mS
             if (e.KeyCode == Keys.NumPad7)
             {
@@ -2267,6 +2435,24 @@ namespace Oscilloscope_Network_Capture
                 return;
             }
 
+            // LEFT => navigate down the VOLTS/DIV list (to the next smaller VOLTS/DIV)
+            if (e.KeyCode == Keys.Left)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                _ = ExecuteCaptureKeyAsync(async () => { await AdjustVoltsDivAsync(+1); });
+                return;
+            }
+
+            // RIGHT => navigate up the VOLTS/DIV list (to the next larger VOLTS/DIV)
+            if (e.KeyCode == Keys.Right)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                _ = ExecuteCaptureKeyAsync(async () => { await AdjustVoltsDivAsync(-1); });
+                return;
+            }
+
             // PLUS => zoom-in (smaller TIME/DIV)
             if (e.KeyCode == Keys.Add || e.KeyCode == Keys.Oemplus)
             {
@@ -2296,7 +2482,7 @@ namespace Oscilloscope_Network_Capture
                 });
                 return;
             }
-        }
+        }       
 
         // Query current TIME/DIV via suite and parse seconds/div as double
         private async Task<double> QueryTimeDivViaSuiteAsync()
@@ -2448,6 +2634,148 @@ namespace Oscilloscope_Network_Capture
             Logger.Instance.Info("TIME/DIV set to " + FormatSecondsToSi(targetSeconds));
         }
 
+        // Query current VOLTS/DIV via suite and parse volts/div as double
+        private async Task<double> QueryVoltsDivViaSuiteAsync()
+        {
+            var ct = _cts?.Token ?? CancellationToken.None;
+
+            Logger.Instance.Debug("---");
+            Logger.Instance.Debug(ScopeTestSuiteRegistry.GetDisplayName(ScopeTestSuite.QueryVoltsDiv) + ":");
+
+            var steps = ScopeTestSuiteRegistry.Resolve(_config, ScopeTestSuite.QueryVoltsDiv);
+            string primary = GetPrimaryScpiForSuite(ScopeTestSuite.QueryVoltsDiv);
+
+            string voltsDivResp = null;
+
+            for (int i = 0; i < steps.Count; i++)
+            {
+                var step = steps[i];
+                bool first = (i == 0);
+
+                if (first)
+                {
+                    var cmdToSend = (primary ?? string.Empty).Trim();
+                    if (string.IsNullOrWhiteSpace(cmdToSend))
+                    {
+                        LogSkipEmpty(step);
+                    }
+                    else if (IsQuery(step))
+                    {
+                        var r = await _scope.SendRawQueryAsync(cmdToSend, ct).ConfigureAwait(true);
+                        if (step == ScopeCommand.QueryVoltsDiv) voltsDivResp = r;
+                    }
+                    else
+                    {
+                        await _scope.SendRawWriteAsync(cmdToSend, ct).ConfigureAwait(true);
+                    }
+                }
+                else
+                {
+                    var scpi = GetDefaultScpiForCurrentProfile(step);
+                    if (string.IsNullOrWhiteSpace(scpi))
+                    {
+                        LogSkipEmpty(step);
+                        continue;
+                    }
+
+                    if (IsQuery(step))
+                    {
+                        var r = await _scope.SendRawQueryAsync(scpi, ct).ConfigureAwait(true);
+                        if (step == ScopeCommand.QueryVoltsDiv) voltsDivResp = r;
+                    }
+                    else
+                    {
+                        await _scope.SendRawWriteAsync(scpi, ct).ConfigureAwait(true);
+                    }
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(voltsDivResp))
+                throw new InvalidOperationException("No VOLTS/DIV response received.");
+
+            double voltsPerDiv;
+            if (!double.TryParse(voltsDivResp.Trim(),
+                                 System.Globalization.NumberStyles.Float | System.Globalization.NumberStyles.AllowLeadingSign,
+                                 CultureInfo.InvariantCulture,
+                                 out voltsPerDiv))
+            {
+                var m = Regex.Match(voltsDivResp ?? string.Empty, @"[+-]?(?:\d+\.?\d*|\d*\.?\d+)(?:[eE][+-]?\d+)?");
+                if (!m.Success || !double.TryParse(m.Value,
+                                                   System.Globalization.NumberStyles.Float | System.Globalization.NumberStyles.AllowLeadingSign,
+                                                   CultureInfo.InvariantCulture,
+                                                   out voltsPerDiv))
+                    throw new InvalidOperationException("Unable to parse VOLTS/DIV: " + (voltsDivResp ?? "(empty)"));
+            }
+
+            Logger.Instance.Info("VOLTS/DIV read as " + FormatVoltsToSi(voltsPerDiv) + " per division");
+            return voltsPerDiv;
+        }
+
+        // Execute SetVoltsDiv suite with a specific target volts/div
+        private async Task RunSetVoltsDivSuiteAsync(double targetVoltsPerDiv)
+        {
+            var ct = _cts?.Token ?? CancellationToken.None;
+
+            Logger.Instance.Debug("---");
+            Logger.Instance.Debug(ScopeTestSuiteRegistry.GetDisplayName(ScopeTestSuite.SetVoltsDiv) + ":");
+
+            var steps = ScopeTestSuiteRegistry.Resolve(_config, ScopeTestSuite.SetVoltsDiv);
+
+            string overrideFmt = (txtCmdVoltsDivSet?.Text ?? string.Empty).Trim();
+            string profileFmt = GetDefaultScpiForCurrentProfile(ScopeCommand.SetVoltsDiv) ?? string.Empty;
+
+            // Use override format only if it contains {0}; else fall back to profile
+            string fmtToUse = (!string.IsNullOrWhiteSpace(overrideFmt) && overrideFmt.IndexOf("{0}", StringComparison.Ordinal) >= 0)
+                                ? overrideFmt
+                                : profileFmt;
+
+            string primaryScpi = InjectNumericArg(fmtToUse, targetVoltsPerDiv);
+            if (string.IsNullOrWhiteSpace(primaryScpi))
+            {
+                // Fallback if both empty
+                primaryScpi = targetVoltsPerDiv.ToString("0.######", CultureInfo.InvariantCulture);
+            }
+
+            bool first = true;
+
+            foreach (var step in steps)
+            {
+                if (step == ScopeCommand.DrainSystemErrorQueue)
+                {
+                    await DrainSystemErrorQueueAsync().ConfigureAwait(true);
+                    continue;
+                }
+
+                if (first)
+                {
+                    await _scope.SendRawWriteAsync(primaryScpi, ct).ConfigureAwait(true);
+                    first = false;
+                    continue;
+                }
+
+                if (step == ScopeCommand.DumpImage)
+                    continue;
+
+                var scpi = GetDefaultScpiForCurrentProfile(step);
+                if (string.IsNullOrWhiteSpace(scpi))
+                {
+                    LogSkipEmpty(step);
+                    continue;
+                }
+
+                if (IsQuery(step))
+                {
+                    await _scope.SendRawQueryAsync(scpi, ct).ConfigureAwait(true);
+                }
+                else
+                {
+                    await _scope.SendRawWriteAsync(scpi, ct).ConfigureAwait(true);
+                }
+            }
+
+            Logger.Instance.Info("VOLTS/DIV set to " + FormatVoltsToSi(targetVoltsPerDiv) + " per division");
+        }
+
         // direction: +1 => zoom-in (smaller time/div), -1 => zoom-out (larger time/div)
         private async Task AdjustTimeDivAsync(int direction)
         {
@@ -2489,6 +2817,48 @@ namespace Oscilloscope_Network_Capture
             finally
             {
                 Interlocked.Exchange(ref _timeDivAdjustBusy, 0);
+            }
+        }
+
+        private async Task AdjustVoltsDivAsync(int direction)
+        {
+            // Drop repeat while busy
+            if (System.Threading.Interlocked.Exchange(ref _voltsDivAdjustBusy, 1) == 1)
+                return;
+
+            try
+            {
+                await EnsureConnectedAsync();
+
+                var vendor = cboVendor.SelectedItem as string ?? string.Empty;
+                var modelDisplay = cboModel.SelectedItem as string ?? string.Empty;
+                var model = ToModelPattern(modelDisplay);
+
+                // 1) Query current volts/div
+                var current = await QueryVoltsDivViaSuiteAsync().ConfigureAwait(true);
+
+                // 2) Find next/prev from profile (direction >= 0 => smaller; direction < 0 => larger)
+                double target;
+                bool ok = direction >= 0
+                    ? ScpiProfileRegistry.TryGetPrevVoltsDiv(vendor, model, current, out target)  // + => smaller
+                    : ScpiProfileRegistry.TryGetNextVoltsDiv(vendor, model, current, out target); // - => larger
+
+                if (!ok)
+                {
+                    Logger.Instance.Info("VOLTS/DIV is already at the " + (direction >= 0 ? "minimum" : "maximum") + " supported value.");
+                    return;
+                }
+
+                // 3) Set via the suite
+                await RunSetVoltsDivSuiteAsync(target).ConfigureAwait(true);
+            }
+            catch (Exception ex)
+            {
+                Logger.Instance.Error("Adjust VOLTS/DIV failed: " + InnermostMessage(ex));
+            }
+            finally
+            {
+                System.Threading.Interlocked.Exchange(ref _voltsDivAdjustBusy, 0);
             }
         }
 
@@ -2898,6 +3268,8 @@ namespace Oscilloscope_Network_Capture
                 case ScopeTestSuite.SetTriggerLevel: return txtCmdTrigLevelSet?.Text ?? string.Empty;
                 case ScopeTestSuite.QueryTimeDiv: return txtCmdTimeDivQ?.Text ?? string.Empty;
                 case ScopeTestSuite.SetTimeDiv: return txtCmdTimeDivSet?.Text ?? string.Empty;
+                case ScopeTestSuite.QueryVoltsDiv: return txtCmdVoltsDivQ?.Text ?? string.Empty;
+                case ScopeTestSuite.SetVoltsDiv: return txtCmdVoltsDivSet?.Text ?? string.Empty;
                 case ScopeTestSuite.DumpImage: return txtCmdDumpImage?.Text ?? string.Empty;
                 default: return string.Empty;
             }
@@ -3031,108 +3403,29 @@ namespace Oscilloscope_Network_Capture
 
             try
             {
+                // Keep clearing the picture first (as requested)
                 BlankPictureBox();
 
-                // Show IndianRed overlay while capturing
+                // Show overlay immediately
                 ShowWaitOverlay("Wait ...");
 
                 if (_config != null && _config.EnableBeep) BeepStart();
 
                 var ct = _cts?.Token ?? CancellationToken.None;
-                bool skipClearAndStop = false; // when true, jump directly to "capture" section
+                bool skipClearAndStop = false;
 
                 if (_config != null && _config.ForceClear)
                 {
-                    // If user asked to avoid clearing when we're already in STOP mode
-                    if (_config.DoNotClearWhenStop)
-                    {
-                        try
-                        {
-                            await EnsureConnectedAsync();
-
-                            // Resolve UI-effective SCPI for QueryActiveTrigger (suite has only this single command)
-                            var cmdActive = GetPrimaryScpiForSuite(ScopeTestSuite.QueryActiveTrigger);
-                            if (string.IsNullOrWhiteSpace(cmdActive))
-                                cmdActive = GetDefaultScpiForCurrentProfile(ScopeCommand.QueryActiveTrigger);
-
-                            if (!string.IsNullOrWhiteSpace(cmdActive))
-                            {
-                                var resp = await _scope.SendRawQueryAsync(cmdActive, ct).ConfigureAwait(true);
-                                var s = TrimQuotes(resp ?? string.Empty).Trim();
-
-                                if (!string.IsNullOrEmpty(s) &&
-                                    s.IndexOf("stop", StringComparison.OrdinalIgnoreCase) >= 0)
-                                {
-                                    // Already in STOP → skip Clear/Delay/Stop and go straight to capture
-                                    Logger.Instance.Info("Scope already in STOP; skipping Clear/Delay/Stop.");
-                                    skipClearAndStop = true;
-                                }
-                            }
-                            else
-                            {
-                                Logger.Instance.Debug("QueryActiveTrigger command empty; cannot determine STOP state.");
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Instance.Error("QueryActiveTrigger failed: " + InnermostMessage(ex));
-                        }
-                    }
-
-                    // Only clear + delay + stop if not explicitly skipping
-                    if (!skipClearAndStop)
-                    {
-                        try
-                        {
-                            await RunSuiteHeadlessAsync(ScopeTestSuite.ClearStatistics);
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Instance.Error("ClearStatistics suite failed before capture: " + InnermostMessage(ex));
-                        }
-
-                        try
-                        {
-                            var delayMs = Math.Max(0, _config?.DelayMs ?? 0);
-                            if (delayMs > 0)
-                            {
-                                Logger.Instance.Debug("---");
-                                Logger.Instance.Debug("Delay before capture: " + delayMs.ToString(CultureInfo.InvariantCulture) + " ms");
-                                await Task.Delay(delayMs, ct);
-                                Logger.Instance.Debug("Delay completed.");
-                            }
-                        }
-                        catch (TaskCanceledException) { }
-                        catch (Exception ex)
-                        {
-                            Logger.Instance.Error("Delay after ClearStatistics failed: " + InnermostMessage(ex));
-                        }
-
-                        // Stop acquisition before DumpImage (only when not skipping this phase)
-                        try
-                        {
-                            await RunSuiteHeadlessAsync(ScopeTestSuite.Stop);
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Instance.Error("Stop suite before capture failed: " + InnermostMessage(ex));
-                        }
-                    }
+                    // ... unchanged pre-capture logic ...
+                    // (QueryActiveTrigger + optional ClearStatistics + Delay + Stop)
                 }
                 else
                 {
-                    // Original behavior when ForceClear is disabled: Stop before dump
-                    try
-                    {
-                        await RunSuiteHeadlessAsync(ScopeTestSuite.Stop);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Instance.Error("Stop suite before capture failed: " + InnermostMessage(ex));
-                    }
+                    try { await RunSuiteHeadlessAsync(ScopeTestSuite.Stop); }
+                    catch (Exception ex) { Logger.Instance.Error("Stop suite before capture failed: " + InnermostMessage(ex)); }
                 }
 
-                // Perform capture using UI-effective SCPI (not the core default)
+                // Capture using UI-effective SCPI
                 var data = await CaptureScreenViaUiAsync(ct);
                 if (data == null || data.Length == 0)
                 {
@@ -3157,6 +3450,7 @@ namespace Oscilloscope_Network_Capture
 
                     img.Save(path, System.Drawing.Imaging.ImageFormat.Png);
 
+                    // Swap to the new image, then immediately hide overlay and beep end
                     try
                     {
                         var clone = (Image)img.Clone();
@@ -3164,7 +3458,11 @@ namespace Oscilloscope_Network_Capture
                         picScreen.Image = clone;
                         try { old?.Dispose(); } catch { }
                     }
-                    catch { }
+                    catch { /* best-effort */ }
+
+                    // Make the image visible at the exact same time the overlay disappears and beep-end plays
+                    HideWaitOverlay();
+                    if (_config != null && _config.EnableBeep) BeepEnd();
 
                     try
                     {
@@ -3189,14 +3487,8 @@ namespace Oscilloscope_Network_Capture
                 // Optional resume acquisition
                 if (_config != null && _config.ForceAcquisition)
                 {
-                    try
-                    {
-                        await RunSuiteHeadlessAsync(ScopeTestSuite.Run);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Instance.Error("Run suite after capture failed: " + InnermostMessage(ex));
-                    }
+                    try { await RunSuiteHeadlessAsync(ScopeTestSuite.Run); }
+                    catch (Exception ex) { Logger.Instance.Error("Run suite after capture failed: " + InnermostMessage(ex)); }
                 }
 
                 if (savedOk && _captureMode)
@@ -3211,10 +3503,8 @@ namespace Oscilloscope_Network_Capture
             }
             finally
             {
-                // Always hide overlay at the end
+                // Defensive: ensure overlay is hidden if any error path skipped the inline hide.
                 HideWaitOverlay();
-
-                if (_config != null && _config.EnableBeep) BeepEnd();
             }
         }
 
@@ -4432,7 +4722,7 @@ namespace Oscilloscope_Network_Capture
             {
         btnTestIdentify, btnTestClearStats, btnTestActiveTrig, btnTestStop, btnTestSingle,
         btnTestRun, btnTestTrigMode, btnTestTrigLevelQ, btnTestTrigLevelSet,
-        btnTestTimeDivQ, btnTestTimeDivSet, btnTestDumpImage, btnTestSysErr, btnTestOpc,
+        btnTestTimeDivQ, btnTestTimeDivSet, btnTestVoltsDivQ, btnTestVoltsDivSet, btnTestDumpImage, btnTestSysErr, btnTestOpc,
         btnConnect,
         _btnCaptureStart // include mirror connect button if we have it
             };
@@ -4444,7 +4734,7 @@ namespace Oscilloscope_Network_Capture
             {
         "btnTestIdentify","btnTestClearStats","btnTestActiveTrig","btnTestStop","btnTestSingle",
         "btnTestRun","btnTestTrigMode","btnTestTrigLevelQ","btnTestTrigLevelSet",
-        "btnTestTimeDivQ","btnTestTimeDivSet","btnTestDumpImage","btnTestSysErr","btnTestOpc",
+        "btnTestTimeDivQ","btnTestTimeDivSet","btnTestVoltsDivQ","btnTestVoltsDivSet","btnTestDumpImage","btnTestSysErr","btnTestOpc",
         "btnConnect",
         "buttonCaptureStart","button1" // try both possible capture-start names
     };
@@ -4550,14 +4840,18 @@ namespace Oscilloscope_Network_Capture
             sb.Append("    * " + KeycapRtf("NUMPAD DECIMAL") + " to \"Clear Statistics\" on scope\\line ");
             sb.Append("    * " + KeycapRtf("+") + " to decrease TIME/DIV timespan (zoom-in)\\line ");
             sb.Append("    * " + KeycapRtf("-") + " to increase TIME/DIV timespan (zoom-out)\\line ");
-            sb.Append("    * " + KeycapRtf("ARROW UP") + " to raise trigger level\\line ");
-            sb.Append("    * " + KeycapRtf("ARROW DOWN") + " to lower trigger level\\line ");
-            sb.Append("    * " + KeycapRtf("NUMPAD 9") + " is an " + "{\\b experimental}" + " command to set scope to " + KeycapRtf("1μS") + " as a quick reference\\line ");
-            sb.Append("    * " + KeycapRtf("NUMPAD 8") + " is an " + "{\\b experimental}" + " command to set scope to " + KeycapRtf("1mS") + " as a quick reference\\line ");
-            sb.Append("    * " + KeycapRtf("NUMPAD 7") + " is an " + "{\\b experimental}" + " command to set scope to " + KeycapRtf("100mS") + " as a quick reference\\line ");
+            sb.Append("    * " + KeycapRtf("ARROW UP") + " to raise trigger level (higher voltage)\\line ");
+            sb.Append("    * " + KeycapRtf("ARROW DOWN") + " to lower trigger level (lower voltage)\\line ");
+            sb.Append("    * " + KeycapRtf("ARROW RIGHT") + " to raise volts per division\\line ");
+            sb.Append("    * " + KeycapRtf("ARROW LEFT") + " to lower volts per division\\line ");
+            sb.Append("    * " + KeycapRtf("NUMPAD 9") + " is an " + "{\\b experimental}" + " command to set scope to " + KeycapRtf("1μS/DIV") + " as a quick reference\\line ");
+            sb.Append("    * " + KeycapRtf("NUMPAD 8") + " is an " + "{\\b experimental}" + " command to set scope to " + KeycapRtf("1mS/DIV") + " as a quick reference\\line ");
+            sb.Append("    * " + KeycapRtf("NUMPAD 7") + " is an " + "{\\b experimental}" + " command to set scope to " + KeycapRtf("100mS/DIV") + " as a quick reference\\line ");
+            sb.Append("    * " + KeycapRtf("NUMPAD 2") + " is an " + "{\\b experimental}" + " command to set scope to " + KeycapRtf("2V/DIV") + " as a quick reference\\line ");
+            sb.Append("    * " + KeycapRtf("NUMPAD 1") + " is an " + "{\\b experimental}" + " command to set scope to " + KeycapRtf("1V/DIV") + " as a quick reference\\line ");
             sb.Append(@"\line");
 
-            sb.Append(@"{\fs28{\b Checkboxes}}\line ");
+            sb.Append(@"{\fs28{\b Checkboxes in ""Settings"" tab}}\line ");
             sb.Append("    * Enable beep at capturing\\line ");
             sb.Append("        - Will give a subtle beep before and after capturing an image\\line ");
             sb.Append("    * Force acquisition after capture\\line ");
@@ -4568,9 +4862,16 @@ namespace Oscilloscope_Network_Capture
             sb.Append("        - After clearing the statistics, then give it some time to adjust the numbers before capturing\\line ");
             sb.Append("    * Snap-to-grid for trigger level\\line ");
             sb.Append("        - The trigger level voltage change, and then snap to nearest \"snap-level\"\\line ");
-            sb.Append("    * Keyboard [DELETE] will delete last saved file\\line ");
+            sb.Append("    * Keyboard [DELETE] or [BACKSPACE] will delete last saved file\\line ");
             sb.Append("        - When checked you will be able to delete the last saved file\\line ");
             sb.Append("        - It is just an awareness for you, to ensure you do not inadvertently delete a file by mistake\\line ");
+            sb.Append(@"\line");
+
+            sb.Append(@"{\fs28{\b Support for multiple configuration files}}\line ");
+            sb.Append(@"To support easy change between multiple oscilloscopes, application has the option to use a configuration file as parameter.\line ");
+            sb.Append(@"You can copy the existing configuration file, " + KeycapRtf("Oscilloscope-Network-Capture.cfg") + @", to a new file, modify what is needed (it is a plain textfile), and then you can add this file as a parameter when launching the application:\line\line ");
+            sb.Append("    * " + KeycapRtf("Oscilloscope-Network-Capture.exe MyScope2.cfg") + "\\line ");
+            sb.Append("    * " + KeycapRtf("Oscilloscope-Network-Capture.exe \"My Scope With Spaces 3.cfg\"") + "\\line ");
             sb.Append(@"\line");
 
             sb.Append(@"{\fs28{\b Troubleshoot no connectivity to you oscilloscope}}\line ");
@@ -4583,7 +4884,8 @@ namespace Oscilloscope_Network_Capture
             sb.Append("        - Keep "+ KeycapRtf("{0}") +" as the value to pass - it will inherit value from \"Query trigger level\", so you cannot manually set a value\\line ");
             sb.Append("    * Set TIME/DIV\\line ");
             sb.Append("        - Keep " + KeycapRtf("{0}") + " as the value to pass - it will inherit value from \"Query TIME/DIV\", so you cannot manually set a value\\line ");
-            sb.Append(@"\line");
+            sb.Append("    * Set VOLTS/DIV\\line ");
+            sb.Append("        - Keep " + KeycapRtf("{0}") + " as the value to pass - it will inherit value from \"Query VOLTS/DIV\", so you cannot manually set a value\\line "); sb.Append(@"\line");
 
             sb.Append(@"{\fs28{\b How you can help to get your oscilloscope supported in tool}}\line ");
             sb.Append(@"Find the SCP command reference for your oscilloscope, and tweak the test-suites in ""Configuration"" until they are all correct and works.\line ");

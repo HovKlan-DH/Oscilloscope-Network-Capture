@@ -6,8 +6,8 @@ namespace Oscilloscope_Network_Capture.Core.Configuration
 {
     public static class ConfigurationService
     {
-        private static readonly string ConfigDirectory;
-        private static readonly string ConfigPath;
+        private static string ConfigDirectory;
+        private static string ConfigPath;
 
         public static bool Exists => File.Exists(ConfigPath);
 
@@ -22,6 +22,35 @@ namespace Oscilloscope_Network_Capture.Core.Configuration
             Directory.CreateDirectory(ConfigDirectory);
             ConfigPath = Path.Combine(ConfigDirectory, "Oscilloscope-Network-Capture.cfg");
             Dirty = false;
+        }
+
+        // Allow overriding the configuration file path at startup
+        public static void SetConfigFilePath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path)) return;
+
+            string resolved = path;
+            if (!Path.IsPathRooted(resolved))
+            {
+                var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                resolved = Path.Combine(baseDir, resolved);
+            }
+
+            try
+            {
+                var dir = Path.GetDirectoryName(resolved);
+                if (!string.IsNullOrEmpty(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+            }
+            catch
+            {
+                // Ignore directory creation errors; Save will try again
+            }
+
+            ConfigDirectory = Path.GetDirectoryName(resolved) ?? AppDomain.CurrentDomain.BaseDirectory;
+            ConfigPath = resolved;
         }
 
         public static AppConfiguration Load()
@@ -49,6 +78,12 @@ namespace Oscilloscope_Network_Capture.Core.Configuration
         {
             try
             {
+                var dir = Path.GetDirectoryName(ConfigPath);
+                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+
                 using (var fs = File.Create(ConfigPath))
                 {
                     var xs = new XmlSerializer(typeof(AppConfiguration));
@@ -60,12 +95,6 @@ namespace Oscilloscope_Network_Capture.Core.Configuration
             {
                 // Ignore persist errors
             }
-        }
-
-        public static void ResetToDefaults()
-        {
-            var fresh = new AppConfiguration();
-            Save(fresh);
         }
 
         public static string GetConfigFilePath() => ConfigPath;

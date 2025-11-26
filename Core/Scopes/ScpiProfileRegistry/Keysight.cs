@@ -34,6 +34,8 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                     .Map(ScopeCommand.SetTriggerLevel, ":TRIGGER:LEVEL {0}")
                     .Map(ScopeCommand.QueryTimeDiv, ":TIMEBASE:SCALE?")
                     .Map(ScopeCommand.SetTimeDiv, ":TIMEBASE:SCALE {0}")
+                    .Map(ScopeCommand.QueryVoltsDiv, ":CHANNEL1:SCALE?") // NEEDS TO BE FOUND AND SET!
+                    .Map(ScopeCommand.SetVoltsDiv, ":CHANNEL1:SCALE {0}") // NEEDS TO BE FOUND AND SET!
                     .Map(ScopeCommand.DumpImage, ":DISPLAY:DATA?")
             );
 
@@ -62,6 +64,8 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                     .Map(ScopeCommand.SetTriggerLevel, ":TRIGGER:EDGE:LEVEL {0}")
                     .Map(ScopeCommand.QueryTimeDiv, ":TIMEBASE:SCALE?")
                     .Map(ScopeCommand.SetTimeDiv, ":TIMEBASE:SCALE {0}")
+                    .Map(ScopeCommand.QueryVoltsDiv, ":CHANNEL1:SCALE?")
+                    .Map(ScopeCommand.SetVoltsDiv, ":CHANNEL1:SCALE {0}")
                     .Map(ScopeCommand.DumpImage, ":DISPLAY:DATA? PNG")
             );
 
@@ -83,6 +87,10 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                     "1us","2us","5us","10us","20us","50us","100us","200us","500us",
                     "1ms","2ms","5ms","10ms","20ms","50ms","100ms","200ms","500ms",
                     "1s","2s","5s","10s","20s","50s"
+                },
+                new[]
+                {
+                    "0.5", "1", "2"
                 }
             );
         }

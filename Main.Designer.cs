@@ -29,6 +29,16 @@
             this.numPort = new System.Windows.Forms.NumericUpDown();
             this.tabMain = new System.Windows.Forms.TabControl();
             this.tabConfiguration = new System.Windows.Forms.TabPage();
+            this.txtVoltsDivValues = new System.Windows.Forms.TextBox();
+            this.label5 = new System.Windows.Forms.Label();
+            this.lblStatusVoltsDivSet = new System.Windows.Forms.Label();
+            this.btnTestVoltsDivSet = new System.Windows.Forms.Button();
+            this.txtCmdVoltsDivSet = new System.Windows.Forms.TextBox();
+            this.label19 = new System.Windows.Forms.Label();
+            this.lblStatusVoltsDivQ = new System.Windows.Forms.Label();
+            this.btnTestVoltsDivQ = new System.Windows.Forms.Button();
+            this.txtCmdVoltsDivQ = new System.Windows.Forms.TextBox();
+            this.label21 = new System.Windows.Forms.Label();
             this.txtTimeDivValues = new System.Windows.Forms.TextBox();
             this.label13 = new System.Windows.Forms.Label();
             this.label11 = new System.Windows.Forms.Label();
@@ -282,11 +292,21 @@
             this.tabMain.Margin = new System.Windows.Forms.Padding(4);
             this.tabMain.Name = "tabMain";
             this.tabMain.SelectedIndex = 0;
-            this.tabMain.Size = new System.Drawing.Size(1065, 677);
+            this.tabMain.Size = new System.Drawing.Size(1065, 764);
             this.tabMain.TabIndex = 100;
             // 
             // tabConfiguration
             // 
+            this.tabConfiguration.Controls.Add(this.txtVoltsDivValues);
+            this.tabConfiguration.Controls.Add(this.label5);
+            this.tabConfiguration.Controls.Add(this.lblStatusVoltsDivSet);
+            this.tabConfiguration.Controls.Add(this.btnTestVoltsDivSet);
+            this.tabConfiguration.Controls.Add(this.txtCmdVoltsDivSet);
+            this.tabConfiguration.Controls.Add(this.label19);
+            this.tabConfiguration.Controls.Add(this.lblStatusVoltsDivQ);
+            this.tabConfiguration.Controls.Add(this.btnTestVoltsDivQ);
+            this.tabConfiguration.Controls.Add(this.txtCmdVoltsDivQ);
+            this.tabConfiguration.Controls.Add(this.label21);
             this.tabConfiguration.Controls.Add(this.txtTimeDivValues);
             this.tabConfiguration.Controls.Add(this.label13);
             this.tabConfiguration.Controls.Add(this.label11);
@@ -362,14 +382,114 @@
             this.tabConfiguration.Margin = new System.Windows.Forms.Padding(4);
             this.tabConfiguration.Name = "tabConfiguration";
             this.tabConfiguration.Padding = new System.Windows.Forms.Padding(4);
-            this.tabConfiguration.Size = new System.Drawing.Size(1057, 644);
+            this.tabConfiguration.Size = new System.Drawing.Size(1057, 731);
             this.tabConfiguration.TabIndex = 0;
             this.tabConfiguration.Text = "Configuration";
             this.tabConfiguration.UseVisualStyleBackColor = true;
             // 
+            // txtVoltsDivValues
+            // 
+            this.txtVoltsDivValues.Location = new System.Drawing.Point(232, 688);
+            this.txtVoltsDivValues.Margin = new System.Windows.Forms.Padding(4);
+            this.txtVoltsDivValues.Name = "txtVoltsDivValues";
+            this.txtVoltsDivValues.Size = new System.Drawing.Size(302, 27);
+            this.txtVoltsDivValues.TabIndex = 1009;
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(16, 692);
+            this.label5.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(215, 20);
+            this.label5.TabIndex = 1010;
+            this.label5.Text = "VOLTS/DIV values and notation";
+            // 
+            // lblStatusVoltsDivSet
+            // 
+            this.lblStatusVoltsDivSet.AutoSize = true;
+            this.lblStatusVoltsDivSet.ForeColor = System.Drawing.Color.Gray;
+            this.lblStatusVoltsDivSet.Location = new System.Drawing.Point(634, 610);
+            this.lblStatusVoltsDivSet.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblStatusVoltsDivSet.Name = "lblStatusVoltsDivSet";
+            this.lblStatusVoltsDivSet.Size = new System.Drawing.Size(274, 20);
+            this.lblStatusVoltsDivSet.TabIndex = 1001;
+            this.lblStatusVoltsDivSet.Text = "Not tested - first run \"Query VOLTS/DIV\"";
+            // 
+            // btnTestVoltsDivSet
+            // 
+            this.btnTestVoltsDivSet.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnTestVoltsDivSet.Location = new System.Drawing.Point(546, 606);
+            this.btnTestVoltsDivSet.Margin = new System.Windows.Forms.Padding(4);
+            this.btnTestVoltsDivSet.Name = "btnTestVoltsDivSet";
+            this.btnTestVoltsDivSet.Size = new System.Drawing.Size(80, 22);
+            this.btnTestVoltsDivSet.TabIndex = 1008;
+            this.btnTestVoltsDivSet.Text = "Test";
+            this.btnTestVoltsDivSet.UseVisualStyleBackColor = true;
+            this.btnTestVoltsDivSet.Click += new System.EventHandler(this.btnTestVoltsDivSet_Click);
+            // 
+            // txtCmdVoltsDivSet
+            // 
+            this.txtCmdVoltsDivSet.Location = new System.Drawing.Point(232, 606);
+            this.txtCmdVoltsDivSet.Margin = new System.Windows.Forms.Padding(4);
+            this.txtCmdVoltsDivSet.Name = "txtCmdVoltsDivSet";
+            this.txtCmdVoltsDivSet.Size = new System.Drawing.Size(302, 27);
+            this.txtCmdVoltsDivSet.TabIndex = 1007;
+            // 
+            // label19
+            // 
+            this.label19.AutoSize = true;
+            this.label19.Location = new System.Drawing.Point(16, 610);
+            this.label19.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label19.Name = "label19";
+            this.label19.Size = new System.Drawing.Size(106, 20);
+            this.label19.TabIndex = 1002;
+            this.label19.Text = "Set VOLTS/DIV";
+            // 
+            // lblStatusVoltsDivQ
+            // 
+            this.lblStatusVoltsDivQ.AutoSize = true;
+            this.lblStatusVoltsDivQ.ForeColor = System.Drawing.Color.Gray;
+            this.lblStatusVoltsDivQ.Location = new System.Drawing.Point(634, 582);
+            this.lblStatusVoltsDivQ.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblStatusVoltsDivQ.Name = "lblStatusVoltsDivQ";
+            this.lblStatusVoltsDivQ.Size = new System.Drawing.Size(79, 20);
+            this.lblStatusVoltsDivQ.TabIndex = 1003;
+            this.lblStatusVoltsDivQ.Text = "Not tested";
+            // 
+            // btnTestVoltsDivQ
+            // 
+            this.btnTestVoltsDivQ.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.btnTestVoltsDivQ.Location = new System.Drawing.Point(546, 579);
+            this.btnTestVoltsDivQ.Margin = new System.Windows.Forms.Padding(4);
+            this.btnTestVoltsDivQ.Name = "btnTestVoltsDivQ";
+            this.btnTestVoltsDivQ.Size = new System.Drawing.Size(80, 22);
+            this.btnTestVoltsDivQ.TabIndex = 1006;
+            this.btnTestVoltsDivQ.Text = "Test";
+            this.btnTestVoltsDivQ.UseVisualStyleBackColor = true;
+            this.btnTestVoltsDivQ.Click += new System.EventHandler(this.btnTestVoltsDivQ_Click);
+            // 
+            // txtCmdVoltsDivQ
+            // 
+            this.txtCmdVoltsDivQ.Location = new System.Drawing.Point(232, 579);
+            this.txtCmdVoltsDivQ.Margin = new System.Windows.Forms.Padding(4);
+            this.txtCmdVoltsDivQ.Name = "txtCmdVoltsDivQ";
+            this.txtCmdVoltsDivQ.Size = new System.Drawing.Size(302, 27);
+            this.txtCmdVoltsDivQ.TabIndex = 1005;
+            // 
+            // label21
+            // 
+            this.label21.AutoSize = true;
+            this.label21.Location = new System.Drawing.Point(16, 583);
+            this.label21.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.label21.Name = "label21";
+            this.label21.Size = new System.Drawing.Size(124, 20);
+            this.label21.TabIndex = 1004;
+            this.label21.Text = "Query VOLTS/DIV";
+            // 
             // txtTimeDivValues
             // 
-            this.txtTimeDivValues.Location = new System.Drawing.Point(232, 607);
+            this.txtTimeDivValues.Location = new System.Drawing.Point(232, 661);
             this.txtTimeDivValues.Margin = new System.Windows.Forms.Padding(4);
             this.txtTimeDivValues.Name = "txtTimeDivValues";
             this.txtTimeDivValues.Size = new System.Drawing.Size(302, 27);
@@ -378,7 +498,7 @@
             // label13
             // 
             this.label13.AutoSize = true;
-            this.label13.Location = new System.Drawing.Point(16, 611);
+            this.label13.Location = new System.Drawing.Point(16, 665);
             this.label13.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label13.Name = "label13";
             this.label13.Size = new System.Drawing.Size(206, 20);
@@ -515,7 +635,7 @@
             // 
             this.lblStatusDumpImage.AutoSize = true;
             this.lblStatusDumpImage.ForeColor = System.Drawing.Color.Gray;
-            this.lblStatusDumpImage.Location = new System.Drawing.Point(634, 583);
+            this.lblStatusDumpImage.Location = new System.Drawing.Point(634, 637);
             this.lblStatusDumpImage.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblStatusDumpImage.Name = "lblStatusDumpImage";
             this.lblStatusDumpImage.Size = new System.Drawing.Size(79, 20);
@@ -525,7 +645,7 @@
             // btnTestDumpImage
             // 
             this.btnTestDumpImage.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.btnTestDumpImage.Location = new System.Drawing.Point(546, 580);
+            this.btnTestDumpImage.Location = new System.Drawing.Point(546, 634);
             this.btnTestDumpImage.Margin = new System.Windows.Forms.Padding(4);
             this.btnTestDumpImage.Name = "btnTestDumpImage";
             this.btnTestDumpImage.Size = new System.Drawing.Size(80, 22);
@@ -536,7 +656,7 @@
             // 
             // txtCmdDumpImage
             // 
-            this.txtCmdDumpImage.Location = new System.Drawing.Point(232, 580);
+            this.txtCmdDumpImage.Location = new System.Drawing.Point(232, 634);
             this.txtCmdDumpImage.Margin = new System.Windows.Forms.Padding(4);
             this.txtCmdDumpImage.Name = "txtCmdDumpImage";
             this.txtCmdDumpImage.Size = new System.Drawing.Size(302, 27);
@@ -545,7 +665,7 @@
             // lblCmdDumpImage
             // 
             this.lblCmdDumpImage.AutoSize = true;
-            this.lblCmdDumpImage.Location = new System.Drawing.Point(16, 584);
+            this.lblCmdDumpImage.Location = new System.Drawing.Point(16, 638);
             this.lblCmdDumpImage.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblCmdDumpImage.Name = "lblCmdDumpImage";
             this.lblCmdDumpImage.Size = new System.Drawing.Size(137, 20);
@@ -1023,7 +1143,7 @@
             this.tabSettings.Controls.Add(this.checkBoxEnableBeep);
             this.tabSettings.Location = new System.Drawing.Point(4, 29);
             this.tabSettings.Name = "tabSettings";
-            this.tabSettings.Size = new System.Drawing.Size(1057, 644);
+            this.tabSettings.Size = new System.Drawing.Size(1057, 731);
             this.tabSettings.TabIndex = 5;
             this.tabSettings.Text = "Settings";
             this.tabSettings.UseVisualStyleBackColor = true;
@@ -1128,9 +1248,9 @@
             this.checkBoxDeleteDoubleUnderscore.CheckState = System.Windows.Forms.CheckState.Checked;
             this.checkBoxDeleteDoubleUnderscore.Location = new System.Drawing.Point(13, 365);
             this.checkBoxDeleteDoubleUnderscore.Name = "checkBoxDeleteDoubleUnderscore";
-            this.checkBoxDeleteDoubleUnderscore.Size = new System.Drawing.Size(475, 24);
+            this.checkBoxDeleteDoubleUnderscore.Size = new System.Drawing.Size(487, 24);
             this.checkBoxDeleteDoubleUnderscore.TabIndex = 20;
-            this.checkBoxDeleteDoubleUnderscore.Text = "Delete double underscore/whitespace from filename before saving";
+            this.checkBoxDeleteDoubleUnderscore.Text = "Delete double underscores/whitespaces from filename before saving";
             this.checkBoxDeleteDoubleUnderscore.UseVisualStyleBackColor = true;
             // 
             // label7
@@ -1236,7 +1356,7 @@
             this.tabCapturing.Margin = new System.Windows.Forms.Padding(4);
             this.tabCapturing.Name = "tabCapturing";
             this.tabCapturing.Padding = new System.Windows.Forms.Padding(4);
-            this.tabCapturing.Size = new System.Drawing.Size(1057, 644);
+            this.tabCapturing.Size = new System.Drawing.Size(1057, 731);
             this.tabCapturing.TabIndex = 1;
             this.tabCapturing.Text = "Capturing";
             this.tabCapturing.UseVisualStyleBackColor = true;
@@ -1427,7 +1547,7 @@
             this.tabDebug.Margin = new System.Windows.Forms.Padding(4);
             this.tabDebug.Name = "tabDebug";
             this.tabDebug.Padding = new System.Windows.Forms.Padding(4);
-            this.tabDebug.Size = new System.Drawing.Size(1057, 644);
+            this.tabDebug.Size = new System.Drawing.Size(1057, 731);
             this.tabDebug.TabIndex = 2;
             this.tabDebug.Text = "Debug";
             this.tabDebug.UseVisualStyleBackColor = true;
@@ -1485,7 +1605,7 @@
             this.tabFeedback.Controls.Add(this.textBoxEmail);
             this.tabFeedback.Location = new System.Drawing.Point(4, 29);
             this.tabFeedback.Name = "tabFeedback";
-            this.tabFeedback.Size = new System.Drawing.Size(1057, 644);
+            this.tabFeedback.Size = new System.Drawing.Size(1057, 731);
             this.tabFeedback.TabIndex = 6;
             this.tabFeedback.Text = "Feedback";
             this.tabFeedback.UseVisualStyleBackColor = true;
@@ -1580,7 +1700,7 @@
             this.tabHelp.Margin = new System.Windows.Forms.Padding(4);
             this.tabHelp.Name = "tabHelp";
             this.tabHelp.Padding = new System.Windows.Forms.Padding(4);
-            this.tabHelp.Size = new System.Drawing.Size(1057, 644);
+            this.tabHelp.Size = new System.Drawing.Size(1057, 731);
             this.tabHelp.TabIndex = 3;
             this.tabHelp.Text = "Help";
             this.tabHelp.UseVisualStyleBackColor = true;
@@ -1595,7 +1715,7 @@
             this.richTextBoxHelp.Location = new System.Drawing.Point(8, 23);
             this.richTextBoxHelp.Name = "richTextBoxHelp";
             this.richTextBoxHelp.ReadOnly = true;
-            this.richTextBoxHelp.Size = new System.Drawing.Size(1048, 614);
+            this.richTextBoxHelp.Size = new System.Drawing.Size(1048, 678);
             this.richTextBoxHelp.TabIndex = 61;
             this.richTextBoxHelp.Text = "Text built dynamically ...";
             // 
@@ -1623,7 +1743,7 @@
             this.tabAbout.Margin = new System.Windows.Forms.Padding(4);
             this.tabAbout.Name = "tabAbout";
             this.tabAbout.Padding = new System.Windows.Forms.Padding(4);
-            this.tabAbout.Size = new System.Drawing.Size(1057, 644);
+            this.tabAbout.Size = new System.Drawing.Size(1057, 731);
             this.tabAbout.TabIndex = 4;
             this.tabAbout.Text = "About";
             this.tabAbout.UseVisualStyleBackColor = true;
@@ -1689,12 +1809,12 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1067, 676);
+            this.ClientSize = new System.Drawing.Size(1067, 763);
             this.Controls.Add(this.tabMain);
             this.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(4);
-            this.MinimumSize = new System.Drawing.Size(1085, 723);
+            this.MinimumSize = new System.Drawing.Size(1085, 810);
             this.Name = "Main";
             this.Text = "Oscilloscope Network Capture";
             this.Load += new System.EventHandler(this.Main_Load);
@@ -1812,6 +1932,16 @@
         private System.Windows.Forms.CheckBox checkBoxDoNotClearWhenStop;
         private System.Windows.Forms.Label labelCaptureModeActive;
         private System.Windows.Forms.Label labelCaptureModeInactive;
+        private System.Windows.Forms.Label lblStatusVoltsDivSet;
+        private System.Windows.Forms.Button btnTestVoltsDivSet;
+        private System.Windows.Forms.TextBox txtCmdVoltsDivSet;
+        private System.Windows.Forms.Label label19;
+        private System.Windows.Forms.Label lblStatusVoltsDivQ;
+        private System.Windows.Forms.Button btnTestVoltsDivQ;
+        private System.Windows.Forms.TextBox txtCmdVoltsDivQ;
+        private System.Windows.Forms.Label label21;
+        private System.Windows.Forms.TextBox txtVoltsDivValues;
+        private System.Windows.Forms.Label label5;
     }
 }
 

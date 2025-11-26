@@ -45,6 +45,8 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                     .Map(ScopeCommand.SetTriggerLevel, "C1:TRIG_LEVEL {0}")
                     .Map(ScopeCommand.QueryTimeDiv, "TIME_DIV?")
                     .Map(ScopeCommand.SetTimeDiv, "TIME_DIV {0}")
+                    .Map(ScopeCommand.QueryVoltsDiv, ":CHANNEL1:SCALE?")
+                    .Map(ScopeCommand.SetVoltsDiv, ":CHANNEL1:SCALE {0}")
                     .Map(ScopeCommand.DumpImage, "SCDP")
             );
 
@@ -81,10 +83,12 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                     .Map(ScopeCommand.Single, "TRIG_MODE SINGLE")
                     .Map(ScopeCommand.Run, "TRIG_MODE AUTO")
                     .Map(ScopeCommand.QueryTriggerMode, "TRIG_SELECT?")
-                    .Map(ScopeCommand.QueryTriggerLevel, ":TRIGGER:EDGE:LEVEL?")
-                    .Map(ScopeCommand.SetTriggerLevel, ":TRIGGER:EDGE:LEVEL {0}")
-                    .Map(ScopeCommand.QueryTimeDiv, "TIME_DIV?")
-                    .Map(ScopeCommand.SetTimeDiv, "TIME_DIV {0}")
+                    .Map(ScopeCommand.QueryTriggerLevel, "TRIGGER:EDGE:LEVEL?") // changed 2025-11-26 from "":TRIGGER:EDGE:LEVEL?""
+                    .Map(ScopeCommand.SetTriggerLevel, "TRIGGER:EDGE:LEVEL {0}") // changed 2025-11-26 from ":TRIGGER:EDGE:LEVEL {0}"
+                    .Map(ScopeCommand.QueryTimeDiv, "TIMEBASE:SCALE?") // changed 2025-11-26 from "TIME_DIV?"
+                    .Map(ScopeCommand.SetTimeDiv, "TIMEBASE:SCALE {0}") // changed 2025-11-26 from ":TIMEBASE:SCALE {0}"
+                    .Map(ScopeCommand.QueryVoltsDiv, "CHANNEL1:SCALE?")
+                    .Map(ScopeCommand.SetVoltsDiv, "CHANNEL1:SCALE {0}")
                     .Map(ScopeCommand.DumpImage, ":PRINT? PNG")
             );
 
@@ -122,6 +126,11 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                     "1uS", "2uS", "5uS", "10uS", "20uS", "50uS", "100uS", "200uS", "500uS",
                     "1mS", "2mS", "5mS", "10mS", "20mS", "50mS", "100mS", "200mS", "500mS",
                     "1S", "2S", "5S", "10S", "20S", "50S"
+                },
+                new[]
+                {
+                    "2mV", "5mV", "10mV", "20mV", "50mV", "100mV", "200mV", "500mV",
+                    "1V", "2V", "5V", "10V"
                 }
             );
         }

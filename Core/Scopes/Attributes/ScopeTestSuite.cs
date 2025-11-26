@@ -22,6 +22,8 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
         SetTriggerLevel,
         QueryTimeDiv,
         SetTimeDiv,
+        QueryVoltsDiv,
+        SetVoltsDiv,
         DumpImage
     }
 
@@ -41,6 +43,8 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
             { ScopeTestSuite.SetTriggerLevel, "Set trigger level" },
             { ScopeTestSuite.QueryTimeDiv, "Query TIME/DIV" },
             { ScopeTestSuite.SetTimeDiv, "Set TIME/DIV" },
+            { ScopeTestSuite.QueryVoltsDiv, "Query VOLTS/DIV" },
+            { ScopeTestSuite.SetVoltsDiv, "Set VOLTS/DIV" },
             { ScopeTestSuite.DumpImage, "Query dump image" },
             { ScopeTestSuite.DrainSystemErrorQueue, "Query last system error" },
             { ScopeTestSuite.OperationComplete, "Query \"Operation Complete\"" },
@@ -100,6 +104,15 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                 ScopeCommand.OperationComplete,
                 ScopeCommand.DrainSystemErrorQueue
             }},
+            { ScopeTestSuite.QueryVoltsDiv, new[]{
+                ScopeCommand.QueryVoltsDiv
+            }},
+            { ScopeTestSuite.SetVoltsDiv, new[]{
+                ScopeCommand.SetVoltsDiv,
+                ScopeCommand.OperationComplete,
+                ScopeCommand.DrainSystemErrorQueue
+            }},
+
             { ScopeTestSuite.DumpImage, new[]{
                 ScopeCommand.DumpImage
             }},

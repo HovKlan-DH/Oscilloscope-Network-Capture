@@ -15,6 +15,8 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
         SetTriggerLevel,
         QueryTimeDiv,
         SetTimeDiv,
+        QueryVoltsDiv,
+        SetVoltsDiv,
         DumpImage
     }
 }
