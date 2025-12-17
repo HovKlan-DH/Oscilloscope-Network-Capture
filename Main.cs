@@ -761,23 +761,8 @@ namespace Oscilloscope_Network_Capture
         }
 
         private static string ToDisplayModel(string modelPattern) => modelPattern == "*" ? "Generic" : modelPattern;
-        private static string ToModelPattern(string displayModel) => string.Equals(displayModel, "Generic", StringComparison.OrdinalIgnoreCase) ? "*" : displayModel;
 
-        /*
-        private ScpiProfileOverride GetOrCreateCurrentProfileOverride()
-        {
-            var vendor = cboVendor.SelectedItem as string ?? string.Empty;
-            var modelDisplay = cboModel.SelectedItem as string ?? string.Empty;
-            var model = ToModelPattern(modelDisplay);
-            var prof = _config.ScpiProfiles.FirstOrDefault(p => string.Equals(p.Vendor, vendor, StringComparison.OrdinalIgnoreCase) && string.Equals(p.Model, model, StringComparison.OrdinalIgnoreCase));
-            if (prof == null)
-            {
-                prof = new ScpiProfileOverride { Vendor = vendor, Model = model };
-                _config.ScpiProfiles.Add(prof);
-            }
-            return prof;
-        }
-        */
+        private static string ToModelPattern(string displayModel) => string.Equals(displayModel, "Generic", StringComparison.OrdinalIgnoreCase) ? "*" : displayModel;
 
         private ScpiProfileOverride FindCurrentProfileOverride()
         {
@@ -998,7 +983,6 @@ namespace Oscilloscope_Network_Capture
             txtCmdOpc.Text = GetCmd(ScopeCommand.OperationComplete);
         }
 
-        // REPLACE: show effective values, preferring saved override if present
         private void PopulateTimeDivTextbox()
         {
             try
@@ -1058,7 +1042,6 @@ namespace Oscilloscope_Network_Capture
             catch { /* best-effort */ }
         }
 
-        // NEW: call once in Main_Load after controls are created (and after _config is loaded)
         private void WireTimeDivTextbox()
         {
             var tb = this.Controls.Find("txtTimeDivValues", true).FirstOrDefault() as TextBox;
@@ -1081,7 +1064,6 @@ namespace Oscilloscope_Network_Capture
             };
         }
 
-        // NEW: parse textbox, apply to ScpiProfileRegistry, and persist in config for current vendor+model
         private void ApplyTimeDivTextboxToOverrides(string text)
         {
             try
@@ -1787,7 +1769,6 @@ namespace Oscilloscope_Network_Capture
 
         private async void buttonSendToDeveloper_Click(object sender, EventArgs e)
         {
-            // Optional: ensure modern TLS
             try { System.Net.ServicePointManager.SecurityProtocol |= System.Net.SecurityProtocolType.Tls12; } catch { }
 
             var btn = sender as Button;
@@ -2268,12 +2249,9 @@ namespace Oscilloscope_Network_Capture
             }
             catch
             {
-                // best-effort
             }
         }
 
-        // Update the capture-mode key handler to route scope-affecting actions through the busy gate
-        // Update the capture-mode key handler to enforce the allowed tabs
         private void Form1_Capture_KeyDown(object sender, KeyEventArgs e)
         {
             // Only process keys while capture mode is active
@@ -3394,7 +3372,7 @@ namespace Oscilloscope_Network_Capture
                     picScreen.BackColor = Color.Black;
                 }
             }
-            catch { /* best-effort */ }
+            catch {}
         }
 
         private async Task CaptureAndSaveAsync()
@@ -3416,8 +3394,81 @@ namespace Oscilloscope_Network_Capture
 
                 if (_config != null && _config.ForceClear)
                 {
-                    // ... unchanged pre-capture logic ...
-                    // (QueryActiveTrigger + optional ClearStatistics + Delay + Stop)
+                    // If user asked to avoid clearing when we're already in STOP mode
+                    if (_config.DoNotClearWhenStop)
+                    {
+                        try
+                        {
+                            await EnsureConnectedAsync();
+
+                            // Resolve UI-effective SCPI for QueryActiveTrigger (suite has only this single command)
+                            var cmdActive = GetPrimaryScpiForSuite(ScopeTestSuite.QueryActiveTrigger);
+                            if (string.IsNullOrWhiteSpace(cmdActive))
+                                cmdActive = GetDefaultScpiForCurrentProfile(ScopeCommand.QueryActiveTrigger);
+
+                            if (!string.IsNullOrWhiteSpace(cmdActive))
+                            {
+                                var resp = await _scope.SendRawQueryAsync(cmdActive, ct).ConfigureAwait(true);
+                                var s = TrimQuotes(resp ?? string.Empty).Trim();
+
+                                if (!string.IsNullOrEmpty(s) &&
+                                    s.IndexOf("stop", StringComparison.OrdinalIgnoreCase) >= 0)
+                                {
+                                    // Already in STOP → skip Clear/Delay/Stop and go straight to capture
+                                    Logger.Instance.Info("Scope already in STOP; skipping Clear/Delay/Stop.");
+                                    skipClearAndStop = true;
+                                }
+                            }
+                            else
+                            {
+                                Logger.Instance.Debug("QueryActiveTrigger command empty; cannot determine STOP state.");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Instance.Error("QueryActiveTrigger failed: " + InnermostMessage(ex));
+                        }
+                    }
+
+                    // Only clear + delay + stop if not explicitly skipping
+                    if (!skipClearAndStop)
+                    {
+                        try
+                        {
+                            await RunSuiteHeadlessAsync(ScopeTestSuite.ClearStatistics);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Instance.Error("ClearStatistics suite failed before capture: " + InnermostMessage(ex));
+                        }
+
+                        try
+                        {
+                            var delayMs = Math.Max(0, _config?.DelayMs ?? 0);
+                            if (delayMs > 0)
+                            {
+                                Logger.Instance.Debug("---");
+                                Logger.Instance.Debug("Delay before capture: " + delayMs.ToString(CultureInfo.InvariantCulture) + " ms");
+                                await Task.Delay(delayMs, ct);
+                                Logger.Instance.Debug("Delay completed.");
+                            }
+                        }
+                        catch (TaskCanceledException) { }
+                        catch (Exception ex)
+                        {
+                            Logger.Instance.Error("Delay after ClearStatistics failed: " + InnermostMessage(ex));
+                        }
+
+                        // Stop acquisition before DumpImage (only when not skipping this phase)
+                        try
+                        {
+                            await RunSuiteHeadlessAsync(ScopeTestSuite.Stop);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Instance.Error("Stop suite before capture failed: " + InnermostMessage(ex));
+                        }
+                    }
                 }
                 else
                 {
@@ -3458,7 +3509,7 @@ namespace Oscilloscope_Network_Capture
                         picScreen.Image = clone;
                         try { old?.Dispose(); } catch { }
                     }
-                    catch { /* best-effort */ }
+                    catch { }
 
                     // Make the image visible at the exact same time the overlay disappears and beep-end plays
                     HideWaitOverlay();
@@ -5079,7 +5130,6 @@ namespace Oscilloscope_Network_Capture
                 bool hotkeysSuspended = _suspendCaptureHotkeys;
                 bool activeUi = captureMode && !hotkeysSuspended;
 
-                // IMPORTANT: use our own connectable flag, not _scope?.IsConnected
                 bool scopeConnected = _isConnectable;
 
                 const string InactiveWhileSuspendedText =
@@ -5119,8 +5169,6 @@ namespace Oscilloscope_Network_Capture
             }
             catch { }
         }
-
-        // Add these helpers near other private helpers (e.g., close to UpdateCaptureModeIndicators)
 
         private void EnsureConnectionMonitorStarted()
         {
@@ -5215,7 +5263,7 @@ namespace Oscilloscope_Network_Capture
             try
             {
                 StopConnectionMonitor();
-                _isConnectable = false;            // <-- clear on loss
+                _isConnectable = false;            
                 DisableCaptureMode(reason);
                 SetConnectivityStatus("Connection lost - capture mode disabled", Color.Red);
                 Logger.Instance.Error(reason ?? "Connection lost.");
@@ -5263,7 +5311,6 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
-        // NEW: Wire KeyDown for static and current dynamic Capturing-tab inputs
         private void TryWireEnterKeyForCapturingInputs()
         {
             try
@@ -5292,7 +5339,6 @@ namespace Oscilloscope_Network_Capture
             catch { /* best-effort */ }
         }
 
-        // NEW: also wire future dynamic variable fields when they’re added to the Capturing tab
         private void WireEnterKeyForFutureVariableFields()
         {
             try
@@ -5319,7 +5365,6 @@ namespace Oscilloscope_Network_Capture
             catch { /* best-effort */ }
         }
 
-        // NEW: attach one Enter handler to a control (TextBox/NumericUpDown)
         private void WireEnterToStartCaptureMode(Control ctrl)
         {
             if (ctrl == null) return;
@@ -5327,7 +5372,6 @@ namespace Oscilloscope_Network_Capture
             ctrl.KeyDown += Input_EnterToStartCaptureMode_KeyDown;
         }
 
-        // NEW: pressing ENTER once enters capture mode (only on Capturing tab), then removes focus.
         // If already in capture mode, it just removes focus so the next ENTER will capture.
         private async void Input_EnterToStartCaptureMode_KeyDown(object sender, KeyEventArgs e)
         {
@@ -5353,11 +5397,9 @@ namespace Oscilloscope_Network_Capture
             }
             catch
             {
-                // best-effort
             }
         }
 
-        // Helper: ensure Capturing tab is active and focus NUMBER control
         private void FocusNumberOnCapturingTab()
         {
             try

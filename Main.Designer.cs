@@ -1383,7 +1383,7 @@
             this.labelCaptureModeActive.Name = "labelCaptureModeActive";
             this.labelCaptureModeActive.Size = new System.Drawing.Size(284, 83);
             this.labelCaptureModeActive.TabIndex = 65;
-            this.labelCaptureModeActive.Text = "Capture mode active";
+            this.labelCaptureModeActive.Text = "Capture mode active\r\nPress [ENTER] to capture";
             this.labelCaptureModeActive.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             this.labelCaptureModeActive.Visible = false;
             // 
