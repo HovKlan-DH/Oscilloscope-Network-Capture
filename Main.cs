@@ -4818,8 +4818,6 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
-        // Place these helpers near other private helpers (e.g., after SetConnectButtonsEnabled)
-
         private void PopulateHelpTabRtf()
         {
             try
