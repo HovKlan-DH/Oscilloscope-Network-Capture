@@ -16,6 +16,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Oscilloscope_Network_Capture.Core.Online;
 
 namespace Oscilloscope_Network_Capture
 {
@@ -24,7 +25,11 @@ namespace Oscilloscope_Network_Capture
         // Overlay shown on picScreen after delete
         private Label _deleteOverlayLabel;
         private System.Windows.Forms.Timer _deleteOverlayTimer;
-        
+
+        // Share ListView shift-click anchor (for checkbox range toggling)
+        private int _shareFilesCheckAnchorIndex = -1;
+        private bool _shareFilesRangeCheckInProgress; // guards to avoid recursive ItemCheck storms when we set Checked in code
+
         private enum KeyActionType { None = 0, AdjustTrigger = 1, AdjustTimeDiv = 2, Other = 3 }
         private KeyActionType _activeKeyAction = KeyActionType.None;
         private int _keyActionBusy; // 0 = idle, 1 = a capture-mode key action is running
@@ -523,7 +528,63 @@ namespace Oscilloscope_Network_Capture
             PopulateAboutTabRtf();
 
             // Make hyperlinks clickable in both Help and About
-            WireRichTextBoxHyperlinks("richTextBoxHelp", "richTextBoxAbout");
+            WireRichTextBoxHyperlinks("richTextBoxHelp", "richTextBoxAbout", "richTextBoxGalleryUrl");
+
+            buttonShareDeleteSelected.Click -= ButtonShareDeleteSelected_Click;
+            buttonShareDeleteSelected.Click += ButtonShareDeleteSelected_Click;
+
+            tabMain.SelectedIndexChanged += (s, a) =>
+            {
+                _config.LastTabIndex = tabMain.SelectedIndex;
+                ConfigurationService.Save(_config);
+
+                try
+                {
+                    if (tabMain.SelectedTab == tabShare)
+                    {
+                        PopulateShareFilesList();
+                    }
+                }
+                catch { }
+            };
+
+            // Wire Share list range check behavior once
+            try
+            {
+                if (listViewShareFiles != null)
+                {
+                    listViewShareFiles.ItemCheck -= listViewShareFiles_ItemCheck;
+                    listViewShareFiles.ItemCheck += listViewShareFiles_ItemCheck;
+                }
+            }
+            catch { }
+
+            // Share handlers
+            try
+            {
+                buttonShareSelectAll.Click -= ButtonShareSelectAll_Click;
+                buttonShareSelectAll.Click += ButtonShareSelectAll_Click;
+
+                buttonShareSelectNone.Click -= ButtonShareSelectNone_Click;
+                buttonShareSelectNone.Click += ButtonShareSelectNone_Click;
+
+                buttonShareUpload.Click -= ButtonShareUpload_Click;
+                buttonShareUpload.Click += ButtonShareUpload_Click;
+
+                buttonShareCopyId.Click -= ButtonShareCopyId_Click;
+                buttonShareCopyId.Click += ButtonShareCopyId_Click;
+            }
+            catch { }
+
+            // If Share is the startup tab, populate immediately
+            try
+            {
+                if (tabMain.SelectedTab == tabShare)
+                {
+                    PopulateShareFilesList();
+                }
+            }
+            catch { }
 
             if (_hadConfigOnStartup)
             {
@@ -532,6 +593,366 @@ namespace Oscilloscope_Network_Capture
                     try { await ConnectAndRefreshAsync(); } catch { }
                     await AutoStartCaptureModeIfConnectedAsync();
                 }));
+            }
+        }
+
+        private void PopulateShareFilesList()
+        {
+            if (listViewShareFiles == null) return;
+
+            // Reset anchor whenever the list is rebuilt
+            _shareFilesCheckAnchorIndex = -1;
+
+            richTextBoxGalleryUrl.Text = "Gallery URL will get populated once files are uploaded";
+            labelShareStatus.Text = "Not uploaded";
+            labelShareStatus.ForeColor = Color.IndianRed;
+            buttonShareCopyId.Enabled = false;
+
+            listViewShareFiles.BeginUpdate();
+            try
+            {
+                listViewShareFiles.Items.Clear();
+
+                var folder = ResolveCaptureFolder();
+                if (string.IsNullOrWhiteSpace(folder) || !Directory.Exists(folder))
+                {
+                    labelShareStatus.Text = "Capture folder not found";
+                    labelShareStatus.ForeColor = Color.IndianRed;
+                    return;
+                }
+
+                var exts = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp" };
+
+                var files = Directory.EnumerateFiles(folder)
+                    .Where(f => exts.Contains(Path.GetExtension(f)))
+                    .Select(f => new FileInfo(f))
+                    .OrderByDescending(f => f.LastWriteTimeUtc)
+                    .ToList();
+
+                foreach (var fi in files)
+                {
+                    var item = new ListViewItem(fi.Name);
+                    item.Tag = fi.FullName; // full path for upload
+                    item.Checked = false;
+
+                    item.SubItems.Add(FormatFileSize(fi.Length));
+
+                    listViewShareFiles.Items.Add(item);
+                }
+
+                labelShareStatus.Text = string.Format(CultureInfo.InvariantCulture, "Total files: {0}", files.Count);
+                labelShareStatus.ForeColor = Color.Black;
+            }
+            finally
+            {
+                listViewShareFiles.EndUpdate();
+                UpdateShareDeleteSelectedButtonState();
+            }
+        }
+
+        private void ButtonShareSelectAll_Click(object sender, EventArgs e)
+        {
+            if (listViewShareFiles == null) return;
+
+            listViewShareFiles.BeginUpdate();
+            try
+            {
+                foreach (ListViewItem item in listViewShareFiles.Items)
+                    item.Checked = true;
+            }
+            finally
+            {
+                listViewShareFiles.EndUpdate();
+            }
+            UpdateShareDeleteSelectedButtonState();
+        }
+
+        private void ButtonShareSelectNone_Click(object sender, EventArgs e)
+        {
+            if (listViewShareFiles == null) return;
+
+            listViewShareFiles.BeginUpdate();
+            try
+            {
+                foreach (ListViewItem item in listViewShareFiles.Items)
+                    item.Checked = false;
+            }
+            finally
+            {
+                listViewShareFiles.EndUpdate();
+            }
+            UpdateShareDeleteSelectedButtonState();
+        }
+
+        private void ButtonShareCopyId_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                var id = (richTextBoxGalleryUrl?.Text ?? string.Empty).Trim();
+                if (string.IsNullOrWhiteSpace(id)) return;
+                Clipboard.SetText(id);
+            }
+            catch { }
+        }
+
+        private static string FormatFileSize(long bytes)
+        {
+            const double KB = 1024.0;
+//            const double MB = KB * 1024.0;
+//            const double GB = MB * 1024.0;
+
+//            if (bytes >= GB) return (bytes / GB).ToString("0", CultureInfo.InvariantCulture) + " GB";
+//            if (bytes >= MB) return (bytes / MB).ToString("0", CultureInfo.InvariantCulture) + " MB";
+            if (bytes >= KB) return (bytes / KB).ToString("0", CultureInfo.InvariantCulture) + " KB";
+            return bytes.ToString(CultureInfo.InvariantCulture) + " bytes";
+        }
+
+        private void listViewShareFiles_ItemCheck(object sender, ItemCheckEventArgs e)
+        {
+            try
+            {
+                if (_shareFilesRangeCheckInProgress) return;
+
+                var lv = listViewShareFiles;
+                if (lv == null) return;
+
+                // The state the clicked item WILL become
+                bool targetState = e.NewValue == CheckState.Checked;
+
+                bool shift = (ModifierKeys & Keys.Shift) == Keys.Shift;
+                if (shift && _shareFilesCheckAnchorIndex >= 0 && _shareFilesCheckAnchorIndex < lv.Items.Count)
+                {
+                    int start = Math.Min(_shareFilesCheckAnchorIndex, e.Index);
+                    int end = Math.Max(_shareFilesCheckAnchorIndex, e.Index);
+
+                    _shareFilesRangeCheckInProgress = true;
+                    lv.BeginUpdate();
+                    try
+                    {
+                        for (int i = start; i <= end; i++)
+                        {
+                            if (i == e.Index) continue; // this one is handled by the current ItemCheck event
+                            lv.Items[i].Checked = targetState;
+                        }
+                    }
+                    finally
+                    {
+                        lv.EndUpdate();
+                        _shareFilesRangeCheckInProgress = false;
+                    }
+                }
+
+                // Update anchor after every user check/uncheck
+                _shareFilesCheckAnchorIndex = e.Index;
+
+                // ItemCheck fires before the control visually updates; defer the button state update
+                BeginInvoke(new Action(UpdateShareDeleteSelectedButtonState));
+            }
+            catch { }
+        }
+
+        private void listViewShareFiles_MouseUp(object sender, MouseEventArgs e)
+        {
+            try
+            {
+                if (e.Button != MouseButtons.Left) return;
+
+                var lv = listViewShareFiles;
+                if (lv == null) return;
+
+                var info = lv.HitTest(e.Location);
+                var item = info?.Item;
+                if (item == null) return;
+
+                // Clicking directly on checkbox: ListView already toggles (ItemCheck will handle range)
+                if (info.Location == ListViewHitTestLocations.StateImage)
+                    return;
+
+                // Row click toggles checkbox (current behavior)
+                item.Checked = !item.Checked;
+            }
+            catch { }
+        }
+
+        private void UpdateShareDeleteSelectedButtonState()
+        {
+            try
+            {
+                if (buttonShareDeleteSelected == null || listViewShareFiles == null)
+                    return;
+
+                bool anyChecked = listViewShareFiles.Items.Cast<ListViewItem>().Any(i => i.Checked);
+                buttonShareDeleteSelected.Enabled = anyChecked;
+            }
+            catch
+            {
+                // best-effort
+            }
+        }
+
+        private void ButtonShareDeleteSelected_Click(object sender, EventArgs e)
+        {
+            if (listViewShareFiles == null) return;
+
+            var selected = listViewShareFiles.Items
+                .Cast<ListViewItem>()
+                .Where(i => i.Checked)
+                .ToList();
+
+            if (selected.Count == 0)
+            {
+                UpdateShareDeleteSelectedButtonState();
+                return;
+            }
+
+            var resp = MessageBox.Show(
+                string.Format(CultureInfo.InvariantCulture, "Delete {0} file(s) from disk?", selected.Count),
+                "Delete files",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (resp != DialogResult.Yes)
+                return;
+
+            int deleted = 0;
+            int failed = 0;
+
+            foreach (var item in selected)
+            {
+                var path = item.Tag as string;
+                if (string.IsNullOrWhiteSpace(path)) { failed++; continue; }
+
+                try
+                {
+                    if (File.Exists(path))
+                    {
+                        File.Delete(path);
+                        deleted++;
+                    }
+                }
+                catch
+                {
+                    failed++;
+                }
+            }
+
+            PopulateShareFilesList();
+
+            labelShareStatus.Text = string.Format(
+                CultureInfo.InvariantCulture,
+                "Deleted {0} file(s){1}",
+                deleted,
+                failed > 0 ? string.Format(CultureInfo.InvariantCulture, " ({0} failed)", failed) : string.Empty);
+
+            labelShareStatus.ForeColor = failed > 0 ? Color.IndianRed : Color.Green;
+
+            UpdateShareDeleteSelectedButtonState();
+        }
+
+        private async void ButtonShareUpload_Click(object sender, EventArgs e)
+        {
+            try { System.Net.ServicePointManager.SecurityProtocol |= System.Net.SecurityProtocolType.Tls12; } catch { }
+
+            var btn = sender as Button;
+            try
+            {
+                if (btn != null) btn.Enabled = false;
+
+                var selectedPaths = new List<string>();
+                foreach (ListViewItem item in listViewShareFiles.Items)
+                {
+                    if (!item.Checked) continue;
+                    var path = item.Tag as string;
+                    if (!string.IsNullOrWhiteSpace(path))
+                        selectedPaths.Add(path);
+                }
+
+                if (selectedPaths.Count == 0)
+                {
+                    MessageBox.Show("Select one or more files to upload.", "Share", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+                }
+
+                if (selectedPaths.Count > 500)
+                {
+                    MessageBox.Show(
+                        string.Format(CultureInfo.InvariantCulture, "Cannot upload {0} files. Maximum is 500 files per upload.", selectedPaths.Count),
+                        "Share",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                    return;
+                }
+
+                var vendor = cboVendor.SelectedItem as string ?? _config?.Vendor ?? string.Empty;
+                var model = cboModel.SelectedItem as string ?? _config?.Model ?? string.Empty;
+
+                labelShareStatus.Text = "Uploading...";
+                labelShareStatus.ForeColor = Color.Black;
+                richTextBoxGalleryUrl.Text = "Gallery URL will get populated once files are uploaded";
+                buttonShareCopyId.Enabled = false;
+
+                using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(60)))
+                {
+                    var progress = new Progress<(long Sent, long Total)>(p =>
+                    {
+                        if (p.Total > 0)
+                        {
+                            var pct = (int)Math.Min(100, (p.Sent * 100L) / p.Total);
+                            labelShareStatus.Text = string.Format(CultureInfo.InvariantCulture, "Uploading... {0}%", pct);
+                        }
+                        else
+                        {
+                            labelShareStatus.Text = string.Format(CultureInfo.InvariantCulture, "Uploading... {0} KB", p.Sent / 1024);
+                        }
+                    });
+
+                    var shareId = await Oscilloscope_Network_Capture.Core.Online.Online
+                        .SendShareAsync(vendor, model, selectedPaths, progress, cts.Token)
+                        .ConfigureAwait(true);
+
+                    shareId = (shareId ?? string.Empty).Trim();
+
+                    if (string.IsNullOrWhiteSpace(shareId))
+                    {
+                        labelShareStatus.Text = "Upload failed (empty response)";
+                        labelShareStatus.ForeColor = Color.IndianRed;
+                        return;
+                    }
+
+                    if (shareId.StartsWith("ERROR", StringComparison.OrdinalIgnoreCase))
+                    {
+                        labelShareStatus.Text = "Upload failed";
+                        labelShareStatus.ForeColor = Color.IndianRed;
+
+                        MessageBox.Show(
+                            shareId,
+                            "Share",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Error);
+
+                        return;
+                    }
+
+                    richTextBoxGalleryUrl.Text = Online.ShareGalleryUrl + shareId;
+                    labelShareStatus.Text = "Uploaded successfully";
+                    labelShareStatus.ForeColor = Color.Green;
+                    buttonShareCopyId.Enabled = true;
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                labelShareStatus.Text = "Upload timed out";
+                labelShareStatus.ForeColor = Color.IndianRed;
+            }
+            catch (Exception ex)
+            {
+                labelShareStatus.Text = "Upload failed";
+                labelShareStatus.ForeColor = Color.IndianRed;
+                MessageBox.Show("Upload failed: " + ex.Message, "Share", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                if (btn != null) btn.Enabled = true;
             }
         }
 
@@ -4935,6 +5356,14 @@ namespace Oscilloscope_Network_Capture
             sb.Append("        - Keep " + KeycapRtf("{0}") + " as the value to pass - it will inherit value from \"Query TIME/DIV\", so you cannot manually set a value\\line ");
             sb.Append("    * Set VOLTS/DIV\\line ");
             sb.Append("        - Keep " + KeycapRtf("{0}") + " as the value to pass - it will inherit value from \"Query VOLTS/DIV\", so you cannot manually set a value\\line "); sb.Append(@"\line");
+
+            sb.Append(@"{\fs28{\b Share images as an online gallery}}\line ");
+            sb.Append(@"You can share your oscilloscope images by uploading them to an online gallery.\line ");
+            sb.Append(@"Simply select the images you want to share, and click the ""Upload"" button.\line ");
+            sb.Append(@"Once uploaded, you will receive a direct link to the gallery that you can share with others or post in a forum.\line ");
+            sb.Append(@"It is important to highlight that the gallery will be automatically {\b deleted after 3 months!} If posted to a forum, then maybe also post a remark that it will be unavailable after 3 months.\line ");
+            sb.Append(@"Also, you can only upload files equal to or less than 50KB, and no more than 500 files in total.\line ");
+            sb.Append(@"\line");
 
             sb.Append(@"{\fs28{\b How you can help to get your oscilloscope supported in tool}}\line ");
             sb.Append(@"Find the SCP command reference for your oscilloscope, and tweak the test-suites in ""Configuration"" until they are all correct and works.\line ");

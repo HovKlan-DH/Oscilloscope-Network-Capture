@@ -3,6 +3,15 @@
     partial class Main
     {
         private System.ComponentModel.IContainer components = null;
+        private System.Windows.Forms.ListView listViewShareFiles;
+        private System.Windows.Forms.ColumnHeader columnHeaderShareFilename;
+        private System.Windows.Forms.ColumnHeader columnHeaderShareSize;
+        private System.Windows.Forms.Button buttonShareSelectAll;
+        private System.Windows.Forms.Button buttonShareSelectNone;
+        private System.Windows.Forms.Button buttonShareUpload;
+        private System.Windows.Forms.Label labelShareStatus;
+        private System.Windows.Forms.Label labelShareId;
+        private System.Windows.Forms.Button buttonShareCopyId;
 
         protected override void Dispose(bool disposing)
         {
@@ -139,6 +148,20 @@
             this.buttonDebugClear = new System.Windows.Forms.Button();
             this.labelNewVersion3 = new System.Windows.Forms.Label();
             this.rtbLog = new System.Windows.Forms.RichTextBox();
+            this.tabShare = new System.Windows.Forms.TabPage();
+            this.buttonShareDeleteSelected = new System.Windows.Forms.Button();
+            this.richTextBoxGalleryUrl = new System.Windows.Forms.RichTextBox();
+            this.label22 = new System.Windows.Forms.Label();
+            this.label20 = new System.Windows.Forms.Label();
+            this.buttonShareCopyId = new System.Windows.Forms.Button();
+            this.labelShareId = new System.Windows.Forms.Label();
+            this.labelShareStatus = new System.Windows.Forms.Label();
+            this.buttonShareUpload = new System.Windows.Forms.Button();
+            this.buttonShareSelectNone = new System.Windows.Forms.Button();
+            this.buttonShareSelectAll = new System.Windows.Forms.Button();
+            this.listViewShareFiles = new System.Windows.Forms.ListView();
+            this.columnHeaderShareFilename = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.columnHeaderShareSize = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.tabFeedback = new System.Windows.Forms.TabPage();
             this.checkBoxFeedbackAttachConfig = new System.Windows.Forms.CheckBox();
             this.checkBoxFeedbackAttachDebug = new System.Windows.Forms.CheckBox();
@@ -167,6 +190,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.picScreen)).BeginInit();
             this.tabDebug.SuspendLayout();
+            this.tabShare.SuspendLayout();
             this.tabFeedback.SuspendLayout();
             this.tabHelp.SuspendLayout();
             this.tabAbout.SuspendLayout();
@@ -285,6 +309,7 @@
             this.tabMain.Controls.Add(this.tabSettings);
             this.tabMain.Controls.Add(this.tabCapturing);
             this.tabMain.Controls.Add(this.tabDebug);
+            this.tabMain.Controls.Add(this.tabShare);
             this.tabMain.Controls.Add(this.tabFeedback);
             this.tabMain.Controls.Add(this.tabHelp);
             this.tabMain.Controls.Add(this.tabAbout);
@@ -1593,6 +1618,162 @@
             this.rtbLog.TabIndex = 0;
             this.rtbLog.Text = "";
             // 
+            // tabShare
+            // 
+            this.tabShare.Controls.Add(this.buttonShareDeleteSelected);
+            this.tabShare.Controls.Add(this.richTextBoxGalleryUrl);
+            this.tabShare.Controls.Add(this.label22);
+            this.tabShare.Controls.Add(this.label20);
+            this.tabShare.Controls.Add(this.buttonShareCopyId);
+            this.tabShare.Controls.Add(this.labelShareId);
+            this.tabShare.Controls.Add(this.labelShareStatus);
+            this.tabShare.Controls.Add(this.buttonShareUpload);
+            this.tabShare.Controls.Add(this.buttonShareSelectNone);
+            this.tabShare.Controls.Add(this.buttonShareSelectAll);
+            this.tabShare.Controls.Add(this.listViewShareFiles);
+            this.tabShare.Location = new System.Drawing.Point(4, 29);
+            this.tabShare.Name = "tabShare";
+            this.tabShare.Size = new System.Drawing.Size(1057, 731);
+            this.tabShare.TabIndex = 7;
+            this.tabShare.Text = "Share";
+            this.tabShare.UseVisualStyleBackColor = true;
+            // 
+            // buttonShareDeleteSelected
+            // 
+            this.buttonShareDeleteSelected.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.buttonShareDeleteSelected.Location = new System.Drawing.Point(8, 272);
+            this.buttonShareDeleteSelected.Name = "buttonShareDeleteSelected";
+            this.buttonShareDeleteSelected.Size = new System.Drawing.Size(120, 29);
+            this.buttonShareDeleteSelected.TabIndex = 1007;
+            this.buttonShareDeleteSelected.Text = "Delete selected";
+            this.buttonShareDeleteSelected.UseVisualStyleBackColor = true;
+            // 
+            // richTextBoxGalleryUrl
+            // 
+            this.richTextBoxGalleryUrl.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.richTextBoxGalleryUrl.BackColor = System.Drawing.Color.White;
+            this.richTextBoxGalleryUrl.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.richTextBoxGalleryUrl.Font = new System.Drawing.Font("Segoe UI", 10.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.richTextBoxGalleryUrl.Location = new System.Drawing.Point(253, 648);
+            this.richTextBoxGalleryUrl.Name = "richTextBoxGalleryUrl";
+            this.richTextBoxGalleryUrl.ReadOnly = true;
+            this.richTextBoxGalleryUrl.Size = new System.Drawing.Size(729, 28);
+            this.richTextBoxGalleryUrl.TabIndex = 1005;
+            this.richTextBoxGalleryUrl.Text = "Gallery URL";
+            // 
+            // label22
+            // 
+            this.label22.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.label22.Location = new System.Drawing.Point(12, 37);
+            this.label22.Name = "label22";
+            this.label22.Size = new System.Drawing.Size(1033, 57);
+            this.label22.TabIndex = 1004;
+            this.label22.Text = resources.GetString("label22.Text");
+            // 
+            // label20
+            // 
+            this.label20.AutoSize = true;
+            this.label20.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label20.Location = new System.Drawing.Point(3, 5);
+            this.label20.Name = "label20";
+            this.label20.Size = new System.Drawing.Size(65, 28);
+            this.label20.TabIndex = 1003;
+            this.label20.Text = "Share";
+            // 
+            // buttonShareCopyId
+            // 
+            this.buttonShareCopyId.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.buttonShareCopyId.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.buttonShareCopyId.Location = new System.Drawing.Point(149, 680);
+            this.buttonShareCopyId.Name = "buttonShareCopyId";
+            this.buttonShareCopyId.Size = new System.Drawing.Size(136, 29);
+            this.buttonShareCopyId.TabIndex = 5;
+            this.buttonShareCopyId.Text = "Copy gallery URL";
+            this.buttonShareCopyId.UseVisualStyleBackColor = true;
+            // 
+            // labelShareId
+            // 
+            this.labelShareId.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.labelShareId.AutoSize = true;
+            this.labelShareId.Location = new System.Drawing.Point(145, 652);
+            this.labelShareId.Name = "labelShareId";
+            this.labelShareId.Size = new System.Drawing.Size(130, 20);
+            this.labelShareId.TabIndex = 1002;
+            this.labelShareId.Text = "Share/gallery URL:";
+            // 
+            // labelShareStatus
+            // 
+            this.labelShareStatus.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.labelShareStatus.AutoSize = true;
+            this.labelShareStatus.ForeColor = System.Drawing.Color.Black;
+            this.labelShareStatus.Location = new System.Drawing.Point(145, 609);
+            this.labelShareStatus.Name = "labelShareStatus";
+            this.labelShareStatus.Size = new System.Drawing.Size(102, 20);
+            this.labelShareStatus.TabIndex = 1001;
+            this.labelShareStatus.Text = "Not uploaded";
+            // 
+            // buttonShareUpload
+            // 
+            this.buttonShareUpload.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.buttonShareUpload.Location = new System.Drawing.Point(8, 202);
+            this.buttonShareUpload.Name = "buttonShareUpload";
+            this.buttonShareUpload.Size = new System.Drawing.Size(120, 29);
+            this.buttonShareUpload.TabIndex = 3;
+            this.buttonShareUpload.Text = "Upload";
+            this.buttonShareUpload.UseVisualStyleBackColor = true;
+            // 
+            // buttonShareSelectNone
+            // 
+            this.buttonShareSelectNone.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.buttonShareSelectNone.Location = new System.Drawing.Point(8, 132);
+            this.buttonShareSelectNone.Name = "buttonShareSelectNone";
+            this.buttonShareSelectNone.Size = new System.Drawing.Size(120, 29);
+            this.buttonShareSelectNone.TabIndex = 2;
+            this.buttonShareSelectNone.Text = "Select none";
+            this.buttonShareSelectNone.UseVisualStyleBackColor = true;
+            // 
+            // buttonShareSelectAll
+            // 
+            this.buttonShareSelectAll.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.buttonShareSelectAll.Location = new System.Drawing.Point(8, 97);
+            this.buttonShareSelectAll.Name = "buttonShareSelectAll";
+            this.buttonShareSelectAll.Size = new System.Drawing.Size(120, 29);
+            this.buttonShareSelectAll.TabIndex = 1;
+            this.buttonShareSelectAll.Text = "Select all";
+            this.buttonShareSelectAll.UseVisualStyleBackColor = true;
+            // 
+            // listViewShareFiles
+            // 
+            this.listViewShareFiles.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.listViewShareFiles.CheckBoxes = true;
+            this.listViewShareFiles.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.columnHeaderShareFilename,
+            this.columnHeaderShareSize});
+            this.listViewShareFiles.FullRowSelect = true;
+            this.listViewShareFiles.HideSelection = false;
+            this.listViewShareFiles.Location = new System.Drawing.Point(149, 97);
+            this.listViewShareFiles.MultiSelect = false;
+            this.listViewShareFiles.Name = "listViewShareFiles";
+            this.listViewShareFiles.Size = new System.Drawing.Size(896, 509);
+            this.listViewShareFiles.TabIndex = 0;
+            this.listViewShareFiles.UseCompatibleStateImageBehavior = false;
+            this.listViewShareFiles.View = System.Windows.Forms.View.Details;
+            this.listViewShareFiles.MouseUp += new System.Windows.Forms.MouseEventHandler(this.listViewShareFiles_MouseUp);
+            // 
+            // columnHeaderShareFilename
+            // 
+            this.columnHeaderShareFilename.Text = "Filename";
+            this.columnHeaderShareFilename.Width = 432;
+            // 
+            // columnHeaderShareSize
+            // 
+            this.columnHeaderShareSize.Text = "Size";
+            this.columnHeaderShareSize.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.columnHeaderShareSize.Width = 120;
+            // 
             // tabFeedback
             // 
             this.tabFeedback.Controls.Add(this.checkBoxFeedbackAttachConfig);
@@ -1832,6 +2013,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.picScreen)).EndInit();
             this.tabDebug.ResumeLayout(false);
             this.tabDebug.PerformLayout();
+            this.tabShare.ResumeLayout(false);
+            this.tabShare.PerformLayout();
             this.tabFeedback.ResumeLayout(false);
             this.tabFeedback.PerformLayout();
             this.tabHelp.ResumeLayout(false);
@@ -1942,6 +2125,11 @@
         private System.Windows.Forms.Label label21;
         private System.Windows.Forms.TextBox txtVoltsDivValues;
         private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.TabPage tabShare;
+        private System.Windows.Forms.Label label22;
+        private System.Windows.Forms.Label label20;
+        private System.Windows.Forms.RichTextBox richTextBoxGalleryUrl;
+        private System.Windows.Forms.Button buttonShareDeleteSelected;
     }
 }
 
