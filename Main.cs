@@ -16,6 +16,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Collections;
 using Oscilloscope_Network_Capture.Core.Online;
 
 namespace Oscilloscope_Network_Capture
@@ -55,6 +56,7 @@ namespace Oscilloscope_Network_Capture
         private readonly SemaphoreSlim _triggerAdjustGate = new SemaphoreSlim(1, 1);
         private const int TriggerAdjustDebounceMs = 70;    // collect rapid key presses
         private const int TriggerAdjustMinIntervalMs = 80; // guard between instrument writes
+        private int maxFilesUpload = 250;
 
         private ErrorProvider _emailErrorProvider;
         private AppConfiguration _config;
@@ -573,6 +575,9 @@ namespace Oscilloscope_Network_Capture
 
                 buttonShareCopyId.Click -= ButtonShareCopyId_Click;
                 buttonShareCopyId.Click += ButtonShareCopyId_Click;
+
+                buttonRefreshFolder.Click -= ButtonRefreshFolder_Click;
+                buttonRefreshFolder.Click += ButtonRefreshFolder_Click;
             }
             catch { }
 
@@ -596,6 +601,15 @@ namespace Oscilloscope_Network_Capture
             }
         }
 
+        private void ButtonRefreshFolder_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                PopulateShareFilesList();
+            }
+            catch { }
+        }
+
         private void PopulateShareFilesList()
         {
             if (listViewShareFiles == null) return;
@@ -604,8 +618,10 @@ namespace Oscilloscope_Network_Capture
             _shareFilesCheckAnchorIndex = -1;
 
             richTextBoxGalleryUrl.Text = "Gallery URL will get populated once files are uploaded";
-            labelShareStatus.Text = "Not uploaded";
-            labelShareStatus.ForeColor = Color.IndianRed;
+            labelShareStatus.Text = "";
+            labelShareStatus.Visible = false;
+            labelShareStatus.ForeColor = Color.White;
+            labelShareStatus.BackColor = Color.IndianRed;
             buttonShareCopyId.Enabled = false;
 
             listViewShareFiles.BeginUpdate();
@@ -617,16 +633,20 @@ namespace Oscilloscope_Network_Capture
                 if (string.IsNullOrWhiteSpace(folder) || !Directory.Exists(folder))
                 {
                     labelShareStatus.Text = "Capture folder not found";
-                    labelShareStatus.ForeColor = Color.IndianRed;
+                    labelShareStatus.Visible = true;
+                    labelShareStatus.ForeColor = Color.White;
+                    labelShareStatus.BackColor = Color.IndianRed;
                     return;
                 }
 
                 var exts = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp" };
 
+                var natural = new NaturalStringComparer(StringComparison.OrdinalIgnoreCase);
+
                 var files = Directory.EnumerateFiles(folder)
                     .Where(f => exts.Contains(Path.GetExtension(f)))
                     .Select(f => new FileInfo(f))
-                    .OrderByDescending(f => f.LastWriteTimeUtc)
+                    .OrderBy(f => f.Name, natural)
                     .ToList();
 
                 foreach (var fi in files)
@@ -639,14 +659,12 @@ namespace Oscilloscope_Network_Capture
 
                     listViewShareFiles.Items.Add(item);
                 }
-
-                labelShareStatus.Text = string.Format(CultureInfo.InvariantCulture, "Total files: {0}", files.Count);
-                labelShareStatus.ForeColor = Color.Black;
             }
             finally
             {
                 listViewShareFiles.EndUpdate();
                 UpdateShareDeleteSelectedButtonState();
+                UpdateShareFilesCounters();
             }
         }
 
@@ -705,6 +723,78 @@ namespace Oscilloscope_Network_Capture
 //            if (bytes >= MB) return (bytes / MB).ToString("0", CultureInfo.InvariantCulture) + " MB";
             if (bytes >= KB) return (bytes / KB).ToString("0", CultureInfo.InvariantCulture) + " KB";
             return bytes.ToString(CultureInfo.InvariantCulture) + " bytes";
+        }
+
+        private sealed class NaturalStringComparer : IComparer<string>
+        {
+            private readonly StringComparison _comparison;
+
+            public NaturalStringComparer(StringComparison comparison)
+            {
+                _comparison = comparison;
+            }
+
+            public int Compare(string x, string y)
+            {
+                if (ReferenceEquals(x, y)) return 0;
+                if (x == null) return -1;
+                if (y == null) return 1;
+
+                int ix = 0;
+                int iy = 0;
+
+                while (ix < x.Length && iy < y.Length)
+                {
+                    char cx = x[ix];
+                    char cy = y[iy];
+
+                    bool dx = char.IsDigit(cx);
+                    bool dy = char.IsDigit(cy);
+
+                    if (dx && dy)
+                    {
+                        // Compare the full numeric runs as integers.
+                        int sx = ix;
+                        int sy = iy;
+
+                        while (ix < x.Length && char.IsDigit(x[ix])) ix++;
+                        while (iy < y.Length && char.IsDigit(y[iy])) iy++;
+
+                        string nx = x.Substring(sx, ix - sx);
+                        string ny = y.Substring(sy, iy - sy);
+
+                        // Trim leading zeros for numeric compare, but keep length for tie-breaker.
+                        string nxTrim = nx.TrimStart('0');
+                        string nyTrim = ny.TrimStart('0');
+                        if (nxTrim.Length == 0) nxTrim = "0";
+                        if (nyTrim.Length == 0) nyTrim = "0";
+
+                        // Bigger digit-count => bigger number.
+                        if (nxTrim.Length != nyTrim.Length)
+                            return nxTrim.Length.CompareTo(nyTrim.Length);
+
+                        int numCmp = string.Compare(nxTrim, nyTrim, StringComparison.Ordinal);
+                        if (numCmp != 0)
+                            return numCmp;
+
+                        // Same numeric value; shorter run (fewer leading zeros) sorts first.
+                        if (nx.Length != ny.Length)
+                            return nx.Length.CompareTo(ny.Length);
+
+                        continue;
+                    }
+
+                    // One digit run, one non-digit => compare as text at this point.
+                    int c = string.Compare(cx.ToString(), cy.ToString(), _comparison);
+                    if (c != 0) return c;
+
+                    ix++;
+                    iy++;
+                }
+
+                // If one is a prefix of the other, shorter sorts first.
+                return (x.Length - ix).CompareTo(y.Length - iy);
+            }
         }
 
         private void listViewShareFiles_ItemCheck(object sender, ItemCheckEventArgs e)
@@ -783,6 +873,29 @@ namespace Oscilloscope_Network_Capture
 
                 bool anyChecked = listViewShareFiles.Items.Cast<ListViewItem>().Any(i => i.Checked);
                 buttonShareDeleteSelected.Enabled = anyChecked;
+
+                UpdateShareFilesCounters();
+            }
+            catch
+            {
+                // best-effort
+            }
+        }
+
+        private void UpdateShareFilesCounters()
+        {
+            try
+            {
+                if (listViewShareFiles == null) return;
+
+                var total = listViewShareFiles.Items.Count;
+                var selected = listViewShareFiles.Items.Cast<ListViewItem>().Count(i => i.Checked);
+
+                if (labelFilesTotal != null)
+                    labelFilesTotal.Text = "Files in total: " + total.ToString(CultureInfo.InvariantCulture);
+
+                if (labelFilesSelected != null)
+                    labelFilesSelected.Text = "Files selected: " + selected.ToString(CultureInfo.InvariantCulture);
             }
             catch
             {
@@ -805,6 +918,7 @@ namespace Oscilloscope_Network_Capture
                 return;
             }
 
+/*
             var resp = MessageBox.Show(
                 string.Format(CultureInfo.InvariantCulture, "Delete {0} file(s) from disk?", selected.Count),
                 "Delete files",
@@ -813,6 +927,7 @@ namespace Oscilloscope_Network_Capture
 
             if (resp != DialogResult.Yes)
                 return;
+*/
 
             int deleted = 0;
             int failed = 0;
@@ -840,11 +955,22 @@ namespace Oscilloscope_Network_Capture
 
             labelShareStatus.Text = string.Format(
                 CultureInfo.InvariantCulture,
-                "Deleted {0} file(s){1}",
+                "Deleted [{0}] {1}{2}",
                 deleted,
+                deleted == 1 ? "file" : "files",
                 failed > 0 ? string.Format(CultureInfo.InvariantCulture, " ({0} failed)", failed) : string.Empty);
 
-            labelShareStatus.ForeColor = failed > 0 ? Color.IndianRed : Color.Green;
+            //            labelShareStatus.ForeColor = failed > 0 ? Color.IndianRed : Color.Green;
+            if (failed > 0) {
+                labelShareStatus.Visible = true;
+                labelShareStatus.ForeColor = Color.White;
+                labelShareStatus.BackColor = Color.IndianRed;
+            } else
+            {
+                labelShareStatus.Visible = true;
+                labelShareStatus.ForeColor = Color.White;
+                labelShareStatus.BackColor = Color.Green;
+            }
 
             UpdateShareDeleteSelectedButtonState();
         }
@@ -873,10 +999,10 @@ namespace Oscilloscope_Network_Capture
                     return;
                 }
 
-                if (selectedPaths.Count > 500)
+                if (selectedPaths.Count > maxFilesUpload)
                 {
                     MessageBox.Show(
-                        string.Format(CultureInfo.InvariantCulture, "Cannot upload {0} files. Maximum is 500 files per upload.", selectedPaths.Count),
+                        string.Format(CultureInfo.InvariantCulture, "Cannot upload [{0}] files. Maximum is [{maxFilesUpload}] files per upload.", selectedPaths.Count),
                         "Share",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
@@ -887,7 +1013,9 @@ namespace Oscilloscope_Network_Capture
                 var model = cboModel.SelectedItem as string ?? _config?.Model ?? string.Empty;
 
                 labelShareStatus.Text = "Uploading...";
+                labelShareStatus.Visible = true;
                 labelShareStatus.ForeColor = Color.Black;
+                labelShareStatus.BackColor = Color.LightGray;
                 richTextBoxGalleryUrl.Text = "Gallery URL will get populated once files are uploaded";
                 buttonShareCopyId.Enabled = false;
 
@@ -915,14 +1043,23 @@ namespace Oscilloscope_Network_Capture
                     if (string.IsNullOrWhiteSpace(shareId))
                     {
                         labelShareStatus.Text = "Upload failed (empty response)";
-                        labelShareStatus.ForeColor = Color.IndianRed;
+                        labelShareStatus.Visible = true;
+                        labelShareStatus.ForeColor = Color.White;
+                        labelShareStatus.BackColor = Color.IndianRed;
                         return;
                     }
 
                     if (shareId.StartsWith("ERROR", StringComparison.OrdinalIgnoreCase))
                     {
+                        // Remove "ERROR: " from "shareId"
+                        shareId = shareId.StartsWith("ERROR", StringComparison.OrdinalIgnoreCase)
+                            ? shareId.Substring(5).TrimStart(' ', ':').Trim()
+                            : shareId;
+
                         labelShareStatus.Text = "Upload failed";
-                        labelShareStatus.ForeColor = Color.IndianRed;
+                        labelShareStatus.Visible = true;
+                        labelShareStatus.ForeColor = Color.White;
+                        labelShareStatus.BackColor = Color.IndianRed;
 
                         MessageBox.Show(
                             shareId,
@@ -935,19 +1072,25 @@ namespace Oscilloscope_Network_Capture
 
                     richTextBoxGalleryUrl.Text = Online.ShareGalleryUrl + shareId;
                     labelShareStatus.Text = "Uploaded successfully";
-                    labelShareStatus.ForeColor = Color.Green;
+                    labelShareStatus.Visible = true;
+                    labelShareStatus.ForeColor = Color.White;
+                    labelShareStatus.BackColor = Color.Green;
                     buttonShareCopyId.Enabled = true;
                 }
             }
             catch (TaskCanceledException)
             {
                 labelShareStatus.Text = "Upload timed out";
-                labelShareStatus.ForeColor = Color.IndianRed;
+                labelShareStatus.Visible = true;
+                labelShareStatus.ForeColor = Color.White;
+                labelShareStatus.BackColor = Color.IndianRed;
             }
             catch (Exception ex)
             {
                 labelShareStatus.Text = "Upload failed";
-                labelShareStatus.ForeColor = Color.IndianRed;
+                labelShareStatus.Visible = true;
+                labelShareStatus.ForeColor = Color.White;
+                labelShareStatus.BackColor = Color.IndianRed;
                 MessageBox.Show("Upload failed: " + ex.Message, "Share", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
@@ -5361,8 +5504,9 @@ namespace Oscilloscope_Network_Capture
             sb.Append(@"You can share your oscilloscope images by uploading them to an online gallery.\line ");
             sb.Append(@"Simply select the images you want to share, and click the ""Upload"" button.\line ");
             sb.Append(@"Once uploaded, you will receive a direct link to the gallery that you can share with others or post in a forum.\line ");
-            sb.Append(@"It is important to highlight that the gallery will be automatically {\b deleted after 3 months!} If posted to a forum, then maybe also post a remark that it will be unavailable after 3 months.\line ");
-            sb.Append(@"Also, you can only upload files equal to or less than 50KB, and no more than 500 files in total.\line ");
+            sb.Append(@"It is important to highlight that the gallery will be automatically {\b deleted after 3 months!} - this is a {\b temporary} gallery only!\line ");
+            sb.Append(@"If posted to a forum, then maybe also post a remark that it will be unavailable after 3 months.\line ");
+            sb.Append(@"Also, you can only upload files equal to or less than 250KB, and no more than 250 files in total.\line ");
             sb.Append(@"\line");
 
             sb.Append(@"{\fs28{\b How you can help to get your oscilloscope supported in tool}}\line ");
@@ -5398,10 +5542,10 @@ namespace Oscilloscope_Network_Capture
             sb.Append(@"{""\i Make it easier and faster for me to capture oscilloscope measurements, when creating oscilloscope baseline images for my other project; Commodore Repair Toolbox.}{\i0}""\line ");
             sb.Append(@"\line ");
 
-            sb.Append(@"It has been designed to work specifically with my Rigol DS2202A oscilloscope, but as it uses the SCPI socket protocol, then it should also work for other oscilloscopes also, if the configured SCPI commands are correct.\line ");
+            sb.Append(@"It is quite oriented towards measurements done for Commodore (primarily 0V to +12VDC) and has been designed to work specifically with my Rigol DS2202A oscilloscope, but as it uses the SCPI socket protocol, then it should also work for other oscilloscopes, if the configured SCPI commands are correct.\line ");
             sb.Append(@"\line ");
 
-            sb.Append(@"The goal is not to make this a full-blown ""Swiss army knife"" that suits everyones need, but if can help someone other than myself, then I am happy to make this available. For sure I have made it much more robust and user-friendly than my first rough PoC :-)\line ");
+            sb.Append(@"The goal is not to make this a full-blown ""Swiss army knife"" that suits everyones need, but if can help someone other than myself, then I am happy to make this available. For sure I have made it much more robust and user-friendly than my first rough PoC for myself only :-)\line ");
             sb.Append(@"\line ");
 
             sb.Append(@"You can check for a newer version on its official GitHub project page, https://github.com/HovKlan-DH/Oscilloscope-Network-Capture\line ");

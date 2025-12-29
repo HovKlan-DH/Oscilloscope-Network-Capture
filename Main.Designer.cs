@@ -10,7 +10,6 @@
         private System.Windows.Forms.Button buttonShareSelectNone;
         private System.Windows.Forms.Button buttonShareUpload;
         private System.Windows.Forms.Label labelShareStatus;
-        private System.Windows.Forms.Label labelShareId;
         private System.Windows.Forms.Button buttonShareCopyId;
 
         protected override void Dispose(bool disposing)
@@ -135,7 +134,7 @@
             this.label3 = new System.Windows.Forms.Label();
             this.label12 = new System.Windows.Forms.Label();
             this.label10 = new System.Windows.Forms.Label();
-            this.buttonOpenFolder = new System.Windows.Forms.Button();
+            this.buttonOpenFolder1 = new System.Windows.Forms.Button();
             this.buttonCaptureStart = new System.Windows.Forms.Button();
             this.richTextBoxAction = new System.Windows.Forms.RichTextBox();
             this.textBoxCaptureOutputFolder = new System.Windows.Forms.TextBox();
@@ -154,7 +153,6 @@
             this.label22 = new System.Windows.Forms.Label();
             this.label20 = new System.Windows.Forms.Label();
             this.buttonShareCopyId = new System.Windows.Forms.Button();
-            this.labelShareId = new System.Windows.Forms.Label();
             this.labelShareStatus = new System.Windows.Forms.Label();
             this.buttonShareUpload = new System.Windows.Forms.Button();
             this.buttonShareSelectNone = new System.Windows.Forms.Button();
@@ -180,6 +178,10 @@
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.richTextBoxAbout = new System.Windows.Forms.RichTextBox();
             this.labelNewVersion5 = new System.Windows.Forms.Label();
+            this.labelFilesTotal = new System.Windows.Forms.Label();
+            this.labelFilesSelected = new System.Windows.Forms.Label();
+            this.buttonOpenFolder2 = new System.Windows.Forms.Button();
+            this.buttonRefreshFolder = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.numPort)).BeginInit();
             this.tabMain.SuspendLayout();
             this.tabConfiguration.SuspendLayout();
@@ -1368,7 +1370,7 @@
             this.tabCapturing.Controls.Add(this.label3);
             this.tabCapturing.Controls.Add(this.label12);
             this.tabCapturing.Controls.Add(this.label10);
-            this.tabCapturing.Controls.Add(this.buttonOpenFolder);
+            this.tabCapturing.Controls.Add(this.buttonOpenFolder1);
             this.tabCapturing.Controls.Add(this.buttonCaptureStart);
             this.tabCapturing.Controls.Add(this.richTextBoxAction);
             this.tabCapturing.Controls.Add(this.textBoxCaptureOutputFolder);
@@ -1458,16 +1460,16 @@
             this.label10.TabIndex = 12;
             this.label10.Text = "Variables";
             // 
-            // buttonOpenFolder
+            // buttonOpenFolder1
             // 
-            this.buttonOpenFolder.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.buttonOpenFolder.Location = new System.Drawing.Point(8, 100);
-            this.buttonOpenFolder.Name = "buttonOpenFolder";
-            this.buttonOpenFolder.Size = new System.Drawing.Size(284, 28);
-            this.buttonOpenFolder.TabIndex = 2;
-            this.buttonOpenFolder.Text = "Open capture folder";
-            this.buttonOpenFolder.UseVisualStyleBackColor = true;
-            this.buttonOpenFolder.Click += new System.EventHandler(this.buttonOpenFolder_Click);
+            this.buttonOpenFolder1.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.buttonOpenFolder1.Location = new System.Drawing.Point(8, 100);
+            this.buttonOpenFolder1.Name = "buttonOpenFolder1";
+            this.buttonOpenFolder1.Size = new System.Drawing.Size(284, 28);
+            this.buttonOpenFolder1.TabIndex = 2;
+            this.buttonOpenFolder1.Text = "Open capture folder";
+            this.buttonOpenFolder1.UseVisualStyleBackColor = true;
+            this.buttonOpenFolder1.Click += new System.EventHandler(this.buttonOpenFolder_Click);
             // 
             // buttonCaptureStart
             // 
@@ -1620,12 +1622,15 @@
             // 
             // tabShare
             // 
+            this.tabShare.Controls.Add(this.buttonRefreshFolder);
+            this.tabShare.Controls.Add(this.buttonOpenFolder2);
+            this.tabShare.Controls.Add(this.labelFilesSelected);
+            this.tabShare.Controls.Add(this.labelFilesTotal);
             this.tabShare.Controls.Add(this.buttonShareDeleteSelected);
             this.tabShare.Controls.Add(this.richTextBoxGalleryUrl);
             this.tabShare.Controls.Add(this.label22);
             this.tabShare.Controls.Add(this.label20);
             this.tabShare.Controls.Add(this.buttonShareCopyId);
-            this.tabShare.Controls.Add(this.labelShareId);
             this.tabShare.Controls.Add(this.labelShareStatus);
             this.tabShare.Controls.Add(this.buttonShareUpload);
             this.tabShare.Controls.Add(this.buttonShareSelectNone);
@@ -1641,9 +1646,9 @@
             // buttonShareDeleteSelected
             // 
             this.buttonShareDeleteSelected.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.buttonShareDeleteSelected.Location = new System.Drawing.Point(8, 272);
+            this.buttonShareDeleteSelected.Location = new System.Drawing.Point(8, 374);
             this.buttonShareDeleteSelected.Name = "buttonShareDeleteSelected";
-            this.buttonShareDeleteSelected.Size = new System.Drawing.Size(120, 29);
+            this.buttonShareDeleteSelected.Size = new System.Drawing.Size(166, 29);
             this.buttonShareDeleteSelected.TabIndex = 1007;
             this.buttonShareDeleteSelected.Text = "Delete selected";
             this.buttonShareDeleteSelected.UseVisualStyleBackColor = true;
@@ -1653,11 +1658,13 @@
             this.richTextBoxGalleryUrl.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.richTextBoxGalleryUrl.BackColor = System.Drawing.Color.White;
             this.richTextBoxGalleryUrl.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.richTextBoxGalleryUrl.Cursor = System.Windows.Forms.Cursors.Hand;
             this.richTextBoxGalleryUrl.Font = new System.Drawing.Font("Segoe UI", 10.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.richTextBoxGalleryUrl.Location = new System.Drawing.Point(253, 648);
+            this.richTextBoxGalleryUrl.Location = new System.Drawing.Point(322, 680);
+            this.richTextBoxGalleryUrl.Multiline = false;
             this.richTextBoxGalleryUrl.Name = "richTextBoxGalleryUrl";
             this.richTextBoxGalleryUrl.ReadOnly = true;
-            this.richTextBoxGalleryUrl.Size = new System.Drawing.Size(729, 28);
+            this.richTextBoxGalleryUrl.Size = new System.Drawing.Size(723, 29);
             this.richTextBoxGalleryUrl.TabIndex = 1005;
             this.richTextBoxGalleryUrl.Text = "Gallery URL";
             // 
@@ -1685,40 +1692,31 @@
             // 
             this.buttonShareCopyId.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.buttonShareCopyId.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.buttonShareCopyId.Location = new System.Drawing.Point(149, 680);
+            this.buttonShareCopyId.Location = new System.Drawing.Point(180, 676);
             this.buttonShareCopyId.Name = "buttonShareCopyId";
             this.buttonShareCopyId.Size = new System.Drawing.Size(136, 29);
             this.buttonShareCopyId.TabIndex = 5;
             this.buttonShareCopyId.Text = "Copy gallery URL";
             this.buttonShareCopyId.UseVisualStyleBackColor = true;
             // 
-            // labelShareId
-            // 
-            this.labelShareId.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.labelShareId.AutoSize = true;
-            this.labelShareId.Location = new System.Drawing.Point(145, 652);
-            this.labelShareId.Name = "labelShareId";
-            this.labelShareId.Size = new System.Drawing.Size(130, 20);
-            this.labelShareId.TabIndex = 1002;
-            this.labelShareId.Text = "Share/gallery URL:";
-            // 
             // labelShareStatus
             // 
-            this.labelShareStatus.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.labelShareStatus.AutoSize = true;
-            this.labelShareStatus.ForeColor = System.Drawing.Color.Black;
-            this.labelShareStatus.Location = new System.Drawing.Point(145, 609);
+            this.labelShareStatus.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.labelShareStatus.BackColor = System.Drawing.Color.IndianRed;
+            this.labelShareStatus.ForeColor = System.Drawing.Color.White;
+            this.labelShareStatus.Location = new System.Drawing.Point(874, 609);
             this.labelShareStatus.Name = "labelShareStatus";
-            this.labelShareStatus.Size = new System.Drawing.Size(102, 20);
+            this.labelShareStatus.Size = new System.Drawing.Size(171, 20);
             this.labelShareStatus.TabIndex = 1001;
-            this.labelShareStatus.Text = "Not uploaded";
+            this.labelShareStatus.Text = "Status";
+            this.labelShareStatus.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // buttonShareUpload
             // 
             this.buttonShareUpload.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.buttonShareUpload.Location = new System.Drawing.Point(8, 202);
+            this.buttonShareUpload.Location = new System.Drawing.Point(8, 304);
             this.buttonShareUpload.Name = "buttonShareUpload";
-            this.buttonShareUpload.Size = new System.Drawing.Size(120, 29);
+            this.buttonShareUpload.Size = new System.Drawing.Size(166, 29);
             this.buttonShareUpload.TabIndex = 3;
             this.buttonShareUpload.Text = "Upload";
             this.buttonShareUpload.UseVisualStyleBackColor = true;
@@ -1726,9 +1724,9 @@
             // buttonShareSelectNone
             // 
             this.buttonShareSelectNone.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.buttonShareSelectNone.Location = new System.Drawing.Point(8, 132);
+            this.buttonShareSelectNone.Location = new System.Drawing.Point(8, 234);
             this.buttonShareSelectNone.Name = "buttonShareSelectNone";
-            this.buttonShareSelectNone.Size = new System.Drawing.Size(120, 29);
+            this.buttonShareSelectNone.Size = new System.Drawing.Size(166, 29);
             this.buttonShareSelectNone.TabIndex = 2;
             this.buttonShareSelectNone.Text = "Select none";
             this.buttonShareSelectNone.UseVisualStyleBackColor = true;
@@ -1736,9 +1734,9 @@
             // buttonShareSelectAll
             // 
             this.buttonShareSelectAll.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.buttonShareSelectAll.Location = new System.Drawing.Point(8, 97);
+            this.buttonShareSelectAll.Location = new System.Drawing.Point(8, 199);
             this.buttonShareSelectAll.Name = "buttonShareSelectAll";
-            this.buttonShareSelectAll.Size = new System.Drawing.Size(120, 29);
+            this.buttonShareSelectAll.Size = new System.Drawing.Size(166, 29);
             this.buttonShareSelectAll.TabIndex = 1;
             this.buttonShareSelectAll.Text = "Select all";
             this.buttonShareSelectAll.UseVisualStyleBackColor = true;
@@ -1754,10 +1752,10 @@
             this.columnHeaderShareSize});
             this.listViewShareFiles.FullRowSelect = true;
             this.listViewShareFiles.HideSelection = false;
-            this.listViewShareFiles.Location = new System.Drawing.Point(149, 97);
+            this.listViewShareFiles.Location = new System.Drawing.Point(180, 97);
             this.listViewShareFiles.MultiSelect = false;
             this.listViewShareFiles.Name = "listViewShareFiles";
-            this.listViewShareFiles.Size = new System.Drawing.Size(896, 509);
+            this.listViewShareFiles.Size = new System.Drawing.Size(865, 509);
             this.listViewShareFiles.TabIndex = 0;
             this.listViewShareFiles.UseCompatibleStateImageBehavior = false;
             this.listViewShareFiles.View = System.Windows.Forms.View.Details;
@@ -1986,6 +1984,49 @@
             this.labelNewVersion5.Text = "New version available ";
             this.labelNewVersion5.Visible = false;
             // 
+            // labelFilesTotal
+            // 
+            this.labelFilesTotal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.labelFilesTotal.AutoSize = true;
+            this.labelFilesTotal.ForeColor = System.Drawing.Color.Black;
+            this.labelFilesTotal.Location = new System.Drawing.Point(176, 609);
+            this.labelFilesTotal.Name = "labelFilesTotal";
+            this.labelFilesTotal.Size = new System.Drawing.Size(112, 20);
+            this.labelFilesTotal.TabIndex = 1008;
+            this.labelFilesTotal.Text = "Files in total: 24";
+            // 
+            // labelFilesSelected
+            // 
+            this.labelFilesSelected.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.labelFilesSelected.AutoSize = true;
+            this.labelFilesSelected.ForeColor = System.Drawing.Color.Black;
+            this.labelFilesSelected.Location = new System.Drawing.Point(176, 629);
+            this.labelFilesSelected.Name = "labelFilesSelected";
+            this.labelFilesSelected.Size = new System.Drawing.Size(120, 20);
+            this.labelFilesSelected.TabIndex = 1009;
+            this.labelFilesSelected.Text = "Files selected: 23";
+            // 
+            // buttonOpenFolder2
+            // 
+            this.buttonOpenFolder2.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.buttonOpenFolder2.Location = new System.Drawing.Point(8, 97);
+            this.buttonOpenFolder2.Name = "buttonOpenFolder2";
+            this.buttonOpenFolder2.Size = new System.Drawing.Size(166, 28);
+            this.buttonOpenFolder2.TabIndex = 1010;
+            this.buttonOpenFolder2.Text = "Open capture folder";
+            this.buttonOpenFolder2.UseVisualStyleBackColor = true;
+            this.buttonOpenFolder2.Click += new System.EventHandler(this.buttonOpenFolder_Click);
+            // 
+            // buttonRefreshFolder
+            // 
+            this.buttonRefreshFolder.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.buttonRefreshFolder.Location = new System.Drawing.Point(8, 131);
+            this.buttonRefreshFolder.Name = "buttonRefreshFolder";
+            this.buttonRefreshFolder.Size = new System.Drawing.Size(166, 28);
+            this.buttonRefreshFolder.TabIndex = 1011;
+            this.buttonRefreshFolder.Text = "Refresh";
+            this.buttonRefreshFolder.UseVisualStyleBackColor = true;
+            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
@@ -2078,7 +2119,7 @@
         private System.Windows.Forms.CheckBox checkBoxForceAcquisition;
         private System.Windows.Forms.CheckBox checkBoxEnableBeep;
         private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.Button buttonOpenFolder;
+        private System.Windows.Forms.Button buttonOpenFolder1;
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.NumericUpDown numericUpDownDelayMs;
         private System.Windows.Forms.CheckBox checkBoxDeleteDoubleUnderscore;
@@ -2130,6 +2171,10 @@
         private System.Windows.Forms.Label label20;
         private System.Windows.Forms.RichTextBox richTextBoxGalleryUrl;
         private System.Windows.Forms.Button buttonShareDeleteSelected;
+        private System.Windows.Forms.Label labelFilesSelected;
+        private System.Windows.Forms.Label labelFilesTotal;
+        private System.Windows.Forms.Button buttonOpenFolder2;
+        private System.Windows.Forms.Button buttonRefreshFolder;
     }
 }
 

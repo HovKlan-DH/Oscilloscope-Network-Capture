@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="label22.Text" xml:space="preserve">
-    <value>You can as a free service share your images as a gallery. This could be useful for troubleshooting or review, where you have measured some components and you want someone else to view these oscilloscope images also. Once you have uploaded one or more images, you will receive back a gallery link, which you can share with relevant people. It is important to highlight that you can share a maximum of 500 images, and this is a TEMPORARY gallery, that will automatically get deleted after 3 months!!!</value>
+    <value>You can as a free service share your images as a gallery. This could be useful for troubleshooting or review, where you have measured some components and you want someone else to view these oscilloscope images also. Once you have uploaded one or more images, you will receive back a gallery link, which you can share with relevant people. It is important to highlight that you can share a maximum of 250 images, where the maximum file size per file is 250KB, and this is a TEMPORARY gallery, that will automatically get deleted after 3 months!!!</value>
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="pictureBox1.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
