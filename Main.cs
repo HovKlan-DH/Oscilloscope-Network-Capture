@@ -56,7 +56,7 @@ namespace Oscilloscope_Network_Capture
         private readonly SemaphoreSlim _triggerAdjustGate = new SemaphoreSlim(1, 1);
         private const int TriggerAdjustDebounceMs = 70;    // collect rapid key presses
         private const int TriggerAdjustMinIntervalMs = 80; // guard between instrument writes
-        private int maxFilesUpload = 250;
+        private int maxFilesUpload = 500;
 
         private ErrorProvider _emailErrorProvider;
         private AppConfiguration _config;
@@ -1002,7 +1002,7 @@ namespace Oscilloscope_Network_Capture
                 if (selectedPaths.Count > maxFilesUpload)
                 {
                     MessageBox.Show(
-                        string.Format(CultureInfo.InvariantCulture, "Cannot upload [{0}] files. Maximum is [{maxFilesUpload}] files per upload.", selectedPaths.Count),
+                        string.Format(CultureInfo.InvariantCulture, "Cannot upload [{0}] files. Maximum is [{1}] files per upload.", selectedPaths.Count, maxFilesUpload),
                         "Share",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);

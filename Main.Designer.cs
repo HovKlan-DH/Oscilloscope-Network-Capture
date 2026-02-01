@@ -148,6 +148,10 @@
             this.labelNewVersion3 = new System.Windows.Forms.Label();
             this.rtbLog = new System.Windows.Forms.RichTextBox();
             this.tabShare = new System.Windows.Forms.TabPage();
+            this.buttonRefreshFolder = new System.Windows.Forms.Button();
+            this.buttonOpenFolder2 = new System.Windows.Forms.Button();
+            this.labelFilesSelected = new System.Windows.Forms.Label();
+            this.labelFilesTotal = new System.Windows.Forms.Label();
             this.buttonShareDeleteSelected = new System.Windows.Forms.Button();
             this.richTextBoxGalleryUrl = new System.Windows.Forms.RichTextBox();
             this.label22 = new System.Windows.Forms.Label();
@@ -178,10 +182,6 @@
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.richTextBoxAbout = new System.Windows.Forms.RichTextBox();
             this.labelNewVersion5 = new System.Windows.Forms.Label();
-            this.labelFilesTotal = new System.Windows.Forms.Label();
-            this.labelFilesSelected = new System.Windows.Forms.Label();
-            this.buttonOpenFolder2 = new System.Windows.Forms.Button();
-            this.buttonRefreshFolder = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.numPort)).BeginInit();
             this.tabMain.SuspendLayout();
             this.tabConfiguration.SuspendLayout();
@@ -1643,6 +1643,49 @@
             this.tabShare.Text = "Share";
             this.tabShare.UseVisualStyleBackColor = true;
             // 
+            // buttonRefreshFolder
+            // 
+            this.buttonRefreshFolder.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.buttonRefreshFolder.Location = new System.Drawing.Point(8, 131);
+            this.buttonRefreshFolder.Name = "buttonRefreshFolder";
+            this.buttonRefreshFolder.Size = new System.Drawing.Size(166, 28);
+            this.buttonRefreshFolder.TabIndex = 1011;
+            this.buttonRefreshFolder.Text = "Refresh";
+            this.buttonRefreshFolder.UseVisualStyleBackColor = true;
+            // 
+            // buttonOpenFolder2
+            // 
+            this.buttonOpenFolder2.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.buttonOpenFolder2.Location = new System.Drawing.Point(8, 97);
+            this.buttonOpenFolder2.Name = "buttonOpenFolder2";
+            this.buttonOpenFolder2.Size = new System.Drawing.Size(166, 28);
+            this.buttonOpenFolder2.TabIndex = 1010;
+            this.buttonOpenFolder2.Text = "Open capture folder";
+            this.buttonOpenFolder2.UseVisualStyleBackColor = true;
+            this.buttonOpenFolder2.Click += new System.EventHandler(this.buttonOpenFolder_Click);
+            // 
+            // labelFilesSelected
+            // 
+            this.labelFilesSelected.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.labelFilesSelected.AutoSize = true;
+            this.labelFilesSelected.ForeColor = System.Drawing.Color.Black;
+            this.labelFilesSelected.Location = new System.Drawing.Point(176, 629);
+            this.labelFilesSelected.Name = "labelFilesSelected";
+            this.labelFilesSelected.Size = new System.Drawing.Size(120, 20);
+            this.labelFilesSelected.TabIndex = 1009;
+            this.labelFilesSelected.Text = "Files selected: 23";
+            // 
+            // labelFilesTotal
+            // 
+            this.labelFilesTotal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.labelFilesTotal.AutoSize = true;
+            this.labelFilesTotal.ForeColor = System.Drawing.Color.Black;
+            this.labelFilesTotal.Location = new System.Drawing.Point(176, 609);
+            this.labelFilesTotal.Name = "labelFilesTotal";
+            this.labelFilesTotal.Size = new System.Drawing.Size(112, 20);
+            this.labelFilesTotal.TabIndex = 1008;
+            this.labelFilesTotal.Text = "Files in total: 24";
+            // 
             // buttonShareDeleteSelected
             // 
             this.buttonShareDeleteSelected.Cursor = System.Windows.Forms.Cursors.Hand;
@@ -1728,7 +1771,7 @@
             this.buttonShareSelectNone.Name = "buttonShareSelectNone";
             this.buttonShareSelectNone.Size = new System.Drawing.Size(166, 29);
             this.buttonShareSelectNone.TabIndex = 2;
-            this.buttonShareSelectNone.Text = "Select none";
+            this.buttonShareSelectNone.Text = "Select NONE";
             this.buttonShareSelectNone.UseVisualStyleBackColor = true;
             // 
             // buttonShareSelectAll
@@ -1738,7 +1781,7 @@
             this.buttonShareSelectAll.Name = "buttonShareSelectAll";
             this.buttonShareSelectAll.Size = new System.Drawing.Size(166, 29);
             this.buttonShareSelectAll.TabIndex = 1;
-            this.buttonShareSelectAll.Text = "Select all";
+            this.buttonShareSelectAll.Text = "Select ALL";
             this.buttonShareSelectAll.UseVisualStyleBackColor = true;
             // 
             // listViewShareFiles
@@ -1983,49 +2026,6 @@
             this.labelNewVersion5.TabIndex = 0;
             this.labelNewVersion5.Text = "New version available ";
             this.labelNewVersion5.Visible = false;
-            // 
-            // labelFilesTotal
-            // 
-            this.labelFilesTotal.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.labelFilesTotal.AutoSize = true;
-            this.labelFilesTotal.ForeColor = System.Drawing.Color.Black;
-            this.labelFilesTotal.Location = new System.Drawing.Point(176, 609);
-            this.labelFilesTotal.Name = "labelFilesTotal";
-            this.labelFilesTotal.Size = new System.Drawing.Size(112, 20);
-            this.labelFilesTotal.TabIndex = 1008;
-            this.labelFilesTotal.Text = "Files in total: 24";
-            // 
-            // labelFilesSelected
-            // 
-            this.labelFilesSelected.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.labelFilesSelected.AutoSize = true;
-            this.labelFilesSelected.ForeColor = System.Drawing.Color.Black;
-            this.labelFilesSelected.Location = new System.Drawing.Point(176, 629);
-            this.labelFilesSelected.Name = "labelFilesSelected";
-            this.labelFilesSelected.Size = new System.Drawing.Size(120, 20);
-            this.labelFilesSelected.TabIndex = 1009;
-            this.labelFilesSelected.Text = "Files selected: 23";
-            // 
-            // buttonOpenFolder2
-            // 
-            this.buttonOpenFolder2.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.buttonOpenFolder2.Location = new System.Drawing.Point(8, 97);
-            this.buttonOpenFolder2.Name = "buttonOpenFolder2";
-            this.buttonOpenFolder2.Size = new System.Drawing.Size(166, 28);
-            this.buttonOpenFolder2.TabIndex = 1010;
-            this.buttonOpenFolder2.Text = "Open capture folder";
-            this.buttonOpenFolder2.UseVisualStyleBackColor = true;
-            this.buttonOpenFolder2.Click += new System.EventHandler(this.buttonOpenFolder_Click);
-            // 
-            // buttonRefreshFolder
-            // 
-            this.buttonRefreshFolder.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.buttonRefreshFolder.Location = new System.Drawing.Point(8, 131);
-            this.buttonRefreshFolder.Name = "buttonRefreshFolder";
-            this.buttonRefreshFolder.Size = new System.Drawing.Size(166, 28);
-            this.buttonRefreshFolder.TabIndex = 1011;
-            this.buttonRefreshFolder.Text = "Refresh";
-            this.buttonRefreshFolder.UseVisualStyleBackColor = true;
             // 
             // Main
             // 

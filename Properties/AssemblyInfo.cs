@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Oscilloscope Network Capture")]
-[assembly: AssemblyCopyright("Dennis Helligsø ©  2025")]
+[assembly: AssemblyCopyright("Dennis Helligsø ©  2026")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("2025.12.18.1")]
-[assembly: AssemblyFileVersion("2025.12.18.1")]
+[assembly: AssemblyVersion("2026.02.01.1")]
+[assembly: AssemblyFileVersion("2026.02.01.1")]
