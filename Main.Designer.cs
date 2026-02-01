@@ -1583,7 +1583,7 @@
             // 
             this.buttonDebugClear.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.buttonDebugClear.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.buttonDebugClear.Location = new System.Drawing.Point(957, 603);
+            this.buttonDebugClear.Location = new System.Drawing.Point(957, 681);
             this.buttonDebugClear.Name = "buttonDebugClear";
             this.buttonDebugClear.Size = new System.Drawing.Size(75, 27);
             this.buttonDebugClear.TabIndex = 5;
@@ -1616,7 +1616,7 @@
             this.rtbLog.Margin = new System.Windows.Forms.Padding(4);
             this.rtbLog.Name = "rtbLog";
             this.rtbLog.ReadOnly = true;
-            this.rtbLog.Size = new System.Drawing.Size(1065, 640);
+            this.rtbLog.Size = new System.Drawing.Size(1065, 727);
             this.rtbLog.TabIndex = 0;
             this.rtbLog.Text = "";
             // 
