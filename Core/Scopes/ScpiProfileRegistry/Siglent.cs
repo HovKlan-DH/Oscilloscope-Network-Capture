@@ -50,6 +50,31 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                     .Map(ScopeCommand.DumpImage, "SCDP")
             );
 
+            AddSeriesProfiles(
+                "Siglent",
+                new[]
+                {
+                    "SDS1202X-E",
+                },
+                p => p
+                    .Map(ScopeCommand.Identify, "*IDN?")
+                    .Map(ScopeCommand.DrainSystemErrorQueue, ":SYST:ERR?")
+                    .Map(ScopeCommand.OperationComplete, "*OPC?")
+                    .Map(ScopeCommand.ClearStatistics, "*CLS")
+                    .Map(ScopeCommand.QueryActiveTrigger, "TRIG_MODE?")
+                    .Map(ScopeCommand.Stop, "STOP")
+                    .Map(ScopeCommand.Single, "TRIG_MODE SINGLE")
+                    .Map(ScopeCommand.Run, "TRIG_MODE AUTO")
+                    .Map(ScopeCommand.QueryTriggerMode, "TRIG_SELECT?")
+                    .Map(ScopeCommand.QueryTriggerLevel, "TRIG_LEVEL?")
+                    .Map(ScopeCommand.SetTriggerLevel, "C1:TRIG_LEVEL {0}")
+                    .Map(ScopeCommand.QueryTimeDiv, "TIME_DIV?")
+                    .Map(ScopeCommand.SetTimeDiv, "TIME_DIV {0}")
+                    .Map(ScopeCommand.QueryVoltsDiv, "C1:VOLT_DIV?")
+                    .Map(ScopeCommand.SetVoltsDiv, "C1:VOLT_DIV {0}")
+                    .Map(ScopeCommand.DumpImage, "SCDP")
+            );
+
             // SDS3000X HD Series
             //      SDS3104X HD
             // --------------------
@@ -108,6 +133,7 @@ namespace Oscilloscope_Network_Capture.Core.Scopes
                     "SDS1000X+",
                     "SDS1000X-E",
                     "SDS1000X HD",
+                    "SDS1202X-E",
                     "SDS2000X",
                     "SDS2000X HD",
                     "SDS2000X Plus",

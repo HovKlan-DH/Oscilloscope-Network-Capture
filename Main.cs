@@ -2948,12 +2948,12 @@ namespace Oscilloscope_Network_Capture
                 _ = ExecuteCaptureKeyAsync(
                     async () =>
                     {
-                        AdjustTriggerLevelAsync(+1);
+                        _ =  AdjustTriggerLevelAsync(+1);
                         var worker = _triggerAdjustWorker;
                         if (worker != null) await worker.ConfigureAwait(true);
                     },
                     KeyActionType.AdjustTrigger,
-                    coalesceIfBusy: () => AdjustTriggerLevelAsync(+1)
+                    coalesceIfBusy: () => { _ = AdjustTriggerLevelAsync(+1); }
                 );
                 return;
             }
@@ -2967,12 +2967,12 @@ namespace Oscilloscope_Network_Capture
                 _ = ExecuteCaptureKeyAsync(
                     async () =>
                     {
-                        AdjustTriggerLevelAsync(-1);
+                        _ = AdjustTriggerLevelAsync(-1);
                         var worker = _triggerAdjustWorker;
                         if (worker != null) await worker.ConfigureAwait(true);
                     },
                     KeyActionType.AdjustTrigger,
-                    coalesceIfBusy: () => AdjustTriggerLevelAsync(-1)
+                    coalesceIfBusy: () => { _ = AdjustTriggerLevelAsync(-1); }
                 );
                 return;
             }
