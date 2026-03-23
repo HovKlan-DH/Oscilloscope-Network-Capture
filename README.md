@@ -84,6 +84,7 @@ The keyboard actions were implemented to support using an external numpad (or ke
   - SDS1000X+
   - SDS1000X-E
   - SDS1000X HD
+  - SDS1202X-E
   - SDS2000X
   - SDS2000X HD
   - SDS2000X Plus
